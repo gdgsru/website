@@ -1,0 +1,27 @@
+# Cloudflare Wrangler and build caches
+.wrangler/
+node_modules/
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Large binary assets & archives
+*.zip
+*.mp4
+
+# Backups & local snapshots
+backups/
+temp_*.txt
+sections_*.txt
+
+# OS metadata
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Environment variables
+.env
+.env.local
+.env.*.local

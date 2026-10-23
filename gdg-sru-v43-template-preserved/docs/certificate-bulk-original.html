@@ -1,0 +1,1473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GDG Certificate Studio - Co-Branded Master Edition</title>
+<!-- Official Google Web Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700;800;900&family=JetBrains+Mono:wght@400;600;700;800&family=Kalam:wght@400;700&display=swap" rel="stylesheet">
+<!-- PDF Export Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+<style>
+    /* =========================================================
+       CORE THEME & VARIABLES
+       ========================================================= */
+    :root {
+        --g-blue: #4285F4; --g-red: #EA4335; --g-yellow: #FBBC05; --g-green: #34A853;
+        --g-light-yellow: #FEF0C3;
+        
+        --ui-bg: #050608; --ui-panel: #0D1017; --ui-border: #1E2433;
+        
+        --paper-bg: #F8F9FA; 
+        --text-main: #0F172A; 
+        --text-muted: #475569; 
+        
+        --font-display: 'Space Grotesk', sans-serif;
+        --font-title: 'Outfit', sans-serif;
+        --font-body: 'Inter', sans-serif;
+        --font-mono: 'JetBrains Mono', monospace;
+        --font-sign: 'Kalam', cursive;
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--ui-bg); font-family: var(--font-body); display: flex; height: 100vh; overflow: hidden; color: #fff; }
+    ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-thumb { background: #3C4043; border-radius: 10px; }
+
+    /* =========================================================
+       SIDEBAR WORKBENCH UI
+       ========================================================= */
+    .sidebar { width: 420px; flex: none; background: var(--ui-panel); border-right: 1px solid var(--ui-border); display: flex; flex-direction: column; z-index: 100; box-shadow: 4px 0 20px rgba(0,0,0,0.5);}
+    .sidebar-header { padding: 20px 24px; border-bottom: 1px solid var(--ui-border); background: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, transparent 100%);}
+    .sidebar-header h2 { margin: 0 0 4px; font-family: var(--font-display); font-size: 20px; font-weight: 700; letter-spacing: -0.5px;}
+    .sidebar-header p { margin: 0; font-size: 13px; color: #9AA0A6; line-height: 1.4; }
+    
+    .sidebar-content { flex: 1; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 18px; }
+    .sidebar-footer { padding: 18px 24px; border-top: 1px solid var(--ui-border); background: var(--ui-panel);}
+
+    .input-group { display: flex; flex-direction: column; gap: 6px; }
+    .input-group label { font-family: var(--font-mono); font-size: 10px; font-weight: 700; color: #8AB4F8; text-transform: uppercase; letter-spacing: 0.5px; }
+    input[type=text], textarea { width: 100%; padding: 10px; background: #050608; border: 1px solid var(--ui-border); border-radius: 6px; color: #fff; font-family: var(--font-body); font-size: 13px; outline: none; transition: 0.2s;}
+    input[type=text]:focus, textarea:focus { border-color: var(--g-blue); }
+    textarea { resize: vertical; min-height: 55px; }
+    
+    .row { display: flex; gap: 10px; } .row > div { flex: 1; }
+
+    /* Dynamic Sidebar Cards (Signatories & Partners) */
+    .dynamic-input-card { display: flex; flex-direction: column; gap: 6px; background: #050608; padding: 8px; border-radius: 6px; border: 1px solid var(--ui-border); }
+    .dynamic-input-row { display: flex; gap: 6px; align-items: center; }
+    
+    .file-btn { display: flex; justify-content: center; align-items: center; width: 100%; padding: 8px 12px; background: rgba(255,255,255,0.02); border: 1px dashed #444; border-radius: 6px; font-size: 11px; font-weight: 600; color: #ccc; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; transition: 0.2s; text-align: center;}
+    .file-btn:hover { background: rgba(66,133,244,0.1); color: var(--g-blue); border-color: var(--g-blue); }
+    input[type=file] { display: none; }
+
+    .btn-action { width: 100%; padding: 9px; background: #1E2433; border: 1px solid #334155; color: #fff; border-radius: 6px; font-family: var(--font-mono); font-size: 11px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+    .btn-action:hover { background: #2A3347; border-color: #60A5FA; }
+
+    .btn-print { width: 100%; padding: 16px; background: #fff; color: #000; border: none; border-radius: 8px; font-family: var(--font-display); font-weight: 700; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 15px rgba(255,255,255,0.1);}
+    .btn-print:hover { background: var(--g-blue); color: #fff; transform: translateY(-2px); }
+
+    .section-title { font-family: var(--font-display); font-size: 13px; font-weight: 700; color: #fff; border-bottom: 1px solid var(--ui-border); padding-bottom: 5px; margin-bottom: -3px;}
+
+    [contenteditable="true"] { outline: none; transition: 0.2s; }
+    [contenteditable="true"]:hover { opacity: 0.8; }
+    [contenteditable="true"]:focus { outline: 2px dashed var(--g-blue); }
+
+    /* =========================================================
+       CANVAS VIEWPORT & A4 LANDSCAPE PAPER
+       ========================================================= */
+    .canvas-viewport { flex: 1; overflow: auto; display: flex; padding: 40px; justify-content: center; align-items: center; background: #000;}
+    .canvas-scaler { transform-origin: center; transition: transform 0.1s;}
+
+    .a4-landscape {
+        width: 1123px;  
+        height: 794px;  
+        background: var(--paper-bg);
+        box-shadow: 0 30px 100px rgba(0,0,0,0.85);
+        position: relative;
+        color: var(--text-main);
+        padding: 40px 48px; 
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .brutal-shadow { box-shadow: 6px 6px 0px var(--text-main); }
+    .brutal-shadow-sm { box-shadow: 3px 3px 0px var(--text-main); }
+
+    .tech-grid { position: absolute; inset: 0; background-image: radial-gradient(rgba(15, 23, 42, 0.08) 1.5px, transparent 1.5px); background-size: 26px 26px; z-index: 0; pointer-events: none;}
+    
+    /* Dual Watermarks */
+    .bleed-watermark-year {
+        position: absolute;
+        top: -60px;
+        right: -30px;
+        font-family: var(--font-display);
+        font-size: 380px;
+        font-weight: 900;
+        line-height: 0.8;
+        color: transparent;
+        -webkit-text-stroke: 4px rgba(15, 23, 42, 0.05);
+        z-index: 1;
+        pointer-events: none;
+        user-select: none;
+        letter-spacing: -14px;
+    }
+    
+    .bleed-watermark-gdg {
+        position: absolute;
+        top: 220px;
+        right: 30px;
+        font-family: var(--font-display);
+        font-size: 260px;
+        font-weight: 900;
+        line-height: 0.8;
+        color: transparent;
+        -webkit-text-stroke: 3.5px rgba(66, 133, 244, 0.07);
+        z-index: 1;
+        pointer-events: none;
+        user-select: none;
+        letter-spacing: -6px;
+    }
+
+    .tape-accent { position: absolute; top: 12px; left: -35px; width: 130px; height: 32px; background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(0,0,0,0.06); box-shadow: 0 2px 4px rgba(0,0,0,0.04); transform: rotate(-45deg); z-index: 100; pointer-events: none;}
+
+    /* Repositioned Circuit Path */
+    .circuit-path { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; }
+
+    /* =========================================================
+       1. HEADER ROW: LOGOS
+       ========================================================= */
+    .header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        position: relative;
+        z-index: 20;
+        padding-bottom: 12px;
+        border-bottom: 2.5px solid var(--text-main);
+    }
+
+    .main-logo-area { display: flex; align-items: center; gap: 18px; }
+    .main-logo-area svg { width: 72px; height: auto; filter: drop-shadow(2px 2px 0px rgba(15,23,42,0.12)); }
+    .custom-logo { max-width: 240px; max-height: 64px; object-fit: contain; display: none; }
+    
+    .logo-text h1 { margin: 0 0 2px 0; font-family: var(--font-title); font-size: 26px; font-weight: 900; color: var(--text-main); letter-spacing: -0.5px;}
+    .logo-text h2 { margin: 0; font-family: var(--font-display); font-size: 13px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2.5px;}
+
+    .partners-cluster {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        max-width: 54%;
+    }
+    .partner-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #FFFFFF;
+        border: 2px solid var(--text-main);
+        padding: 6px 14px;
+        border-radius: 10px;
+        box-shadow: 3px 3px 0px var(--text-main);
+        height: 48px;
+    }
+    .partner-item img { height: 34px; max-width: 120px; object-fit: contain; }
+    .partner-item .partner-title-badge { font-family: var(--font-mono); font-size: 11px; font-weight: 800; color: var(--text-main); line-height: 1.2; }
+
+    /* =========================================================
+       2. DENSE TWO-COLUMN BODY
+       ========================================================= */
+    .content-body-grid {
+        display: flex;
+        justify-content: space-between;
+        gap: 32px;
+        width: 100%;
+        flex: 1;
+        position: relative;
+        z-index: 10;
+        margin-top: 14px;
+    }
+
+    /* LEFT COLUMN (Balanced for Density) */
+    .left-col {
+        width: 57%;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        z-index: 10;
+    }
+
+    .title-deck { margin-top: 2px; }
+    .cert-tag { display: inline-block; background: #FFFFFF; border: 2px solid var(--text-main); padding: 4px 12px; border-radius: 14px; font-family: var(--font-mono); font-size: 11px; font-weight: 800; color: var(--text-main); margin-bottom: 8px; }
+    .cert-title { font-family: var(--font-title); font-size: 40px; font-weight: 900; text-transform: uppercase; letter-spacing: -0.5px; color: var(--text-main); margin: 0; line-height: 1.05; }
+
+    .statement-deck { margin: 15px 0 0 0; }
+    .cert-statement { font-family: var(--font-display); font-size: 13.5px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 6px; }
+
+    .cert-name-wrapper { margin: 4px 0 16px 0; }
+    .cert-name-badge { 
+        background: var(--g-blue); 
+        color: #fff; 
+        border: 3.5px solid var(--text-main); 
+        border-radius: 12px; 
+        padding: 9px 24px; 
+        font-family: var(--font-title); 
+        font-size: 52px; 
+        letter-spacing: -1px;
+        font-weight: 900; 
+        display: inline-block; 
+        line-height: 1.1;
+        max-width: 100%;
+        word-break: normal;
+        overflow-wrap: anywhere;
+    }
+
+    /* Fixed Line-Height & Margin Overlaps */
+    .cert-event-text { 
+        font-family: var(--font-body); 
+        font-size: 15.5px; 
+        color: var(--text-muted); 
+        line-height: 2.4; 
+        margin-bottom: 25px;
+    }
+    
+    .highlight-box { 
+        background: var(--g-light-yellow); 
+        border: 1.5px solid var(--text-main); 
+        border-radius: 5px; 
+        padding: 3px 8px; 
+        font-weight: 800; 
+        color: var(--text-main); 
+        display: inline-block; 
+        margin: 0 6px; 
+        vertical-align: middle;
+        line-height: 1.2;
+    }
+
+    .event-syllabus-card {
+        background: #FFFFFF;
+        border: 2px solid var(--text-main);
+        border-radius: 10px;
+        padding: 12px 16px;
+        box-shadow: 3px 3px 0px var(--text-main);
+        margin-bottom: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        width: 95%; 
+    }
+    .syllabus-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-family: var(--font-mono);
+        font-size: 9px;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: var(--g-blue);
+        letter-spacing: 0.5px;
+    }
+    .syllabus-body {
+        font-family: var(--font-body);
+        font-size: 12.5px;
+        color: var(--text-muted);
+        line-height: 1.5;
+        font-weight: 500;
+    }
+
+    /* CLEAN OPEN SIGNATURE ARCHITECTURE */
+    .signatures-row { 
+        display: flex; 
+        gap: 20px; 
+        align-items: flex-end; 
+        width: 100%;
+        margin-top: 40px; 
+    }
+    .sig-block { 
+        flex: 1;
+        min-width: 0;
+        display: flex; 
+        flex-direction: column; 
+        padding: 2px 4px;
+    }
+    .sig-img-container { height: 42px; display: flex; align-items: flex-end; margin-bottom: 4px; width: 100%; position: relative; z-index: 5; }
+    .sig-img { height: calc(42px * var(--sig-scale, 1)); width: auto; max-width: none; flex: none; object-fit: contain; mix-blend-mode: multiply; transform: translate(var(--sig-x, 0px), var(--sig-y, 0px)); cursor: grab; touch-action: none; user-select: none; -webkit-user-drag: none; }
+    .sig-img.dragging { cursor: grabbing; }
+    #certificate [contenteditable="true"] { transition: none; }
+    #certificate .sel-hl { outline: 2px dotted var(--g-blue); outline-offset: 3px; }
+    .text-size-panel { position: sticky; top: -20px; z-index: 50; background: var(--ui-panel); border: 1px solid var(--g-blue); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 6px 18px rgba(0,0,0,0.5); }
+    .text-size-panel .ts-title { font-family: var(--font-mono); font-size: 10px; font-weight: 700; color: #8AB4F8; letter-spacing: .5px; text-transform: uppercase; }
+    .text-size-panel .ts-target { font-size: 12px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .text-size-panel .ts-row { display: flex; align-items: center; gap: 6px; }
+    .text-size-panel .ts-row .btn-action { width: 34px; padding: 6px 0; flex: none; }
+    .text-size-panel .ts-row input[type=range] { flex: 1; accent-color: var(--g-blue); }
+    .text-size-panel .ts-val { font-family: var(--font-mono); font-size: 11px; color: #ccc; width: 42px; text-align: right; }
+    .sig-fallback { font-family: var(--font-sign); font-size: calc(26px * var(--sig-scale, 1)); color: var(--text-main); line-height: 0.8; white-space: normal; transform: translate(var(--sig-x, 0px), var(--sig-y, 0px)); }
+    .sig-line { width: 100%; height: 2px; background: var(--text-main); margin-bottom: 4px; }
+    .sig-name { font-family: var(--font-title); font-weight: 800; font-size: calc(13px * var(--sig-name-scale, 1)); color: var(--text-main); line-height: 1.2; word-break: normal; }
+    .sig-role { font-family: var(--font-mono); font-size: calc(9px * var(--sig-role-scale, 1)); font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; line-height: 1.2; word-break: normal; }
+
+    /* RIGHT COLUMN */
+    .right-col {
+        width: 38%;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: flex-end;
+        position: relative;
+        z-index: 10;
+        gap: 25px; 
+    }
+
+    /* CUSTOMIZABLE TECH STICKER CLUSTER */
+    .top-art-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        position: relative;
+        margin-top: 10px;
+    }
+    .dev-badge-card {
+        background: #FFFFFF;
+        border: 2.5px solid var(--text-main);
+        border-radius: 12px;
+        padding: 7px 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 3px 3px 0px var(--text-main);
+    }
+    .dev-badge-icon {
+        width: 28px;
+        height: 28px;
+        background: var(--g-blue);
+        border: 1.5px solid var(--text-main);
+        border-radius: 6px;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--font-mono);
+        font-weight: 800;
+        font-size: 13px;
+    }
+    .dev-badge-title { font-family: var(--font-mono); font-size: 12.5px; font-weight: 800; color: var(--text-main); }
+    
+    .custom-sticker-pill {
+        padding: 6px 14px;
+        border-radius: 14px;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 800;
+        border: 2px solid var(--text-main);
+        box-shadow: 2.5px 2.5px 0px var(--text-main);
+    }
+
+    .terminal-log-card {
+        width: 100%;
+        background: #FFFFFF;
+        border: 2.5px solid var(--text-main);
+        border-radius: 12px;
+        padding: 10px 14px;
+        box-shadow: 4px 4px 0px var(--text-main);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .terminal-head {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-bottom: 2px;
+    }
+    .term-dot { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--text-main); }
+    .term-code {
+        font-family: var(--font-mono);
+        font-size: 10.5px;
+        font-weight: 700;
+        color: var(--text-main);
+        line-height: 1.45;
+    }
+    .term-highlight { color: var(--g-green); font-weight: 800; }
+
+    .dossier-card-wrap {
+        width: 100%;
+        position: relative;
+        margin-top: auto;
+    }
+    .dossier-card {
+        width: 100%;
+        background: var(--g-blue);
+        border: 3px solid var(--text-main);
+        border-radius: 16px;
+        padding: 20px 16px 16px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        position: relative;
+    }
+
+    .dossier-label { font-family: var(--font-mono); font-size: 9.5px; font-weight: 800; color: #FFFFFF; text-transform: uppercase; letter-spacing: 1px; }
+    .skills-cluster { display: flex; flex-wrap: wrap; gap: 7px; }
+    .skill-pill {
+        background: #FFFFFF;
+        color: var(--text-main);
+        border: 2px solid var(--text-main);
+        font-family: var(--font-mono);
+        font-size: 10.5px;
+        font-weight: 800;
+        padding: 4px 10px;
+        border-radius: 14px;
+        box-shadow: 2px 2px 0px var(--text-main);
+        white-space: nowrap;
+    }
+
+    .meta-console {
+        background: rgba(15, 23, 42, 0.35);
+        border: 2px solid var(--text-main);
+        border-radius: 8px;
+        padding: 10px 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 5px;
+    }
+    .meta-item { display: flex; flex-direction: column; gap: 2px; }
+    .meta-title { font-family: var(--font-mono); font-size: 7.5px; font-weight: 700; color: #CBD5E1; text-transform: uppercase; }
+    .meta-val { font-family: var(--font-mono); font-size: 10.5px; font-weight: 800; color: #FFFFFF; }
+
+    .sticker-tag { position: absolute; top: -14px; left: -10px; background: var(--g-yellow); padding: 5px 12px; border-radius: 14px; font-family: var(--font-mono); font-size: 11px; font-weight: 800; color: var(--text-main); z-index: 10; border: 2px solid var(--text-main); box-shadow: 0 0 0 3px #fff, 4px 4px 0px 3px var(--text-main); }
+    .sticker-heart { position: absolute; bottom: -12px; right: -8px; background: var(--g-green); width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; color: var(--text-main); z-index: 10; border: 2px solid var(--text-main); box-shadow: 0 0 0 3px #fff, 4px 4px 0px 3px var(--text-main); }
+
+
+    /* =========================================================
+       BULK GENERATION UI
+       ========================================================= */
+    .recipient-list { max-height: 170px; overflow-y: auto; background: #050608; border: 1px solid var(--ui-border); border-radius: 6px; }
+    .recipient-item { display: flex; align-items: center; gap: 8px; padding: 6px 10px; font-size: 12px; cursor: pointer; border-bottom: 1px solid #11151f; }
+    .recipient-item:last-child { border-bottom: none; }
+    .recipient-item:hover { background: rgba(66,133,244,0.08); }
+    .recipient-item.active { background: rgba(66,133,244,0.18); color: #8AB4F8; }
+    .recipient-item .idx { font-family: var(--font-mono); font-size: 10px; color: #6B7280; width: 26px; flex: none; }
+    .recipient-item .nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .recipient-item .rm { color: var(--g-red); font-size: 11px; padding: 0 4px; }
+    .bulk-meta { display: flex; justify-content: space-between; align-items: center; font-family: var(--font-mono); font-size: 10px; color: #9AA0A6; }
+    .bulk-nav { display: flex; gap: 6px; align-items: center; }
+    .bulk-nav .btn-action { width: auto; padding: 6px 12px; }
+    .hint { font-size: 11px; color: #6B7280; line-height: 1.45; margin: 0; }
+    .hint code { font-family: var(--font-mono); color: #8AB4F8; }
+    .btn-secondary { width: 100%; padding: 12px; background: transparent; color: #fff; border: 1px solid #334155; border-radius: 8px; font-family: var(--font-display); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: 0.2s; margin-top: 8px; }
+    .btn-secondary:hover { border-color: var(--g-blue); color: var(--g-blue); }
+    .btn-disabled { opacity: 0.5; pointer-events: none; }
+    .progress-wrap { display: none; margin-bottom: 12px; }
+    .progress-bar { height: 6px; background: #1E2433; border-radius: 4px; overflow: hidden; }
+    .progress-fill { height: 100%; width: 0%; background: var(--g-green); transition: width 0.15s; }
+    .progress-text { font-family: var(--font-mono); font-size: 10px; color: #9AA0A6; margin-top: 6px; }
+
+    /* =========================================================
+       PRINT EXPORT STYLES
+       ========================================================= */
+    @media print {
+        @page { size: A4 landscape; margin: 0; }
+        body { background: #fff; padding: 0; display: block;}
+        .sidebar { display: none !important; }
+        .canvas-viewport { padding: 0; background: #fff; display: block;}
+        .a4-landscape { box-shadow: none; margin: 0; width: 1123px; height: 794px; transform: none !important; }
+        [contenteditable="true"] { outline: none !important; }
+    }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+    <div class="sidebar-header">
+        <h2>GDG Certificate Studio</h2>
+        <p>Co-Branded Master Edition</p>
+    </div>
+    
+    <div class="sidebar-content">
+
+        <div class="text-size-panel" id="textSizePanel">
+            <div class="ts-title">Text size</div>
+            <div class="ts-target" id="tsTarget">Click any text on the certificate to resize it</div>
+            <div class="ts-row">
+                <button class="btn-action" onclick="nudgeTextSize(-5)" title="Smaller">A−</button>
+                <input type="range" id="tsRange" min="40" max="300" step="1" value="100" oninput="setTextSize(this.value)" disabled>
+                <button class="btn-action" onclick="nudgeTextSize(5)" title="Larger">A+</button>
+                <span class="ts-val" id="tsVal">100%</span>
+            </div>
+            <div class="ts-row">
+                <button class="btn-action" style="width:auto; flex:1; padding:6px;" onclick="resetTextSize()">RESET THIS TEXT</button>
+                <button class="btn-action" style="width:auto; flex:1; padding:6px;" onclick="resetAllTextSizes()">RESET ALL TEXT</button>
+            </div>
+        </div>
+        
+        <div class="section-title">1. Attendees (Bulk or Single)</div>
+        <div class="input-group">
+            <label>Type Names (comma or new-line separated)</label>
+            <textarea id="bulkNames" style="min-height:80px;" placeholder="Asha Rao, Rahul Verma, Priya Singh&#10;or one name per line" oninput="loadFromTyped()"></textarea>
+        </div>
+        <label class="file-btn">Upload CSV / TXT File<input type="file" id="csvInput" accept=".csv,.txt,text/csv,text/plain" onchange="loadFromFile(this)"></label>
+        <p class="hint">CSV needs a <code>name</code> column. Optional columns override per person: <code>id</code>, <code>event</code>, <code>date</code>, <code>chapter</code>, <code>track</code>, <code>skills</code>. Without a header, the first column is used as the name.</p>
+
+        <div class="bulk-meta">
+            <span id="recipientCount">0 attendees loaded</span>
+            <div class="bulk-nav">
+                <button class="btn-action" onclick="stepRecipient(-1)">◀</button>
+                <button class="btn-action" onclick="stepRecipient(1)">▶</button>
+                <button class="btn-action" style="color:var(--g-red);" onclick="clearRecipients()">Clear</button>
+            </div>
+        </div>
+        <div class="recipient-list" id="recipientList"></div>
+        <p class="hint" id="recipientHint">Nothing loaded yet. Type names above or upload a CSV. Click a name to preview it.</p>
+
+        <div class="input-group">
+            <label>Single Name (used when no list is loaded)</label>
+            <input type="text" id="singleNameInput" value="Recipient Name" oninput="singleNameChanged(this.value)">
+        </div>
+
+        <div class="section-title">2. Event Details</div>
+        <div class="input-group">
+            <label>Event Name</label>
+            <input type="text" id="eventNameInput" value="Google Cloud Study Jam" oninput="updateText('eventName', this.value)">
+        </div>
+        <div class="row">
+            <div class="input-group">
+                <label>Chapter Name</label>
+                <input type="text" id="chapterInput" value="GDG Chapter Name" oninput="updateText('chapterName', this.value)">
+            </div>
+            <div class="input-group">
+                <label>Event Date</label>
+                <input type="text" id="eventDateInput" value="October 4, 2026" oninput="updateEventDate(this.value)">
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label>Curriculum Summary</label>
+            <textarea oninput="updateText('syllabusText', this.value)">Completed intensive hands-on development labs exploring Google Cloud infrastructure, Vertex AI foundational model deployments, and Gemini API multi-agent workflows.</textarea>
+        </div>
+
+        <div class="section-title">3. Collaborators (Header Logos)</div>
+        <div id="partnersInputList" style="display:flex; flex-direction:column; gap:8px;"></div>
+        <button class="btn-action" onclick="addPartnerInput()">+ Add Collaborator (With Logo)</button>
+
+        <div class="section-title">4. Custom Tech Stickers & Badges</div>
+        <div class="row">
+            <div class="input-group">
+                <label>Main Tag</label>
+                <input type="text" id="devTagInput" value="#GoogleDeveloper" oninput="updateText('devTagText', this.value)">
+            </div>
+            <div class="input-group">
+                <label>Primary Pill</label>
+                <input type="text" id="nodePillInput" value="NODE_ACTIVE // 2026" oninput="updateText('nodePillText', this.value)">
+            </div>
+        </div>
+        <div class="row">
+            <div class="input-group">
+                <label>Dossier Tag (Yellow)</label>
+                <input type="text" value="BUILD_WITH_AI" oninput="updateText('dossierTagText', this.value)">
+            </div>
+            <div class="input-group">
+                <label>Partner Pill (Optional)</label>
+                <input type="text" id="partnerStickerInput" value="#SRU_ACM // CO-HOST" placeholder="e.g. #SRU_ACM // CO-HOST" oninput="updatePartnerSticker(this.value)">
+            </div>
+        </div>
+
+        <div class="section-title">5. Authorized Signatories</div>
+        <div id="signatoriesInputList" style="display:flex; flex-direction:column; gap:10px;"></div>
+        <button class="btn-action" onclick="addSignatory()">+ Add Signatory</button>
+
+        <div class="section-title">6. Skills & Competencies</div>
+        <div class="input-group">
+            <label>Comma-Separated Skills</label>
+            <input type="text" id="skillsInput" value="Vertex AI, Gemini 2.5, Cloud Run, Python" oninput="renderSkillPills(this.value)">
+        </div>
+
+        <div class="section-title">7. Verification Tracking</div>
+        <div class="row">
+            <div class="input-group">
+                <label>Credential ID</label>
+                <input type="text" id="credIdInput" value="GDG-SRU-CERT-001" oninput="refreshCurrent()">
+            </div>
+            <div class="input-group">
+                <label>Track Name</label>
+                <input type="text" id="trackInput" value="AI & Cloud" oninput="updateText('metaTrack', this.value)">
+            </div>
+        </div>
+
+        <div class="section-title">8. GDG Branding Logo</div>
+        <div class="row">
+            <label class="file-btn">Upload Custom Logo<input type="file" accept="image/*" onchange="handleImg(this, 'headLogo', 'defLogo')"></label>
+        </div>
+
+    </div>
+    
+    <div class="sidebar-footer">
+        <div class="progress-wrap" id="progressWrap">
+            <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+            <div class="progress-text" id="progressText">Preparing…</div>
+        </div>
+        <button class="btn-print" id="btnZip" onclick="exportBulk('zip')">📦 Download All (ZIP of PDFs)</button>
+        <button class="btn-secondary" id="btnMerged" onclick="exportBulk('merged')">📄 Download All as One PDF</button>
+        <button class="btn-secondary" id="btnOne" onclick="exportPDF()">🖨️ Export Current Only</button>
+    </div>
+</div>
+
+<div class="canvas-viewport" id="viewport">
+    <div class="canvas-scaler" id="scaler">
+        
+        <!-- A4 LANDSCAPE CANVAS -->
+        <div class="a4-landscape" id="certificate">
+            
+            <div class="tech-grid"></div>
+            
+            <!-- DUAL WATERMARKS -->
+            <div class="bleed-watermark-year">2026</div>
+            <div class="bleed-watermark-gdg">GDG</div>
+            
+            <div class="tape-accent"></div>
+
+            <!-- Recalculated Orthogonal Circuit Line -->
+            <svg class="circuit-path" viewBox="0 0 1123 794">
+                <path d="M 630,420 L 680,420 L 680,560 L 730,560" fill="none" stroke="var(--text-main)" stroke-width="2.5" stroke-linejoin="miter" />
+                <circle cx="630" cy="420" r="4" fill="var(--g-yellow)" stroke="var(--text-main)" stroke-width="2" />
+                <circle cx="730" cy="560" r="4" fill="var(--g-blue)" stroke="var(--text-main)" stroke-width="2" />
+            </svg>
+
+            <!-- 1. FULL WIDTH HEADER WITH PROMINENT LOGO & PARTNER LOGOS -->
+            <div class="header-row">
+                <div class="main-logo-area">
+                    <svg id="defLogo" viewBox="0 0 100 60">
+                        <path d="M40,10 L10,30 L40,50" fill="none" stroke="#4285F4" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M60,10 L90,30 L60,50" fill="none" stroke="#34A853" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <img id="headLogo" class="custom-logo" src="">
+                    <div class="logo-text">
+                        <h1>Google Developer Groups</h1>
+                        <h2 contenteditable="true" spellcheck="false">On Campus SR University</h2>
+                    </div>
+                </div>
+
+                <!-- DYNAMIC CO-BRANDING PARTNERS CLUSTER -->
+                <div class="partners-cluster" id="partnersCluster"></div>
+            </div>
+
+            <!-- 2. HIGH DENSITY BODY GRID -->
+            <div class="content-body-grid">
+                
+                <!-- LEFT COLUMN -->
+                <div class="left-col">
+                    <div>
+                        <div class="title-deck">
+                            <div class="cert-tag brutal-shadow-sm" contenteditable="true" spellcheck="false">OFFICIAL CREDENTIAL</div>
+                            <h1 class="cert-title" contenteditable="true" spellcheck="false">Certificate of Participation</h1>
+                        </div>
+
+                        <div class="statement-deck">
+                            <div class="cert-statement" contenteditable="true" spellcheck="false">This document certifies that</div>
+                            <div class="cert-name-wrapper">
+                                <div class="cert-name-badge brutal-shadow" id="certName" contenteditable="true" spellcheck="false">Recipient Name</div>
+                            </div>
+
+                            <div class="cert-event-text">
+                                <span contenteditable="true" spellcheck="false">has successfully attended and contributed to</span>&nbsp;<span class="highlight-box brutal-shadow-sm" id="eventName" contenteditable="true" spellcheck="false">Google Cloud Study Jam</span>&nbsp;<span contenteditable="true" spellcheck="false">hosted by</span>&nbsp;<span class="highlight-box brutal-shadow-sm" id="chapterName" contenteditable="true" spellcheck="false">GDG Chapter Name</span>&nbsp;<span contenteditable="true" spellcheck="false">on</span>&nbsp;<span class="highlight-box brutal-shadow-sm" id="eventDate" contenteditable="true" spellcheck="false">October 4, 2026</span>.
+                            </div>
+
+                            <!-- CURRICULUM SYLLABUS CARD -->
+                            <div class="event-syllabus-card">
+                                <div class="syllabus-header">
+                                    <span>// CURRICULUM OVERVIEW</span>
+                                    <span>STATUS: COMPLETED</span>
+                                </div>
+                                <div class="syllabus-body" id="syllabusText" contenteditable="true" spellcheck="false">
+                                    Completed intensive hands-on development labs exploring Google Cloud infrastructure, Vertex AI foundational model deployments, and Gemini API multi-agent workflows.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CLEAN OPEN SIGNATURE ARCHITECTURE -->
+                    <div class="signatures-row" id="signaturesCluster">
+                        <!-- Rendered cleanly via JavaScript -->
+                    </div>
+                </div>
+
+                <!-- RIGHT COLUMN -->
+                <div class="right-col">
+                    
+                    <!-- CUSTOMIZABLE TECH STICKER CLUSTER -->
+                    <div class="top-art-row">
+                        <div class="dev-badge-card">
+                            <div class="dev-badge-icon">&lt;/&gt;</div>
+                            <div class="dev-badge-title" id="devTagText">#GoogleDeveloper</div>
+                        </div>
+                        <div class="custom-sticker-pill" id="nodePillBadge" style="background:var(--g-red); color:#fff;">
+                            <span id="nodePillText">NODE_ACTIVE // 2026</span>
+                        </div>
+                        <div class="custom-sticker-pill" id="partnerStickerBadge" style="background:var(--g-yellow); color:var(--text-main); display:flex;">
+                            <span id="partnerStickerText">#SRU_ACM // CO-HOST</span>
+                        </div>
+                    </div>
+
+                    <!-- TERMINAL LOG CARD -->
+                    <div class="terminal-log-card">
+                        <div class="terminal-head">
+                            <div class="term-dot" style="background:var(--g-red);"></div>
+                            <div class="term-dot" style="background:var(--g-yellow);"></div>
+                            <div class="term-dot" style="background:var(--g-green);"></div>
+                            <span style="font-family:var(--font-mono); font-size:8px; font-weight:800; margin-left:4px; color:var(--text-muted);">SHELL_SESSION_NODE</span>
+                        </div>
+                        <div class="term-code">
+                            &gt; node deploy_credential.js --auth=true<br>
+                            &gt; status: <span class="term-highlight">200_OK_VERIFIED</span><br>
+                            &gt; ref_sha: <span id="termId" style="color:var(--g-blue);">GDG-SRU-CERT-001</span>
+                        </div>
+                    </div>
+
+                    <!-- DOSSIER CARD -->
+                    <div class="dossier-card-wrap">
+                        <div class="sticker-tag" id="dossierTagText">BUILD_WITH_AI</div>
+                        <div class="dossier-card brutal-shadow">
+                            <div class="dossier-label">// Verified Competencies</div>
+                            <div class="skills-cluster" id="skillsContainer"></div>
+                            <div class="meta-console">
+                                <div class="meta-item">
+                                    <span class="meta-title">Credential ID</span>
+                                    <span class="meta-val" id="dossierRef">GDG-SRU-CERT-001</span>
+                                </div>
+                                <div class="meta-item">
+                                    <span class="meta-title">Track</span>
+                                    <span class="meta-val" id="metaTrack">AI & Cloud</span>
+                                </div>
+                                <div class="meta-item">
+                                    <span class="meta-title">Issued</span>
+                                    <span class="meta-val" id="metaDate">Oct 4, 2026</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="sticker-heart">&hearts;</div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+
+    /* =========================================================
+       BULK ENGINE
+       ========================================================= */
+    let recipients = [];      // { name, id?, event?, date?, chapter?, track?, skills? }
+    let currentIndex = 0;
+
+    function esc(str) { return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+    // Proper CSV parser (handles quotes, escaped quotes, commas/newlines inside quotes)
+    function parseCSV(text) {
+        text = text.replace(/^\uFEFF/, '');
+        const rows = []; let row = [], cell = '', inQ = false;
+        for (let i = 0; i < text.length; i++) {
+            const c = text[i];
+            if (inQ) {
+                if (c === '"') { if (text[i+1] === '"') { cell += '"'; i++; } else inQ = false; }
+                else cell += c;
+            } else if (c === '"') inQ = true;
+            else if (c === ',') { row.push(cell); cell = ''; }
+            else if (c === '\n' || c === '\r') {
+                if (c === '\r' && text[i+1] === '\n') i++;
+                row.push(cell); rows.push(row); row = []; cell = '';
+            } else cell += c;
+        }
+        if (cell.length || row.length) { row.push(cell); rows.push(row); }
+        return rows.map(r => r.map(x => x.trim())).filter(r => r.some(x => x !== ''));
+    }
+
+    function parseTypedNames(text) {
+        return text.split(/[,\n;]+/).map(n => n.trim()).filter(Boolean).map(name => ({ name }));
+    }
+
+    function parseTable(text) {
+        const rows = parseCSV(text);
+        if (!rows.length) return [];
+        const header = rows[0].map(h => h.toLowerCase().replace(/[\s_-]+/g, ''));
+        const nameKeys = ['name', 'fullname', 'attendeename', 'attendee', 'recipient', 'recipientname', 'participant', 'participantname', 'studentname'];
+        const nameCol = header.findIndex(h => nameKeys.includes(h));
+
+        if (nameCol === -1) {
+            // No header: single row of many names -> every cell is a name; else first column
+            if (rows.length === 1 && rows[0].length > 1) return rows[0].filter(Boolean).map(name => ({ name }));
+            return rows.map(r => r[0]).filter(Boolean).map(name => ({ name }));
+        }
+        const find = keys => header.findIndex(h => keys.includes(h));
+        const cols = {
+            id: find(['id', 'credentialid', 'certid', 'certificateid', 'certno']),
+            event: find(['event', 'eventname']),
+            date: find(['date', 'eventdate']),
+            chapter: find(['chapter', 'chaptername']),
+            track: find(['track', 'trackname']),
+            skills: find(['skills', 'competencies'])
+        };
+        return rows.slice(1).filter(r => (r[nameCol] || '').trim()).map(r => {
+            const o = { name: r[nameCol].trim() };
+            Object.keys(cols).forEach(k => { if (cols[k] > -1 && r[cols[k]]) o[k] = r[cols[k]]; });
+            return o;
+        });
+    }
+
+    function setRecipients(list) {
+        recipients = list; currentIndex = 0;
+        renderRecipientList();
+        applyCurrent();
+    }
+
+    function loadFromTyped() { setRecipients(parseTypedNames(document.getElementById('bulkNames').value)); }
+
+    function loadFromFile(input) {
+        if (!input.files || !input.files[0]) return;
+        const reader = new FileReader();
+        reader.onload = e => {
+            const text = e.target.result;
+            const list = parseTable(text);
+            document.getElementById('bulkNames').value = list.map(r => r.name).join(', ');
+            setRecipients(list);
+            input.value = '';
+        };
+        reader.readAsText(input.files[0]);
+    }
+
+    function clearRecipients() {
+        document.getElementById('bulkNames').value = '';
+        setRecipients([]);
+    }
+
+    function removeRecipient(i, ev) {
+        ev.stopPropagation();
+        recipients.splice(i, 1);
+        document.getElementById('bulkNames').value = recipients.map(r => r.name).join(', ');
+        if (currentIndex >= recipients.length) currentIndex = Math.max(0, recipients.length - 1);
+        renderRecipientList(); applyCurrent();
+    }
+
+    function selectRecipient(i) { currentIndex = i; renderRecipientList(); applyCurrent(); }
+    function stepRecipient(d) {
+        if (!recipients.length) return;
+        currentIndex = (currentIndex + d + recipients.length) % recipients.length;
+        renderRecipientList(); applyCurrent();
+    }
+
+    function renderRecipientList() {
+        const list = document.getElementById('recipientList');
+        const n = recipients.length;
+        document.getElementById('recipientCount').innerText = n + (n === 1 ? ' attendee loaded' : ' attendees loaded');
+        document.getElementById('recipientHint').style.display = n ? 'none' : 'block';
+        list.style.display = n ? 'block' : 'none';
+        list.innerHTML = recipients.map((r, i) => `
+            <div class="recipient-item ${i === currentIndex ? 'active' : ''}" onclick="selectRecipient(${i})">
+                <span class="idx">${String(i + 1).padStart(2, '0')}</span>
+                <span class="nm">${esc(r.name)}</span>
+                <span class="rm" onclick="removeRecipient(${i}, event)">✕</span>
+            </div>`).join('');
+        const act = list.querySelector('.active');
+        if (act) act.scrollIntoView({ block: 'nearest' });
+    }
+
+    function singleNameChanged(val) { if (!recipients.length) setCertName(val); }
+
+    // Credential ID: increments trailing number per attendee (…-001 -> …-002)
+    function makeCredentialId(base, i, total) {
+        base = (base || '').trim();
+        const m = base.match(/^(.*?)(\d+)$/);
+        if (m) {
+            const num = parseInt(m[2], 10) + i;
+            return m[1] + String(num).padStart(m[2].length, '0');
+        }
+        return total > 1 ? `${base}-${String(i + 1).padStart(3, '0')}` : base;
+    }
+
+    // Keeps the name big: shrinks only a little on one line, then wraps to 2 lines instead of shrinking further
+    function fitName() {
+        const el = document.getElementById('certName');
+        const max = el.parentElement.clientWidth;
+        const MAX = 52 * nameScale, MIN_ONE_LINE = 42 * nameScale, MIN_TWO_LINE = 34 * nameScale;
+        el.style.transition = 'none'; // global contenteditable transition would animate font-size and break measuring
+        const set = s => { el.style.fontSize = s + 'px'; };
+
+        // Pass 1: single line, allowed to shrink only down to MIN_ONE_LINE
+        el.style.whiteSpace = 'nowrap';
+        let size = MAX; set(size);
+        const border = el.offsetWidth - el.clientWidth;
+        while (el.scrollWidth + border > max && size > MIN_ONE_LINE) { size--; set(size); }
+        if (el.scrollWidth + border <= max) return;
+
+        // Pass 2: wrap onto two lines at a large size, shrink slightly only if needed
+        el.style.whiteSpace = 'normal';
+        size = 46 * nameScale; set(size);
+        const pad = 18; // vertical padding inside the badge
+        const tooTall = () => (el.clientHeight - pad) > size * 1.1 * 2 + 4 || el.scrollWidth > el.clientWidth + 1;
+        while (tooTall() && size > MIN_TWO_LINE) { size--; set(size); }
+    }
+
+    function setCertName(name) { updateText('certName', name); fitName(); }
+
+    function applyRecipient(i) {
+        const r = recipients[i];
+        const total = recipients.length;
+        setCertName(r.name);
+        const baseId = document.getElementById('credIdInput').value;
+        const id = r.id || makeCredentialId(baseId, i, total);
+        updateText('dossierRef', id); updateText('termId', id);
+        // Per-person overrides fall back to the sidebar values
+        updateText('eventName', r.event || document.getElementById('eventNameInput').value);
+        updateText('chapterName', r.chapter || document.getElementById('chapterInput').value);
+        const d = r.date || document.getElementById('eventDateInput').value;
+        updateEventDate(d);
+        updateText('metaTrack', r.track || document.getElementById('trackInput').value);
+        renderSkillPills(r.skills || document.getElementById('skillsInput').value);
+    }
+
+    function applyCurrent() {
+        if (recipients.length) applyRecipient(currentIndex);
+        else {
+            setCertName(document.getElementById('singleNameInput').value);
+            const id = document.getElementById('credIdInput').value;
+            updateText('dossierRef', id); updateText('termId', id);
+        }
+    }
+    function refreshCurrent() { applyCurrent(); }
+
+    function safeFileName(str) { return str.replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, '_').slice(0, 80) || 'Certificate'; }
+
+    async function renderCertCanvas() {
+        const cert = document.getElementById('certificate');
+        const hl = Array.from(cert.querySelectorAll('.sel-hl'));
+        hl.forEach(e => e.classList.remove('sel-hl'));
+        try {
+            return await html2canvas(cert, { scale: 2, width: 1123, height: 794, backgroundColor: '#F8F9FA', useCORS: true, logging: false, windowWidth: 1123, windowHeight: 794 });
+        } finally { hl.forEach(e => e.classList.add('sel-hl')); }
+    }
+
+    function newPdf() { return new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' }); }
+
+    function setProgress(show, pct, text) {
+        document.getElementById('progressWrap').style.display = show ? 'block' : 'none';
+        if (pct != null) document.getElementById('progressFill').style.width = pct + '%';
+        if (text) document.getElementById('progressText').innerText = text;
+    }
+
+    function setBusy(busy) {
+        ['btnZip', 'btnMerged', 'btnOne'].forEach(id => document.getElementById(id).classList.toggle('btn-disabled', busy));
+    }
+
+    async function exportBulk(mode) {
+        if (!recipients.length) { alert('Add at least one attendee first (type names or upload a CSV).'); return; }
+        setBusy(true);
+        const scaler = document.getElementById('scaler');
+        const prevIndex = currentIndex;
+        scaler.style.transform = 'scale(1)';
+        if (document.activeElement) document.activeElement.blur();
+
+        try {
+            await (document.fonts ? document.fonts.ready : Promise.resolve());
+            const zip = mode === 'zip' ? new JSZip() : null;
+            const merged = mode === 'merged' ? newPdf() : null;
+            const used = {};
+
+            for (let i = 0; i < recipients.length; i++) {
+                setProgress(true, (i / recipients.length) * 100, `Rendering ${i + 1} of ${recipients.length}: ${recipients[i].name}`);
+                applyRecipient(i);
+                await new Promise(r => setTimeout(r, 120));   // let layout settle
+                const canvas = await renderCertCanvas();
+                const img = canvas.toDataURL('image/jpeg', 0.92);
+
+                if (mode === 'zip') {
+                    const pdf = newPdf();
+                    pdf.addImage(img, 'JPEG', 0, 0, 297, 210);
+                    let base = safeFileName(recipients[i].name);
+                    used[base] = (used[base] || 0) + 1;
+                    if (used[base] > 1) base += '_' + used[base];
+                    zip.file(`GDG_Certificate_${base}.pdf`, pdf.output('arraybuffer'));
+                } else {
+                    if (i > 0) merged.addPage();
+                    merged.addImage(img, 'JPEG', 0, 0, 297, 210);
+                }
+            }
+
+            setProgress(true, 100, 'Packaging download…');
+            if (mode === 'zip') {
+                const blob = await zip.generateAsync({ type: 'blob' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'GDG_Certificates.zip';
+                document.body.appendChild(a); a.click(); a.remove();
+                setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+            } else {
+                merged.save('GDG_Certificates_All.pdf');
+            }
+            setProgress(true, 100, `Done — ${recipients.length} certificates generated.`);
+            setTimeout(() => setProgress(false), 4000);
+        } catch (err) {
+            console.error('Bulk export failed:', err);
+            alert('Bulk export failed. Check the console for details.');
+            setProgress(false);
+        } finally {
+            currentIndex = prevIndex;
+            applyCurrent();
+            scaleCanvas();
+            setBusy(false);
+        }
+    }
+
+    /* --- CORE UTILITIES --- */
+    function updateText(elementId, value) {
+        const el = document.getElementById(elementId);
+        if(el) el.innerText = value;
+    }
+
+    function updateEventDate(val) {
+        updateText('eventDate', val);
+        updateText('metaDate', val);
+    }
+
+    function updatePartnerSticker(val) {
+        const badge = document.getElementById('partnerStickerBadge');
+        const text = document.getElementById('partnerStickerText');
+        if (!val || val.trim() === '') {
+            badge.style.display = 'none';
+        } else {
+            badge.style.display = 'flex';
+            text.innerText = val;
+        }
+    }
+
+    function renderSkillPills(inputString) {
+        const container = document.getElementById('skillsContainer');
+        if (!container) return;
+        container.innerHTML = '';
+        const items = inputString.split(',').map(s => s.trim()).filter(s => s.length > 0);
+        items.forEach(item => {
+            const pill = document.createElement('div');
+            pill.className = 'skill-pill';
+            pill.innerText = item.startsWith('#') ? item : `#${item.replace(/\s+/g, '')}`;
+            container.appendChild(pill);
+        });
+    }
+
+    // Helper: Generate unique IDs
+    function generateUniqueId() {
+        return Date.now().toString(36) + Math.random().toString(36).substr(2);
+    }
+
+    /* --- MULTI-PARTNER CO-BRANDING LOGO ENGINE --- */
+    let partners = [
+        { id: generateUniqueId(), name: "SR University ACM", logo: "" }
+    ];
+
+    function renderPartners() {
+        const inputList = document.getElementById('partnersInputList');
+        const cluster = document.getElementById('partnersCluster');
+        inputList.innerHTML = '';
+        cluster.innerHTML = '';
+
+        partners.forEach((p) => {
+            // Sidebar Controls
+            const inputRow = document.createElement('div');
+            inputRow.className = 'dynamic-input-card';
+            inputRow.innerHTML = `
+                <div class="dynamic-input-row">
+                    <input type="text" value="${p.name}" placeholder="Partner Organization Name" oninput="updatePartnerName('${p.id}', this.value)" style="flex:1;">
+                    <button class="btn-action" style="width: 32px; color: var(--g-red);" onclick="removePartner('${p.id}')">✕</button>
+                </div>
+                <div class="dynamic-input-row">
+                    <label class="file-btn" style="flex:1;">Upload Partner Logo<input type="file" accept="image/*" onchange="uploadPartnerLogo('${p.id}', this)"></label>
+                    ${p.logo ? `<span style="font-family:var(--font-mono); font-size:10px; color:var(--g-green);">[Logo Added]</span>` : ''}
+                </div>
+            `;
+            inputList.appendChild(inputRow);
+
+            // Canvas Output
+            if (p.name.trim() !== "" || p.logo) {
+                const badge = document.createElement('div');
+                badge.className = 'partner-item';
+                badge.innerHTML = `
+                    ${p.logo ? `<img src="${p.logo}" alt="${p.name}">` : ''}
+                    <span class="partner-title-badge">${p.name}</span>
+                `;
+                cluster.appendChild(badge);
+            }
+        });
+    }
+
+    function addPartnerInput() {
+        partners.push({ id: generateUniqueId(), name: "Collaborator Club", logo: "" });
+        renderPartners();
+    }
+
+    function updatePartnerName(id, val) {
+        const target = partners.find(p => p.id === id);
+        if (target) { target.name = val; renderPartners(); }
+    }
+
+    function uploadPartnerLogo(id, input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const target = partners.find(p => p.id === id);
+                if (target) {
+                    target.logo = e.target.result;
+                    renderPartners();
+                }
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function removePartner(id) {
+        partners = partners.filter(p => p.id !== id);
+        renderPartners();
+    }
+
+    /* --- MULTI-SIGNATORY ARCHITECTURE --- */
+    let signatories = [
+        { id: generateUniqueId(), name: "Narayan Bora", role: "Lead Organizer", img: "", scale: 100, x: 0, y: 0, nameSize: 100, roleSize: 100 },
+        { id: generateUniqueId(), name: "Dr. Siddhartha Bhattacharyya", role: "Faculty Advisor", img: "", scale: 100, x: 0, y: 0, nameSize: 100, roleSize: 100 }
+    ];
+
+    function renderSignatories() {
+        const inputList = document.getElementById('signatoriesInputList');
+        const cluster = document.getElementById('signaturesCluster');
+        inputList.innerHTML = '';
+        cluster.innerHTML = '';
+
+        signatories.forEach((s) => {
+            // Sidebar Controls
+            const sGroup = document.createElement('div');
+            sGroup.className = 'dynamic-input-card';
+            sGroup.innerHTML = `
+                <div class="dynamic-input-row">
+                    <input type="text" value="${s.name}" placeholder="Signatory Full Name" oninput="updateSigName('${s.id}', this.value)" style="flex:1;">
+                    <button class="btn-action" style="width:32px; color:var(--g-red);" onclick="removeSignatory('${s.id}')">✕</button>
+                </div>
+                <div class="dynamic-input-row">
+                    <input type="text" value="${s.role}" placeholder="Designation / Role" oninput="updateSigRole('${s.id}', this.value)" style="flex:1;">
+                    <label class="file-btn" style="width:auto; padding:6px 12px;">Sign<input type="file" accept="image/*" onchange="uploadSigImg('${s.id}', this)"></label>
+                </div>
+                <div class="dynamic-input-row" style="gap:8px;">
+                    <span style="font-family:var(--font-mono); font-size:10px; color:#8AB4F8; flex:none;">SIZE</span>
+                    <input type="range" min="40" max="400" step="5" value="${s.scale || 100}" style="flex:1; accent-color:var(--g-blue);" oninput="updateSigScale('${s.id}', this.value, this)">
+                    <span class="sig-scale-val" style="font-family:var(--font-mono); font-size:10px; color:#ccc; width:38px; text-align:right;">${s.scale || 100}%</span>
+                </div>
+                <div class="dynamic-input-row" style="gap:8px;">
+                    <span style="font-family:var(--font-mono); font-size:10px; color:#8AB4F8; flex:none; width:64px;">LEFT/RIGHT</span>
+                    <input class="sig-x-range" type="range" min="-300" max="300" step="1" value="${s.x || 0}" style="flex:1; accent-color:var(--g-blue);" oninput="updateSigPos('${s.id}', 'x', this.value)">
+                </div>
+                <div class="dynamic-input-row" style="gap:8px;">
+                    <span style="font-family:var(--font-mono); font-size:10px; color:#8AB4F8; flex:none; width:64px;">UP/DOWN</span>
+                    <input class="sig-y-range" type="range" min="-200" max="200" step="1" value="${s.y || 0}" style="flex:1; accent-color:var(--g-blue);" oninput="updateSigPos('${s.id}', 'y', this.value)">
+                    <button class="btn-action" style="width:auto; padding:4px 8px; font-size:10px;" onclick="resetSigPos('${s.id}')" title="Reset position">RESET</button>
+                </div>
+                <div class="dynamic-input-row" style="gap:8px;">
+                    <span style="font-family:var(--font-mono); font-size:10px; color:#8AB4F8; flex:none; width:64px;">NAME TEXT</span>
+                    <input type="range" min="60" max="300" step="5" value="${s.nameSize || 100}" style="flex:1; accent-color:var(--g-blue);" oninput="updateSigText('${s.id}', 'nameSize', this.value, this)">
+                    <span class="sig-text-val" style="font-family:var(--font-mono); font-size:10px; color:#ccc; width:38px; text-align:right;">${s.nameSize || 100}%</span>
+                </div>
+                <div class="dynamic-input-row" style="gap:8px;">
+                    <span style="font-family:var(--font-mono); font-size:10px; color:#8AB4F8; flex:none; width:64px;">ROLE TEXT</span>
+                    <input type="range" min="60" max="300" step="5" value="${s.roleSize || 100}" style="flex:1; accent-color:var(--g-blue);" oninput="updateSigText('${s.id}', 'roleSize', this.value, this)">
+                    <span class="sig-text-val" style="font-family:var(--font-mono); font-size:10px; color:#ccc; width:38px; text-align:right;">${s.roleSize || 100}%</span>
+                </div>
+            `;
+            sGroup.dataset.id = s.id;
+            inputList.appendChild(sGroup);
+
+            // Canvas Output - Clean Open Signature Block
+            const card = document.createElement('div');
+            card.className = 'sig-block';
+            card.dataset.id = s.id;
+            card.style.setProperty('--sig-scale', (s.scale || 100) / 100);
+            card.style.setProperty('--sig-name-scale', (s.nameSize || 100) / 100);
+            card.style.setProperty('--sig-role-scale', (s.roleSize || 100) / 100);
+            card.style.setProperty('--sig-x', (s.x || 0) + 'px');
+            card.style.setProperty('--sig-y', (s.y || 0) + 'px');
+            card.innerHTML = `
+                <div class="sig-img-container">
+                    ${s.img ? `<img class="sig-img" src="${s.img}">` : `<div class="sig-fallback">${s.name}</div>`}
+                </div>
+                <div class="sig-line"></div>
+                <div class="sig-name">${s.name}</div>
+                <div class="sig-role">${s.role}</div>
+            `;
+            cluster.appendChild(card);
+            const dragImg = card.querySelector('.sig-img');
+            if (dragImg) enableSigDrag(dragImg, s.id);
+        });
+    }
+
+    function addSignatory() {
+        signatories.push({ id: generateUniqueId(), name: "Partner Chapter Lead", role: "Co-Hosting President", img: "", scale: 100, x: 0, y: 0, nameSize: 100, roleSize: 100 });
+        renderSignatories();
+    }
+
+    function updateSigName(id, val) {
+        const target = signatories.find(s => s.id === id);
+        if (target) { target.name = val; renderSignatories(); }
+    }
+
+    // Live resize without rebuilding the sidebar (keeps the slider draggable)
+    function updateSigScale(id, val, inputEl) {
+        const target = signatories.find(s => s.id === id);
+        if (!target) return;
+        target.scale = parseInt(val, 10);
+        const block = document.querySelector(`.sig-block[data-id="${id}"]`);
+        if (block) block.style.setProperty('--sig-scale', target.scale / 100);
+        const label = inputEl && inputEl.parentElement.querySelector('.sig-scale-val');
+        if (label) label.textContent = target.scale + '%';
+    }
+
+    function updateSigText(id, key, val, inputEl) {
+        const t = signatories.find(s => s.id === id); if (!t) return;
+        t[key] = parseInt(val, 10);
+        const block = document.querySelector(`.sig-block[data-id="${id}"]`);
+        if (block) block.style.setProperty(key === 'nameSize' ? '--sig-name-scale' : '--sig-role-scale', t[key] / 100);
+        const label = inputEl && inputEl.parentElement.querySelector('.sig-text-val');
+        if (label) label.textContent = t[key] + '%';
+        if (textSel && textSel.sigId === id && textSel.key === key) syncTextPanel();
+    }
+
+    // Move signature: sliders or drag it directly on the certificate
+    function applySigPos(id) {
+        const t = signatories.find(s => s.id === id); if (!t) return;
+        const block = document.querySelector(`.sig-block[data-id="${id}"]`);
+        if (block) { block.style.setProperty('--sig-x', t.x + 'px'); block.style.setProperty('--sig-y', t.y + 'px'); }
+        const g = document.querySelector(`#signatoriesInputList [data-id="${id}"]`);
+        if (g) { const rx = g.querySelector('.sig-x-range'), ry = g.querySelector('.sig-y-range'); if (rx) rx.value = t.x; if (ry) ry.value = t.y; }
+    }
+    function updateSigPos(id, axis, val) {
+        const t = signatories.find(s => s.id === id); if (!t) return;
+        t[axis] = parseInt(val, 10); applySigPos(id);
+    }
+    function resetSigPos(id) {
+        const t = signatories.find(s => s.id === id); if (!t) return;
+        t.x = 0; t.y = 0; applySigPos(id);
+    }
+    function enableSigDrag(img, id) {
+        img.addEventListener('pointerdown', e => {
+            const t = signatories.find(s => s.id === id); if (!t) return;
+            e.preventDefault();
+            const k = document.getElementById('scaler').getBoundingClientRect().width / 1123 || 1; // undo preview zoom
+            const sx = e.clientX, sy = e.clientY, ox = t.x || 0, oy = t.y || 0;
+            img.setPointerCapture(e.pointerId); img.classList.add('dragging');
+            const move = ev => {
+                t.x = Math.max(-300, Math.min(300, Math.round(ox + (ev.clientX - sx) / k)));
+                t.y = Math.max(-200, Math.min(200, Math.round(oy + (ev.clientY - sy) / k)));
+                applySigPos(id);
+            };
+            const up = () => { img.classList.remove('dragging'); img.removeEventListener('pointermove', move); img.removeEventListener('pointerup', up); img.removeEventListener('pointercancel', up); };
+            img.addEventListener('pointermove', move); img.addEventListener('pointerup', up); img.addEventListener('pointercancel', up);
+        });
+    }
+
+    /* --- TEXT SIZE PANEL: click any text on the certificate, then resize --- */
+    let textSel = null;      // { label, get(), set(v), el?, sigId?, key? }
+    let nameScale = 1;       // multiplier for the auto-fitting recipient name
+
+    function ownText(el) { return Array.from(el.childNodes).some(n => n.nodeType === 3 && n.textContent.trim()); }
+
+    function clearSelHl() { document.querySelectorAll('#certificate .sel-hl').forEach(e => e.classList.remove('sel-hl')); }
+
+    function selectTextTarget(sel) {
+        clearSelHl();
+        textSel = sel;
+        if (sel.el) sel.el.classList.add('sel-hl');
+        syncTextPanel();
+    }
+
+    function syncTextPanel() {
+        const r = document.getElementById('tsRange');
+        if (!textSel) { r.disabled = true; return; }
+        const v = Math.round(textSel.get());
+        r.disabled = false; r.value = v;
+        document.getElementById('tsVal').textContent = v + '%';
+        document.getElementById('tsTarget').textContent = textSel.label;
+    }
+
+    function setTextSize(v) { if (!textSel) return; textSel.set(Math.max(40, Math.min(300, parseInt(v, 10)))); syncTextPanel(); }
+    function nudgeTextSize(d) { if (textSel) setTextSize(textSel.get() + d); }
+    function resetTextSize() { if (textSel) setTextSize(100); }
+
+    function resetAllTextSizes() {
+        document.querySelectorAll('#certificate [data-text-scale]').forEach(el => {
+            el.style.fontSize = ''; delete el.dataset.textScale; delete el.dataset.baseSize;
+        });
+        nameScale = 1; fitName();
+        signatories.forEach(t => { t.nameSize = 100; t.roleSize = 100; });
+        renderSignatories();
+        if (textSel) { textSel = null; clearSelHl(); document.getElementById('tsTarget').textContent = 'Click any text on the certificate to resize it'; document.getElementById('tsRange').disabled = true; }
+    }
+
+    function genericTarget(el) {
+        const snippet = (el.innerText || '').trim().replace(/\s+/g, ' ');
+        return {
+            el,
+            label: snippet.length > 42 ? snippet.slice(0, 42) + '…' : snippet,
+            get: () => parseFloat(el.dataset.textScale || 100),
+            set: v => {
+                if (!el.dataset.baseSize) { el.style.fontSize = ''; el.dataset.baseSize = parseFloat(getComputedStyle(el).fontSize); }
+                el.dataset.textScale = v;
+                el.style.fontSize = (parseFloat(el.dataset.baseSize) * v / 100) + 'px';
+            }
+        };
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const cert = document.getElementById('certificate');
+        cert.addEventListener('click', e => {
+            let el = e.target;
+            if (el.classList.contains('sig-img')) return;
+
+            // Signatory name / role -> bound to that signatory's own size
+            const blk = el.closest('.sig-block');
+            if (blk) {
+                const t = signatories.find(x => x.id === blk.dataset.id);
+                const key = el.closest('.sig-name') ? 'nameSize' : el.closest('.sig-role') ? 'roleSize' : null;
+                if (t && key) {
+                    selectTextTarget({
+                        el: el.closest('.sig-name, .sig-role'), sigId: t.id, key,
+                        label: (key === 'nameSize' ? 'Signatory name: ' : 'Signatory role: ') + (key === 'nameSize' ? t.name : t.role),
+                        get: () => t[key] || 100,
+                        set: v => { t[key] = v;
+                            blk.style.setProperty(key === 'nameSize' ? '--sig-name-scale' : '--sig-role-scale', v / 100);
+                            const g = document.querySelector(`#signatoriesInputList [data-id="${t.id}"]`);
+                            if (g) { const rs = g.querySelectorAll('input[oninput*="updateSigText"]'); const inp = rs[key === 'nameSize' ? 0 : 1]; if (inp) { inp.value = v; inp.parentElement.querySelector('.sig-text-val').textContent = v + '%'; } } }
+                    });
+                }
+                return;
+            }
+
+            // Recipient name (auto-fit) -> scales the fit range
+            if (el.closest('#certName')) {
+                const nameEl = document.getElementById('certName');
+                selectTextTarget({ el: nameEl, label: 'Recipient name', get: () => nameScale * 100, set: v => { nameScale = v / 100; fitName(); } });
+                return;
+            }
+
+            // Whole event sentence scales together
+            const para = el.closest('.cert-event-text');
+            if (para) { selectTextTarget(genericTarget(para)); return; }
+
+            while (el && el !== cert && !ownText(el)) el = el.parentElement;
+            if (el && el !== cert) selectTextTarget(genericTarget(el));
+        });
+    });
+
+    function updateSigRole(id, val) {
+        const target = signatories.find(s => s.id === id);
+        if (target) { target.role = val; renderSignatories(); }
+    }
+
+    function uploadSigImg(id, input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const target = signatories.find(p => p.id === id);
+                if (target) {
+                    target.img = e.target.result;
+                    renderSignatories();
+                }
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function removeSignatory(id) {
+        if (signatories.length <= 1) {
+            alert("A certificate requires at least one signatory.");
+            return;
+        }
+        signatories = signatories.filter(s => s.id !== id);
+        renderSignatories();
+    }
+
+    /* --- IMAGE HANDLING --- */
+    function handleImg(input, imgId, fallbackId) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imgEl = document.getElementById(imgId);
+                imgEl.src = e.target.result;
+                imgEl.style.display = 'block';
+                if(fallbackId) {
+                    const fallback = document.getElementById(fallbackId);
+                    if(fallback) fallback.style.display = 'none';
+                }
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    /* --- CANVAS SCALING & EXPORT --- */
+    function scaleCanvas() {
+        const scaler = document.getElementById('scaler');
+        const viewport = document.getElementById('viewport');
+        const availableWidth = viewport.clientWidth - 80; 
+        const availableHeight = viewport.clientHeight - 80;
+        
+        const certWidth = 1123;
+        const certHeight = 794;
+        
+        const scale = Math.min(
+            availableWidth / certWidth,
+            availableHeight / certHeight
+        );
+        
+        scaler.style.transform = scale < 1 ? `scale(${scale})` : `scale(1)`;
+    }
+    
+    window.addEventListener('resize', scaleCanvas);
+    document.addEventListener('DOMContentLoaded', () => document.getElementById('certName').addEventListener('input', fitName));
+    window.onload = function() {
+        scaleCanvas();
+        renderSkillPills(document.getElementById('skillsInput').value);
+        renderPartners();
+        renderSignatories();
+        renderRecipientList();
+        applyCurrent();
+    };
+
+    async function exportPDF() {
+        setBusy(true);
+        const scaler = document.getElementById('scaler');
+        scaler.style.transform = `scale(1)`;
+        if (document.activeElement) document.activeElement.blur();
+        try {
+            await (document.fonts ? document.fonts.ready : Promise.resolve());
+            await new Promise(resolve => setTimeout(resolve, 300));
+            const canvas = await renderCertCanvas();
+            const pdf = newPdf();
+            pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 297, 210);
+            const attendeeName = safeFileName(document.getElementById('certName').innerText);
+            pdf.save(`GDG_Certificate_${attendeeName}.pdf`);
+        } catch (error) {
+            console.error("PDF Generation failed:", error);
+            alert("Failed to generate PDF. Check console for details.");
+        } finally {
+            scaleCanvas();
+            setBusy(false);
+        }
+    }
+</script>
+</body>
+</html>

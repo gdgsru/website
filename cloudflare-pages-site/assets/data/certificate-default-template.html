@@ -1,0 +1,684 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>GDG Certificate</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700;800;900&family=JetBrains+Mono:wght@400;600;700;800&family=Kalam:wght@400;700&display=swap">
+<style>
+  :root {
+    --g-blue: #4285F4;
+    --g-red: #EA4335;
+    --g-yellow: #FBBC05;
+    --g-green: #34A853;
+    --g-light-yellow: #FEF0C3;
+    --paper-bg: #F8F9FA;
+    --text-main: #0F172A;
+    --text-muted: #475569;
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-title: 'Outfit', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --font-sign: 'Kalam', cursive;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: transparent;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    font-family: var(--font-body);
+    color: var(--text-main);
+  }
+
+  .a4-landscape {
+    width: 1123px;
+    height: 794px;
+    background: var(--paper-bg);
+    box-shadow: 0 30px 100px rgba(0,0,0,0.85);
+    position: relative;
+    color: var(--text-main);
+    padding: 40px 48px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-sizing: border-box;
+    text-align: left;
+  }
+
+  .brutal-shadow { box-shadow: 6px 6px 0px var(--text-main); }
+  .brutal-shadow-sm { box-shadow: 3px 3px 0px var(--text-main); }
+
+  .tech-grid {
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(rgba(15, 23, 42, 0.08) 1.5px, transparent 1.5px);
+    background-size: 26px 26px;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* Dual Watermarks */
+  .bleed-watermark-year {
+    position: absolute;
+    top: -60px;
+    right: -30px;
+    font-family: var(--font-display);
+    font-size: 380px;
+    font-weight: 900;
+    line-height: 0.8;
+    color: transparent;
+    -webkit-text-stroke: 4px rgba(15, 23, 42, 0.05);
+    z-index: 1;
+    pointer-events: none;
+    user-select: none;
+    letter-spacing: -14px;
+  }
+
+  .bleed-watermark-gdg {
+    position: absolute;
+    top: 220px;
+    right: 30px;
+    font-family: var(--font-display);
+    font-size: 260px;
+    font-weight: 900;
+    line-height: 0.8;
+    color: transparent;
+    -webkit-text-stroke: 3.5px rgba(66, 133, 244, 0.07);
+    z-index: 1;
+    pointer-events: none;
+    user-select: none;
+    letter-spacing: -6px;
+  }
+
+  .tape-accent {
+    position: absolute;
+    top: 12px;
+    left: -35px;
+    width: 130px;
+    height: 32px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0,0,0,0.06);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+    transform: rotate(-45deg);
+    z-index: 100;
+    pointer-events: none;
+  }
+
+  .circuit-path {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  /* 1. Header Row */
+  .header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    position: relative;
+    z-index: 20;
+    padding-bottom: 12px;
+    border-bottom: 2.5px solid var(--text-main);
+  }
+
+  .main-logo-area { display: flex; align-items: center; gap: 18px; }
+  .main-logo-area svg { width: 72px; height: auto; filter: drop-shadow(2px 2px 0px rgba(15,23,42,0.12)); }
+  .custom-logo { max-width: 240px; max-height: 64px; object-fit: contain; display: none; }
+
+  .logo-text h1 { margin: 0 0 2px 0; font-family: var(--font-title); font-size: 26px; font-weight: 900; color: var(--text-main); letter-spacing: -0.5px; line-height: 1.1; }
+  .logo-text h2 { margin: 0; font-family: var(--font-display); font-size: 13px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2.5px; }
+
+  .partners-cluster {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    max-width: 54%;
+  }
+  .partner-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #FFFFFF;
+    border: 2px solid var(--text-main);
+    padding: 6px 14px;
+    border-radius: 10px;
+    box-shadow: 3px 3px 0px var(--text-main);
+    height: 48px;
+  }
+  .partner-item img { height: 34px; max-width: 120px; object-fit: contain; }
+  .partner-item .partner-title-badge { font-family: var(--font-mono); font-size: 11px; font-weight: 800; color: var(--text-main); line-height: 1.2; }
+
+  /* 2. Content Body Grid */
+  .content-body-grid {
+    display: flex;
+    justify-content: space-between;
+    gap: 32px;
+    width: 100%;
+    flex: 1;
+    position: relative;
+    z-index: 10;
+    margin-top: 14px;
+  }
+
+  /* Left Column */
+  .left-col {
+    width: 57%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    z-index: 10;
+  }
+
+  .title-deck { margin-top: 2px; }
+  .cert-tag {
+    display: inline-block;
+    background: #FFFFFF;
+    border: 2px solid var(--text-main);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--text-main);
+    margin-bottom: 8px;
+  }
+  .cert-title {
+    font-family: var(--font-title);
+    font-size: 40px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: -0.5px;
+    color: var(--text-main);
+    margin: 0;
+    line-height: 1.05;
+  }
+
+  .statement-deck { margin: 15px 0 0 0; }
+  .cert-statement {
+    font-family: var(--font-display);
+    font-size: 13.5px;
+    color: var(--text-muted);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+  }
+
+  .cert-name-wrapper { margin: 4px 0 16px 0; }
+  .cert-name-badge {
+    background: var(--g-blue);
+    color: #fff;
+    border: 3.5px solid var(--text-main);
+    border-radius: 12px;
+    padding: 9px 24px;
+    font-family: var(--font-title);
+    font-size: 52px;
+    letter-spacing: -1px;
+    font-weight: 900;
+    display: inline-block;
+    line-height: 1.1;
+    max-width: 100%;
+    word-break: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .cert-event-text {
+    font-family: var(--font-body);
+    font-size: 15.5px;
+    color: var(--text-muted);
+    line-height: 2.4;
+    margin-bottom: 25px;
+  }
+
+  .highlight-box {
+    background: var(--g-light-yellow);
+    border: 1.5px solid var(--text-main);
+    border-radius: 5px;
+    padding: 3px 8px;
+    font-weight: 800;
+    color: var(--text-main);
+    display: inline-block;
+    margin: 0 6px;
+    vertical-align: middle;
+    line-height: 1.2;
+  }
+
+  .event-syllabus-card {
+    background: #FFFFFF;
+    border: 2px solid var(--text-main);
+    border-radius: 10px;
+    padding: 12px 16px;
+    box-shadow: 3px 3px 0px var(--text-main);
+    margin-bottom: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 95%;
+  }
+  .syllabus-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--g-blue);
+    letter-spacing: 0.5px;
+  }
+  .syllabus-body {
+    font-family: var(--font-body);
+    font-size: 12.5px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    font-weight: 500;
+  }
+
+  .signatures-row {
+    display: flex;
+    gap: 20px;
+    align-items: flex-end;
+    width: 100%;
+    margin-top: 40px;
+  }
+  .sig-block {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 2px 4px;
+  }
+  .sig-img-container {
+    height: 42px;
+    display: flex;
+    align-items: flex-end;
+    margin-bottom: 4px;
+    width: 100%;
+    position: relative;
+    z-index: 5;
+  }
+  .sig-img {
+    height: calc(42px * var(--sig-scale, 1));
+    width: auto;
+    max-width: none;
+    flex: none;
+    object-fit: contain;
+    mix-blend-mode: multiply;
+    transform: translate(var(--sig-x, 0px), var(--sig-y, 0px));
+  }
+  .sig-fallback {
+    font-family: var(--font-sign);
+    font-size: calc(26px * var(--sig-scale, 1));
+    color: var(--text-main);
+    line-height: 0.8;
+    white-space: normal;
+    transform: translate(var(--sig-x, 0px), var(--sig-y, 0px));
+  }
+  .sig-line {
+    width: 100%;
+    height: 2px;
+    background: var(--text-main);
+    margin-bottom: 4px;
+  }
+  .sig-name {
+    font-family: var(--font-title);
+    font-weight: 800;
+    font-size: calc(13px * var(--sig-name-scale, 1));
+    color: var(--text-main);
+    line-height: 1.2;
+    word-break: normal;
+  }
+  .sig-role {
+    font-family: var(--font-mono);
+    font-size: calc(9px * var(--sig-role-scale, 1));
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+    line-height: 1.2;
+    word-break: normal;
+  }
+
+  /* Right Column */
+  .right-col {
+    width: 38%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-end;
+    position: relative;
+    z-index: 10;
+    gap: 25px;
+  }
+
+  .top-art-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    position: relative;
+    margin-top: 10px;
+  }
+  .dev-badge-card {
+    background: #FFFFFF;
+    border: 2.5px solid var(--text-main);
+    border-radius: 12px;
+    padding: 7px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 3px 3px 0px var(--text-main);
+  }
+  .dev-badge-icon {
+    width: 28px;
+    height: 28px;
+    background: var(--g-blue);
+    border: 1.5px solid var(--text-main);
+    border-radius: 6px;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-weight: 800;
+    font-size: 13px;
+  }
+  .dev-badge-title { font-family: var(--font-mono); font-size: 12.5px; font-weight: 800; color: var(--text-main); }
+
+  .custom-sticker-pill {
+    padding: 6px 14px;
+    border-radius: 14px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 800;
+    border: 2px solid var(--text-main);
+    box-shadow: 2.5px 2.5px 0px var(--text-main);
+  }
+
+  .terminal-log-card {
+    width: 100%;
+    background: #FFFFFF;
+    border: 2.5px solid var(--text-main);
+    border-radius: 12px;
+    padding: 10px 14px;
+    box-shadow: 4px 4px 0px var(--text-main);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    box-sizing: border-box;
+  }
+  .terminal-head {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 2px;
+  }
+  .term-dot { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--text-main); }
+  .term-code {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--text-main);
+    line-height: 1.45;
+  }
+  .term-highlight { color: var(--g-green); font-weight: 800; }
+
+  .dossier-card-wrap {
+    width: 100%;
+    position: relative;
+    margin-top: auto;
+  }
+  .dossier-card {
+    width: 100%;
+    background: var(--g-blue);
+    border: 3px solid var(--text-main);
+    border-radius: 16px;
+    padding: 20px 16px 16px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    position: relative;
+    box-sizing: border-box;
+  }
+
+  .dossier-label { font-family: var(--font-mono); font-size: 9.5px; font-weight: 800; color: #FFFFFF; text-transform: uppercase; letter-spacing: 1px; }
+  .skills-cluster { display: flex; flex-wrap: wrap; gap: 7px; }
+  .skill-pill {
+    background: #FFFFFF;
+    color: var(--text-main);
+    border: 2px solid var(--text-main);
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 14px;
+    box-shadow: 2px 2px 0px var(--text-main);
+    white-space: nowrap;
+  }
+
+  .meta-console {
+    background: rgba(15, 23, 42, 0.35);
+    border: 2px solid var(--text-main);
+    border-radius: 8px;
+    padding: 10px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 5px;
+  }
+  .meta-item { display: flex; flex-direction: column; gap: 2px; }
+  .meta-title { font-family: var(--font-mono); font-size: 7.5px; font-weight: 700; color: #CBD5E1; text-transform: uppercase; }
+  .meta-val { font-family: var(--font-mono); font-size: 10.5px; font-weight: 800; color: #FFFFFF; }
+
+  .sticker-tag {
+    position: absolute;
+    top: -14px;
+    left: -10px;
+    background: var(--g-yellow);
+    padding: 5px 12px;
+    border-radius: 14px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--text-main);
+    z-index: 10;
+    border: 2px solid var(--text-main);
+    box-shadow: 0 0 0 3px #fff, 4px 4px 0px 3px var(--text-main);
+  }
+  .sticker-heart {
+    position: absolute;
+    bottom: -12px;
+    right: -8px;
+    background: var(--g-green);
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: var(--text-main);
+    z-index: 10;
+    border: 2px solid var(--text-main);
+    box-shadow: 0 0 0 3px #fff, 4px 4px 0px 3px var(--text-main);
+  }
+</style>
+</head>
+<body>
+  <div class="a4-landscape">
+    <div class="tech-grid"></div>
+    <div class="bleed-watermark-year">{{watermark_year}}</div>
+    <div class="bleed-watermark-gdg">GDG</div>
+    <div class="tape-accent"></div>
+
+    <!-- Recalculated Orthogonal Circuit Line -->
+    <svg class="circuit-path" viewBox="0 0 1123 794">
+      <path d="M 630,420 L 680,420 L 680,560 L 730,560" fill="none" stroke="var(--text-main)" stroke-width="2.5" stroke-linejoin="miter" />
+      <circle cx="630" cy="420" r="4" fill="var(--g-yellow)" stroke="var(--text-main)" stroke-width="2" />
+      <circle cx="730" cy="560" r="4" fill="var(--g-blue)" stroke="var(--text-main)" stroke-width="2" />
+    </svg>
+
+    <!-- 1. Header Row -->
+    <div class="header-row">
+      <div class="main-logo-area" style="{{pos_gdg}}">
+        <svg id="defLogo" viewBox="0 0 100 60">
+          <path d="M40,10 L10,30 L40,50" fill="none" stroke="#4285F4" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M60,10 L90,30 L60,50" fill="none" stroke="#34A853" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="logo-text">
+          <h1>Google Developer Groups</h1>
+          <h2>On Campus SR University</h2>
+        </div>
+      </div>
+
+      <div class="partners-cluster">
+        {{#cohosts}}
+        <div class="partner-item" style="{{style}}">
+          {{#logo}}<img src="{{logo}}" alt="{{name}}">{{/logo}}
+          <span class="partner-title-badge">{{name}}</span>
+        </div>
+        {{/cohosts}}
+        {{#sponsors}}
+        <div class="partner-item" style="{{style}}">
+          {{#logo}}<img src="{{logo}}" alt="{{name}}">{{/logo}}
+          <span class="partner-title-badge">{{name}}</span>
+        </div>
+        {{/sponsors}}
+        {{#partners}}
+        <div class="partner-item" style="{{style}}">
+          {{#logo}}<img src="{{logo}}" alt="{{name}}">{{/logo}}
+          <span class="partner-title-badge">{{name}}</span>
+        </div>
+        {{/partners}}
+      </div>
+    </div>
+
+    <!-- 2. Content Body Grid -->
+    <div class="content-body-grid">
+      <!-- Left Column -->
+      <div class="left-col">
+        <div>
+          <div class="title-deck" style="{{pos_cert_tag}}">
+            <div class="cert-tag brutal-shadow-sm">{{cert_tag}}</div>
+            <h1 class="cert-title" style="{{pos_title}}">{{cert_title}}</h1>
+          </div>
+
+          <div class="statement-deck">
+            <div class="cert-statement">This document certifies that</div>
+            <div class="cert-name-wrapper" style="{{pos_name}}">
+              <div class="cert-name-badge brutal-shadow" data-fit-name>{{recipient_name}}</div>
+            </div>
+
+            <div class="cert-event-text" style="{{pos_event}}">
+              has successfully attended and contributed to <span class="highlight-box brutal-shadow-sm">{{event_name}}</span> hosted by <span class="highlight-box brutal-shadow-sm" style="{{pos_host}}">{{chapter}}</span> on <span class="highlight-box brutal-shadow-sm">{{date}}</span>.
+            </div>
+
+            {{#syllabus}}
+            <div class="event-syllabus-card" style="{{pos_curriculum}}">
+              <div class="syllabus-header">
+                <span>// CURRICULUM OVERVIEW</span>
+                <span>{{curriculum_status}}</span>
+              </div>
+              {{#curriculum_bullets}}
+              <div style="font-family:var(--font-body);font-size:12px;color:var(--text-muted);line-height:1.4;margin:2px 0;">• {{text}}</div>
+              {{/curriculum_bullets}}
+              {{^curriculum_bullets}}
+              <div class="syllabus-body">{{curriculum_text}}</div>
+              {{/curriculum_bullets}}
+            </div>
+            {{/syllabus}}
+          </div>
+        </div>
+
+        <div class="signatures-row">
+          {{#signatories}}
+          <div class="sig-block" style="{{style}}">
+            <div class="sig-img-container">
+              {{#img}}<img class="sig-img" src="{{img}}" alt="">{{/img}}
+              {{^img}}<div class="sig-fallback">{{name}}</div>{{/img}}
+            </div>
+            <div class="sig-line"></div>
+            <div class="sig-name">{{name}}</div>
+            <div class="sig-role">{{role}}</div>
+          </div>
+          {{/signatories}}
+        </div>
+      </div>
+
+      <!-- Right Column -->
+      <div class="right-col">
+        <div class="top-art-row">
+          {{#dev_tag}}
+          <div class="dev-badge-card">
+            <div class="dev-badge-icon">&lt;/&gt;</div>
+            <div class="dev-badge-title">{{dev_tag}}</div>
+          </div>
+          {{/dev_tag}}
+          {{#node_pill}}
+          <div class="custom-sticker-pill" style="background:var(--g-red); color:#fff;">
+            <span>{{node_pill}}</span>
+          </div>
+          {{/node_pill}}
+          {{#partner_sticker}}
+          <div class="custom-sticker-pill" style="background:var(--g-yellow); color:var(--text-main); display:flex;">
+            <span>{{partner_sticker}}</span>
+          </div>
+          {{/partner_sticker}}
+        </div>
+
+        <div class="terminal-log-card" style="{{pos_credential}}">
+          <div class="terminal-head">
+            <div class="term-dot" style="background:var(--g-red);"></div>
+            <div class="term-dot" style="background:var(--g-yellow);"></div>
+            <div class="term-dot" style="background:var(--g-green);"></div>
+            <span style="font-family:var(--font-mono); font-size:8px; font-weight:800; margin-left:4px; color:var(--text-muted);">SHELL_SESSION_NODE</span>
+          </div>
+          <div class="term-code">
+            &gt; node deploy_credential.js --auth=true<br>
+            &gt; status: <span class="term-highlight">200_OK_VERIFIED</span><br>
+            &gt; ref_sha: <span style="color:var(--g-blue);">{{credential_id}}</span>
+          </div>
+        </div>
+
+        <div class="dossier-card-wrap" style="{{pos_dossier}}">
+          <div class="sticker-tag">{{dossier_tag}}</div>
+          <div class="dossier-card brutal-shadow">
+            <div class="dossier-label">// Verified Competencies</div>
+            <div class="skills-cluster">
+              {{#skills}}
+              <div class="skill-pill">{{tag}}</div>
+              {{/skills}}
+            </div>
+            <div class="meta-console">
+              <div class="meta-item">
+                <span class="meta-title">Credential ID</span>
+                <span class="meta-val">{{credential_id}}</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-title">Track</span>
+                <span class="meta-val">{{track}}</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-title">Issued</span>
+                <span class="meta-val">{{date_short}}</span>
+              </div>
+            </div>
+          </div>
+          <div class="sticker-heart">&hearts;</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

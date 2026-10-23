@@ -1,0 +1,112 @@
+# Security headers for every route (Cloudflare Pages merges these with the cache rules below).
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+  Strict-Transport-Security: max-age=31536000
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://isfhqbytrbilceqddnll.supabase.co wss://isfhqbytrbilceqddnll.supabase.co; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+
+# HTML entry points revalidate, so edits become visible promptly.
+/
+  Cache-Control: no-cache, must-revalidate
+/index.html
+  Cache-Control: no-cache, must-revalidate
+/events/
+  Cache-Control: no-cache, must-revalidate
+/events/*
+  Cache-Control: no-cache, must-revalidate
+/team/
+  Cache-Control: no-cache, must-revalidate
+/team/*
+  Cache-Control: no-cache, must-revalidate
+/blog/
+  Cache-Control: no-cache, must-revalidate
+/blog/*
+  Cache-Control: no-cache, must-revalidate
+/join/
+  Cache-Control: no-cache, must-revalidate
+/join/*
+  Cache-Control: no-cache, must-revalidate
+/certificates/
+  Cache-Control: no-cache, must-revalidate
+  ! Content-Security-Policy
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://isfhqbytrbilceqddnll.supabase.co wss://isfhqbytrbilceqddnll.supabase.co; frame-src 'self' blob: data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+/certificates/*
+  Cache-Control: no-cache, must-revalidate
+  ! Content-Security-Policy
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://isfhqbytrbilceqddnll.supabase.co wss://isfhqbytrbilceqddnll.supabase.co; frame-src 'self' blob: data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+/verify/
+  Cache-Control: no-cache, must-revalidate
+  ! Content-Security-Policy
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://isfhqbytrbilceqddnll.supabase.co wss://isfhqbytrbilceqddnll.supabase.co; frame-src 'self' blob: data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+/verify/*
+  Cache-Control: no-cache, must-revalidate
+  ! Content-Security-Policy
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://isfhqbytrbilceqddnll.supabase.co wss://isfhqbytrbilceqddnll.supabase.co; frame-src 'self' blob: data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+/leaderboard/
+  Cache-Control: no-cache, must-revalidate
+/leaderboard/*
+  Cache-Control: no-cache, must-revalidate
+/resources/
+  Cache-Control: no-cache, must-revalidate
+/resources/*
+  Cache-Control: no-cache, must-revalidate
+/privacy/
+  Cache-Control: no-cache, must-revalidate
+/privacy/*
+  Cache-Control: no-cache, must-revalidate
+/member-badge/
+  Cache-Control: no-cache, must-revalidate
+/member-badge/*
+  Cache-Control: no-cache, must-revalidate
+/admin/
+  Cache-Control: no-cache, no-store, must-revalidate
+/admin/*
+  Cache-Control: no-cache, no-store, must-revalidate
+/event.html
+  Cache-Control: no-cache, must-revalidate
+/mission-control.html
+  Cache-Control: no-cache, must-revalidate
+  ! Content-Security-Policy
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://isfhqbytrbilceqddnll.supabase.co wss://isfhqbytrbilceqddnll.supabase.co; frame-src 'self' blob: data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+/team-card-preview.html
+  Cache-Control: no-cache, must-revalidate
+  ! X-Frame-Options
+  X-Frame-Options: SAMEORIGIN
+  ! Content-Security-Policy
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https:; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'
+/404.html
+  Cache-Control: no-cache, must-revalidate
+# Static assets. Rules must not overlap: Cloudflare merges duplicate headers.
+/assets/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+/assets/team/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+/assets/team-icons/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+/assets/brand/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+/assets/images/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+/assets/vendor/*
+  Cache-Control: public, max-age=2592000, immutable
+/assets/css/*
+  Cache-Control: public, max-age=3600, stale-while-revalidate=86400
+/assets/js/*
+  Cache-Control: public, max-age=3600, stale-while-revalidate=86400
+/assets/admin/*
+  Cache-Control: public, max-age=0, must-revalidate
+/assets/data/*
+  Cache-Control: public, max-age=0, must-revalidate
+/config.js
+  Cache-Control: no-cache, must-revalidate
+/favicon.svg
+  Cache-Control: public, max-age=3600, stale-while-revalidate=86400
+/sitemap.xml
+  Cache-Control: public, max-age=86400, stale-while-revalidate=86400
+/manifest.webmanifest
+  Content-Type: application/manifest+json; charset=utf-8
+  Cache-Control: public, max-age=86400, stale-while-revalidate=86400
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate

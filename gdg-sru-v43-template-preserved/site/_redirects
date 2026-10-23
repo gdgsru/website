@@ -1,0 +1,28 @@
+# Static canonical routes first. Each path has a real HTML entry point.
+/events /events/ 301
+/team /team/ 301
+/blog /blog/ 301
+/join /join/ 301
+/contact /join/ 301
+/certificates /certificates/ 301
+/verify /verify/ 301
+/leaderboard /leaderboard/ 301
+/resources /resources/ 301
+/perks /resources/ 301
+/privacy /privacy/ 301
+/member-badge /member-badge/ 301
+/member-badge.html /member-badge/ 301
+/about /#about-the-chapter 302
+/gallery /events/ 302
+/admin /admin/ 301
+/admin/* /admin/index.html 200
+/mission-control /admin/ 301
+/mission-control.html /admin/ 301
+/mission-control/* /admin/index.html 200
+/portal /admin/ 301
+/portal/* /admin/index.html 200
+
+# A single segment after these paths is a detail identifier; the bare directory
+# path continues to serve its HTML entry point above.
+/events/:slug /event.html?slug=:slug 200
+/verify/:code /verify/?code=:code 200

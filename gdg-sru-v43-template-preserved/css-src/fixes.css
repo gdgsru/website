@@ -1,0 +1,2052 @@
+/* gdg-fixes.css: audit fixes, loaded last on every page */
+
+
+
+/* 1. No sideways scroll, tighter nav on small phones */
+
+html,body{overflow-x:clip}
+
+@media(max-width:480px){
+
+  .nv{gap:6px}
+
+  html:root[data-theme] header#hd .nv .lg{flex:1 1 0!important;min-width:0!important;overflow:hidden}
+
+  header#hd .nv .lg *{min-width:0}
+
+  header#hd .nv .lg>span:not(:first-child){overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;display:block}
+
+  .nv .btn.rg,.nv .mn{flex:none}
+
+}
+
+
+
+/* 2. Footer: Discord link as a proper pill instead of a bare blue highlight */
+
+footer .gdg-discord-link{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:999px;font-weight:600;text-decoration:none!important;line-height:1.3}
+
+footer .gdg-discord-link:hover{transform:translateY(-1px)}
+
+
+
+/* 3. Events: Upcoming/Past toggle and category filter */
+
+.filter-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px 20px;margin:26px 0 30px!important}
+
+.segmented{display:inline-flex;gap:4px;padding:4px;border-radius:999px;background:var(--card-2,rgba(255,255,255,.06));border:1px solid var(--ln)}
+
+.segmented button{appearance:none;border:0;background:transparent;color:var(--mut);font:inherit;font-weight:700;font-size:14px;padding:9px 20px;border-radius:999px;cursor:pointer;transition:background .2s,color .2s}
+
+.segmented button:hover{color:var(--ink)}
+
+.segmented button[aria-pressed="true"]{background:var(--ink);color:var(--dkt,#0e0f11)}
+
+.segmented button:focus-visible{outline:3px solid #4285f4;outline-offset:2px}
+
+.filter-bar label{display:flex;align-items:center;gap:12px;color:var(--mut);font-weight:600;font-size:14px}
+
+.filter-bar select{min-width:220px;padding:11px 14px;border-radius:14px}
+
+@media(max-width:560px){.filter-bar{flex-direction:column;align-items:stretch}.filter-bar label{justify-content:space-between}.segmented{align-self:flex-start}}
+
+
+
+/* 4. Resources: active tab was white on white */
+
+.resource-hub-tabs button[aria-selected="true"]{background:var(--ink)!important;color:var(--dkt,#0e0f11)!important;border-color:var(--ink)!important}
+
+.resource-hub-tabs button[aria-selected="true"] span{background:rgba(0,0,0,.14)!important;color:inherit!important}
+
+
+
+/* 5. Empty states: readable width, centred */
+
+.event-vault-empty{width:min(100%,640px);max-width:640px;margin-inline:auto;text-align:left}
+
+.g16-row>.event-vault-empty,.g16-row>.blog-latest-empty{grid-column:1/-1;width:100%}
+
+
+
+/* 6. Blog: latest stories + lanes with proper spacing */
+
+.blog-latest{margin:72px 0 0}
+
+.blog-latest-empty{max-width:760px;margin-inline:auto;padding:28px 30px;border-radius:26px;border:1px dashed var(--ln);background:var(--card-2,rgba(255,255,255,.04));text-align:left}
+
+.blog-latest-empty b{display:block;font-size:22px;letter-spacing:-.03em;margin-bottom:8px}
+
+.blog-latest-empty p{color:var(--mut);margin:0 0 18px;max-width:56ch}
+
+.editorial-collections{margin-top:88px}
+
+.editorial-collections .editorial-collections-head,.blog-latest .editorial-collections-head{margin-bottom:12px}
+
+.editorial-collections .g16-row{padding-block:28px 12px}
+
+.editorial-bottom{margin-top:64px!important;padding:26px 30px;gap:20px}
+
+.editorial-bottom p{margin:0}
+
+
+
+/* 7. Join: cards no longer overflow, contact links */
+
+.g16-tl-info .g16-tl-title{overflow-wrap:anywhere;font-size:clamp(24px,2.2vw,30px)}
+
+.g16-tl-more{white-space:nowrap}
+
+.join-contact-links{display:flex;flex-wrap:wrap;gap:12px;margin-top:18px}
+
+
+
+/* 8. Page-specific polish */
+
+.page-privacy h1 em,.page-privacy h1 em *{color:var(--b,#4285f4)!important}
+
+.page-certificates form.card{margin-inline:auto;max-width:880px}
+
+.page-verify .card{max-width:760px}
+
+
+
+/* Elements hidden via the [hidden] attribute (e.g. the placeholder "next session" card on an event detail page,
+
+   or the sections the loader hides) must stay hidden even when a component sets its own display. */
+
+[hidden]{display:none!important}
+
+
+
+/* Optional short bio on the back of a team card (edited in Mission Control → Team). */
+
+html:root body .page-team .tm-riso-card:not(#_) .tm-face-back .tm-bio{margin:8px 0 0;font-size:12.5px;line-height:1.45;color:#fff!important;opacity:.92;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+
+
+
+
+
+/* 9. Member Pass Preview Banner on /join/ */
+
+.gdg-pass-teaser {
+
+  margin: 28px 0 !important;
+
+  position: relative !important;
+
+  overflow: hidden !important;
+
+  border-radius: 28px !important;
+
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+
+  background:
+
+    radial-gradient(circle at 80% 45%, rgba(66, 133, 244, 0.25), transparent 55%),
+
+    radial-gradient(circle at 18% 85%, rgba(234, 67, 53, 0.18), transparent 50%),
+
+    radial-gradient(circle at 45% 15%, rgba(251, 188, 4, 0.12), transparent 45%),
+
+    linear-gradient(135deg, #0e1224 0%, #060810 100%) !important;
+
+  color: #fff !important;
+
+  box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.08) inset !important;
+
+  padding: clamp(28px, 4.5vw, 48px) !important;
+
+  transition: background .25s, border-color .25s, box-shadow .25s;
+
+}
+
+.gdg-pass-teaser::before {
+
+  content: "" !important;
+
+  position: absolute !important;
+
+  inset: 0 !important;
+
+  pointer-events: none !important;
+
+  background-image:
+
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px) !important;
+
+  background-size: 30px 30px !important;
+
+  mask-image: radial-gradient(100% 100% at 50% 50%, #000 65%, transparent 100%) !important;
+
+}
+
+.gdg-pass-grid {
+
+  display: grid !important;
+
+  grid-template-columns: 1.15fr .85fr !important;
+
+  gap: clamp(28px, 4vw, 48px) !important;
+
+  align-items: center !important;
+
+  position: relative !important;
+
+  z-index: 2 !important;
+
+}
+
+@media (max-width: 860px) {
+
+  .gdg-pass-grid { grid-template-columns: 1fr !important; }
+
+}
+
+.gdg-pass-info {
+
+  display: flex !important;
+
+  flex-direction: column !important;
+
+}
+
+.gdg-pass-pill {
+
+  display: inline-flex !important;
+
+  align-items: center !important;
+
+  gap: 8px !important;
+
+  background: rgba(255, 255, 255, 0.06) !important;
+
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+
+  border-radius: 999px !important;
+
+  padding: 6px 14px !important;
+
+  font: 700 11px var(--f-mono, monospace) !important;
+
+  letter-spacing: 1.5px !important;
+
+  color: #FBBC04 !important;
+
+  width: fit-content !important;
+
+  margin-bottom: 18px !important;
+
+  text-transform: uppercase !important;
+
+}
+
+.gdg-pass-dots {
+
+  display: grid !important;
+
+  grid-template-columns: 1fr 1fr !important;
+
+  gap: 3px !important;
+
+}
+
+.gdg-pass-dots i {
+
+  width: 5.5px !important;
+
+  height: 5.5px !important;
+
+  border-radius: 50% !important;
+
+  display: block !important;
+
+}
+
+.gdg-pass-title {
+
+  font: 800 clamp(28px, 3.8vw, 44px)/1.12 var(--f-disp, sans-serif) !important;
+
+  color: #fff !important;
+
+  letter-spacing: -1px !important;
+
+  margin: 0 0 16px 0 !important;
+
+}
+
+.gdg-pass-title .c-b { color: #4285F4 !important; }
+
+.gdg-pass-title .c-w { color: #ffffff !important; }
+
+.gdg-pass-title .c-y { color: #FBBC04 !important; }
+
+.gdg-pass-title .c-r { color: #EA4335 !important; }
+
+.gdg-pass-univ {
+
+  display: inline-flex !important;
+
+  align-items: center !important;
+
+  align-self: flex-start !important;
+
+  font: 800 20px var(--f-disp, sans-serif) !important;
+
+  letter-spacing: 1.5px !important;
+
+  background: #FBBC04 !important;
+
+  color: #08090d !important;
+
+  padding: 10px 22px !important;
+
+  border-radius: 12px !important;
+
+  box-shadow: 0 8px 24px -4px rgba(251, 188, 4, 0.45) !important;
+
+  margin-bottom: 20px !important;
+
+}
+
+.gdg-pass-desc {
+
+  font-size: 15px !important;
+
+  line-height: 1.6 !important;
+
+  color: rgba(255, 255, 255, 0.75) !important;
+
+  margin: 0 0 22px 0 !important;
+
+  max-width: 540px !important;
+
+}
+
+.gdg-pass-chips {
+
+  display: flex !important;
+
+  gap: 10px !important;
+
+  flex-wrap: wrap !important;
+
+  margin-bottom: 24px !important;
+
+}
+
+.gdg-pass-chips span {
+
+  font: 600 13px var(--f-mono, monospace) !important;
+
+  padding: 7px 15px !important;
+
+  border-radius: 999px !important;
+
+  background: rgba(255, 255, 255, 0.07) !important;
+
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+
+  color: #fff !important;
+
+  letter-spacing: .3px !important;
+
+  display: inline-flex !important;
+
+  align-items: center !important;
+
+  gap: 6px !important;
+
+}
+
+.gdg-pass-actions {
+
+  display: flex !important;
+
+  align-items: center !important;
+
+  gap: 12px !important;
+
+  flex-wrap: wrap !important;
+
+}
+
+.gdg-btn-launch {
+
+  background: var(--b, #4285F4) !important;
+
+  color: #fff !important;
+
+  border: 0 !important;
+
+  padding: 13px 24px !important;
+
+  border-radius: 999px !important;
+
+  font: 700 15px var(--f-body, sans-serif) !important;
+
+  text-decoration: none !important;
+
+  display: inline-flex !important;
+
+  align-items: center !important;
+
+  gap: 8px !important;
+
+  box-shadow: 0 10px 24px -6px rgba(66, 133, 244, 0.5) !important;
+
+  transition: transform .15s, box-shadow .15s !important;
+
+}
+
+.gdg-btn-launch:hover {
+
+  transform: translateY(-2px) !important;
+
+  box-shadow: 0 14px 28px -6px rgba(66, 133, 244, 0.65) !important;
+
+}
+
+.gdg-btn-gateway {
+
+  background: transparent !important;
+
+  color: #fff !important;
+
+  border: 1.5px solid rgba(255, 255, 255, 0.25) !important;
+
+  padding: 12px 20px !important;
+
+  border-radius: 999px !important;
+
+  font: 600 14px var(--f-body, sans-serif) !important;
+
+  text-decoration: none !important;
+
+  display: inline-flex !important;
+
+  align-items: center !important;
+
+  gap: 6px !important;
+
+}
+
+.gdg-btn-gateway:hover {
+
+  border-color: var(--b, #4285F4) !important;
+
+  background: rgba(255, 255, 255, 0.06) !important;
+
+}
+
+.gdg-pass-visual {
+
+  display: flex !important;
+
+  justify-content: center !important;
+
+  align-items: center !important;
+
+  perspective: 900px !important;
+
+}
+
+.gdg-mini-card-link {
+
+  text-decoration: none !important;
+
+  display: block !important;
+
+  transition: transform .25s cubic-bezier(.16, 1, .3, 1) !important;
+
+}
+
+.gdg-mini-card-link:hover {
+
+  transform: translateY(-6px) rotate(2deg) scale(1.02) !important;
+
+}
+
+.gdg-mini-pass {
+
+  width: min(300px, 85vw) !important;
+
+  border-radius: 26px !important;
+
+  padding: 0 0 16px 0 !important;
+
+  overflow: hidden !important;
+
+  position: relative !important;
+
+  color: #fff !important;
+
+  background:
+
+    radial-gradient(110% 55% at 100% 0%, rgba(66, 133, 244, 0.45), transparent 60%),
+
+    radial-gradient(90% 50% at 0% 100%, rgba(234, 67, 53, 0.35), transparent 60%),
+
+    radial-gradient(70% 40% at 50% 50%, rgba(52, 168, 83, 0.18), transparent 70%),
+
+    linear-gradient(160deg, #10152e, #070a18) !important;
+
+  box-shadow: 0 35px 70px -20px rgba(7, 10, 24, 0.85), 0 0 0 1.5px rgba(255, 255, 255, 0.15) inset !important;
+
+}
+
+.gdg-mini-pass::after {
+
+  content: "" !important;
+
+  position: absolute !important;
+
+  inset: 0 !important;
+
+  z-index: 1 !important;
+
+  pointer-events: none !important;
+
+  opacity: .45 !important;
+
+  background-image:
+
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px) !important;
+
+  background-size: 20px 20px !important;
+
+}
+
+.gdg-mini-pass > * { position: relative !important; z-index: 2 !important; }
+
+.gdg-mini-slot {
+
+  width: 56px !important;
+
+  height: 9px !important;
+
+  border-radius: 99px !important;
+
+  margin: 12px auto 0 !important;
+
+  background: rgba(0, 0, 0, 0.65) !important;
+
+  box-shadow: inset 0 1px 3px #000, 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+
+}
+
+.gdg-mini-bar {
+
+  display: flex !important;
+
+  height: 5px !important;
+
+  margin-top: 10px !important;
+
+}
+
+.gdg-mini-bar i { flex: 1 !important; }
+
+.gdg-mini-bar i:nth-child(1) { background: #4285F4 !important; }
+
+.gdg-mini-bar i:nth-child(2) { background: #EA4335 !important; }
+
+.gdg-mini-bar i:nth-child(3) { background: #FBBC04 !important; }
+
+.gdg-mini-bar i:nth-child(4) { background: #34A853 !important; }
+
+.gdg-mini-top {
+
+  padding: 14px 18px 0 !important;
+
+  display: flex !important;
+
+  align-items: center !important;
+
+  gap: 8px !important;
+
+}
+
+.gdg-mini-dots {
+
+  display: grid !important;
+
+  grid-template-columns: 1fr 1fr !important;
+
+  gap: 3px !important;
+
+}
+
+.gdg-mini-dots b {
+
+  width: 8px !important;
+
+  height: 8px !important;
+
+  border-radius: 50% !important;
+
+  display: block !important;
+
+}
+
+.gdg-mini-dots b:nth-child(1) { background: #4285F4 !important; }
+
+.gdg-mini-dots b:nth-child(2) { background: #EA4335 !important; }
+
+.gdg-mini-dots b:nth-child(3) { background: #FBBC04 !important; }
+
+.gdg-mini-dots b:nth-child(4) { background: #34A853 !important; }
+
+.gdg-mini-brandtxt b {
+
+  display: block !important;
+
+  font: 700 13px var(--f-disp, sans-serif) !important;
+
+  line-height: 1.1 !important;
+
+  color: #fff !important;
+
+}
+
+.gdg-mini-brandtxt span {
+
+  display: flex !important;
+
+  align-items: center !important;
+
+  gap: 4px !important;
+
+  margin-top: 3px !important;
+
+  font: 700 9px var(--f-mono, monospace) !important;
+
+  letter-spacing: .8px !important;
+
+  color: #fff !important;
+
+}
+
+.gdg-mini-brandtxt u {
+
+  text-decoration: none !important;
+
+  background: #FBBC04 !important;
+
+  color: #111 !important;
+
+  padding: 1.5px 5px !important;
+
+  border-radius: 4px !important;
+
+}
+
+.gdg-mini-hero {
+
+  padding: 14px 18px 10px !important;
+
+  text-align: center !important;
+
+}
+
+.gdg-mini-ring {
+
+  width: 86px !important;
+
+  height: 86px !important;
+
+  border-radius: 50% !important;
+
+  padding: 3px !important;
+
+  margin: 0 auto !important;
+
+  background: conic-gradient(#4285F4, #EA4335, #FBBC04, #34A853, #4285F4) !important;
+
+  box-shadow: 0 0 35px rgba(66, 133, 244, 0.5) !important;
+
+}
+
+.gdg-mini-av {
+
+  width: 100% !important;
+
+  height: 100% !important;
+
+  border-radius: 50% !important;
+
+  background: #1b2140 !important;
+
+  display: grid !important;
+
+  place-items: center !important;
+
+  font-size: 42px !important;
+
+  border: 3px solid #10152e !important;
+
+}
+
+.gdg-mini-name {
+
+  font: 700 20px var(--f-disp, sans-serif) !important;
+
+  margin-top: 10px !important;
+
+  letter-spacing: -.4px !important;
+
+  background: linear-gradient(90deg, #fff, #cfe0ff 50%, #fff) !important;
+
+  -webkit-background-clip: text !important;
+
+  background-clip: text !important;
+
+  color: transparent !important;
+
+}
+
+.gdg-mini-roll {
+
+  font: 600 10.5px var(--f-mono, monospace) !important;
+
+  letter-spacing: 1.5px !important;
+
+  color: rgba(255, 255, 255, 0.6) !important;
+
+  margin-top: 4px !important;
+
+  text-transform: uppercase !important;
+
+}
+
+.gdg-mini-track {
+
+  display: inline-flex !important;
+
+  align-items: center !important;
+
+  gap: 6px !important;
+
+  margin-top: 8px !important;
+
+  padding: 5px 12px !important;
+
+  border-radius: 99px !important;
+
+  font-weight: 700 !important;
+
+  font-size: 11px !important;
+
+  background: linear-gradient(90deg, rgba(66, 133, 244, 0.25), rgba(234, 67, 53, 0.25)) !important;
+
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+
+  color: #fff !important;
+
+}
+
+.gdg-mini-perf {
+
+  position: relative !important;
+
+  height: 22px !important;
+
+  margin-top: 8px !important;
+
+}
+
+.gdg-mini-perf::before, .gdg-mini-perf::after {
+
+  content: "" !important;
+
+  position: absolute !important;
+
+  top: 0 !important;
+
+  width: 22px !important;
+
+  height: 22px !important;
+
+  border-radius: 50% !important;
+
+  background: #080b18 !important;
+
+}
+
+.gdg-mini-perf::before { left: -11px !important; }
+
+.gdg-mini-perf::after { right: -11px !important; }
+
+.gdg-mini-perf hr {
+
+  position: absolute !important;
+
+  top: 10px !important;
+
+  left: 18px !important;
+
+  right: 18px !important;
+
+  border: 0 !important;
+
+  border-top: 1.5px dashed rgba(255, 255, 255, 0.25) !important;
+
+  margin: 0 !important;
+
+}
+
+.gdg-mini-foot {
+
+  display: flex !important;
+
+  justify-content: space-between !important;
+
+  align-items: center !important;
+
+  padding: 2px 18px 4px !important;
+
+}
+
+.gdg-mini-foot small {
+
+  display: block !important;
+
+  font: 500 8px var(--f-mono, monospace) !important;
+
+  letter-spacing: .8px !important;
+
+  color: rgba(255, 255, 255, 0.6) !important;
+
+}
+
+.gdg-mini-foot strong {
+
+  display: block !important;
+
+  font-size: 12px !important;
+
+  margin-top: 2px !important;
+
+  color: #fff !important;
+
+}
+
+.gdg-mini-pass-tag {
+
+  display: block !important;
+
+  font: 700 8.5px var(--f-mono, monospace) !important;
+
+  letter-spacing: 1.2px !important;
+
+  color: #FBBC04 !important;
+
+  margin-top: 3px !important;
+
+}
+
+.gdg-mini-qr {
+
+  width: 52px !important;
+
+  height: 52px !important;
+
+  background: #fff !important;
+
+  border-radius: 8px !important;
+
+  padding: 4px !important;
+
+}
+
+.gdg-mini-qr svg {
+
+  width: 100% !important;
+
+  height: 100% !important;
+
+  display: block !important;
+
+}
+
+.gdg-mini-overlay-badge {
+
+  position: absolute !important;
+
+  bottom: 12px !important;
+
+  right: 14px !important;
+
+  background: #4285F4 !important;
+
+  color: #fff !important;
+
+  font: 700 11px Inter, sans-serif !important;
+
+  padding: 5px 12px !important;
+
+  border-radius: 999px !important;
+
+  box-shadow: 0 4px 14px rgba(66, 133, 244, 0.6) !important;
+
+  display: flex !important;
+
+  align-items: center !important;
+
+  gap: 4px !important;
+
+  z-index: 5 !important;
+
+}
+
+
+
+/* ==========================================================================
+
+   10. Site-wide Padding, Margin & Layout Harmonization
+
+   Aligns header, main content, cards, and footer to unified 1200px grid.
+
+   Establishes consistent vertical rhythm and mobile-optimized edge gutters.
+
+   ========================================================================== */
+
+
+
+/* 10.1 Global Spacing Variables */
+
+:root {
+
+  --site-max-width: 1200px;
+
+  --site-gutter: clamp(16px, 3.5vw, 32px);
+
+  --section-space: clamp(36px, 5.5vw, 68px);
+
+  --card-space: clamp(20px, 3vw, 32px);
+
+  --card-pad: clamp(20px, 3.5vw, 36px);
+
+  --card-radius: clamp(20px, 2.5vw, 28px);
+
+}
+
+
+
+/* 10.2 Global Viewport & Main Container */
+
+html, body {
+
+  overflow-x: clip;
+
+}
+
+
+
+main {
+
+  width: min(100%, var(--site-max-width)) !important;
+
+  max-width: var(--site-max-width) !important;
+
+  margin-inline: auto !important;
+
+  padding-inline: var(--site-gutter) !important;
+
+  padding-top: 0 !important;
+
+  padding-bottom: clamp(36px, 5vw, 64px) !important;
+
+  box-sizing: border-box !important;
+
+}
+
+
+
+/* Page inner wrapper: eliminates double-guttering */
+
+main > .pg {
+
+  width: 100% !important;
+
+  max-width: 100% !important;
+
+  margin-inline: auto !important;
+
+  padding-inline: 0 !important;
+
+  padding-top: 0 !important;
+
+  padding-bottom: 0 !important;
+
+  box-sizing: border-box !important;
+
+}
+
+
+
+/* 10.3 Header & Sticky Navigation Alignment */
+
+header#hd {
+
+  width: min(100%, var(--site-max-width)) !important;
+
+  max-width: var(--site-max-width) !important;
+
+  margin-inline: auto !important;
+
+  box-sizing: border-box !important;
+
+}
+
+header#hd .nv, header#hd.fl .nv {
+
+  width: 100% !important;
+
+  max-width: 100% !important;
+
+  box-sizing: border-box !important;
+
+}
+
+
+
+/* 10.4 Page Intro Headers (Subpages) */
+
+.page-intro {
+
+  margin: clamp(18px, 3vw, 34px) 0 clamp(24px, 4vw, 44px) !important;
+
+  padding: clamp(24px, 4.5vw, 52px) clamp(20px, 3.8vw, 44px) !important;
+
+  border-radius: var(--card-radius) !important;
+
+  box-sizing: border-box !important;
+
+}
+
+.page-intro h1 {
+
+  margin: clamp(14px, 2.5vw, 24px) 0 clamp(10px, 1.8vw, 16px) !important;
+
+  line-height: 1.02 !important;
+
+}
+
+.page-intro .lead {
+
+  margin: 0 !important;
+
+  line-height: 1.55 !important;
+
+}
+
+
+
+/* 10.5 Cards, Panels & Teasers Across All Pages */
+
+.card, .pp, .reference-card, .join-contact-section, .discord-first-promo, .gdg-pass-teaser {
+
+  border-radius: var(--card-radius) !important;
+
+  padding: var(--card-pad) !important;
+
+  box-sizing: border-box !important;
+
+}
+
+
+
+/* ==========================================================================
+
+   10.6 Harmonious Vertical Rhythm: Banners, Charts, Illustrations & Cards
+
+   Prevents adjacent banners, charts, illustrations, and text from colliding.
+
+   Ensures generous, natural breathing space across desktop, tablet, and mobile.
+
+   ========================================================================== */
+
+
+
+/* 1. Grid Children Isolation: Cards inside grids must NEVER inherit sibling margins */
+
+.grid > *, .g16-row > *, .grid > .card, .g16-row > .card, .grid > .pp, .g16-row > .pp {
+
+  margin: 0 !important;
+
+}
+
+
+
+/* 2. Top-level Standalone Cards inside Main Page Container */
+
+main > .pg > .card + .card {
+
+  margin-top: clamp(36px, 5vw, 60px) !important;
+
+}
+
+
+
+/* 3. Subpage Intro to First Section/Card Gap */
+
+main > .pg > .page-intro + section,
+
+main > .pg > .page-intro + .card,
+
+main > .pg > .page-intro + .grid {
+
+  margin-top: clamp(28px, 4vw, 44px) !important;
+
+}
+
+
+
+/* 4. Home Hero Spacing */
+
+.home-hero {
+
+  padding: clamp(18px, 3vw, 36px) 0 clamp(24px, 4vw, 44px) !important;
+
+  gap: clamp(28px, 4.5vw, 60px) !important;
+
+}
+
+.home-hero-copy {
+
+  gap: clamp(20px, 3.2vw, 38px) !important;
+
+  padding-top: 0 !important;
+
+}
+
+.info.info-coming-soon {
+
+  margin-top: clamp(28px, 4vw, 44px) !important;
+
+  padding: clamp(18px, 2.8vw, 26px) 0 !important;
+
+}
+
+.discord-first-promo {
+
+  margin-top: clamp(32px, 4.5vw, 52px) !important;
+
+}
+
+@media (max-width: 860px) {
+
+  .hero-reference-art {
+
+    margin-top: clamp(24px, 4vw, 36px) !important;
+
+  }
+
+}
+
+
+
+/* 5. Home Running Marquee Banners & Stats Ticker */
+
+.rb {
+
+  margin-top: clamp(52px, 7vw, 84px) !important;
+
+  margin-bottom: 0 !important;
+
+  margin-inline: 0 !important;
+
+  overflow: hidden !important;
+
+}
+
+.rb2 {
+
+  margin-top: 10px !important;
+
+  margin-bottom: 0 !important;
+
+  margin-inline: 0 !important;
+
+  overflow: hidden !important;
+
+}
+
+.st {
+
+  margin-top: clamp(40px, 5.5vw, 64px) !important;
+
+  margin-bottom: clamp(48px, 6.5vw, 80px) !important;
+
+}
+
+
+
+/* 6. Home Interactive Campus Playground & Chart (.pk) */
+
+.pk {
+
+  margin-top: clamp(48px, 6.5vw, 80px) !important;
+
+  margin-bottom: clamp(64px, 8.5vw, 108px) !important;
+
+  row-gap: clamp(40px, 5.5vw, 76px) !important;
+
+}
+
+.pk-stage {
+
+  margin-top: clamp(20px, 3.5vw, 36px) !important;
+
+  margin-bottom: clamp(32px, 5vw, 56px) !important;
+
+}
+
+.pk-deck {
+
+  margin-top: clamp(24px, 3.5vw, 40px) !important;
+
+}
+
+
+
+/* 7. Home About and Blog Sections */
+
+.home-about-merged {
+
+  margin-top: clamp(64px, 8.5vw, 108px) !important;
+
+  margin-bottom: 0 !important;
+
+}
+
+.home-about-merged .editorial-collections-head {
+
+  margin-bottom: clamp(22px, 3vw, 32px) !important;
+
+}
+
+.home-about-merged .card.pp {
+
+  margin-top: clamp(22px, 3vw, 32px) !important;
+
+}
+
+.blog-home {
+
+  margin-top: clamp(64px, 8.5vw, 108px) !important;
+
+  margin-bottom: 0 !important;
+
+}
+
+.blog-home-head {
+
+  margin-bottom: clamp(24px, 3.5vw, 36px) !important;
+
+}
+
+.blog-home-grid {
+
+  gap: clamp(18px, 2.5vw, 28px) !important;
+
+}
+
+
+
+/* 8. Bottom Section Headings (.sc) & Tracks */
+
+.sc {
+
+  margin-top: clamp(64px, 8.5vw, 104px) !important;
+
+  margin-bottom: clamp(24px, 3.5vw, 36px) !important;
+
+}
+
+.sc + .grid, .sc + section, .sc + #home-tracks {
+
+  margin-top: 0 !important;
+
+}
+
+#gdg-lotus {
+
+  margin-top: clamp(56px, 8vw, 96px) !important;
+
+}
+
+
+
+/* 9. Team Page Hero, Constellation Chart & Directory Sections */
+
+.team-portal-hero {
+
+  margin-top: clamp(20px, 3vw, 36px) !important;
+
+  margin-bottom: clamp(56px, 8vw, 96px) !important;
+
+  gap: clamp(32px, 5vw, 68px) !important;
+
+}
+
+@media (max-width: 960px) {
+
+  .team-constellation {
+
+    margin-top: clamp(32px, 5vw, 48px) !important;
+
+    margin-bottom: clamp(16px, 2.5vw, 24px) !important;
+
+  }
+
+}
+
+.page-team .tm-sec, .pg-team .tm-sec, .tm-sec[data-team-section] {
+
+  width: 100% !important;
+
+  max-width: 100% !important;
+
+  margin-top: clamp(56px, 7.5vw, 88px) !important;
+
+  margin-bottom: 0 !important;
+
+  margin-inline: auto !important;
+
+  gap: clamp(16px, 2.4vw, 26px) !important;
+
+}
+
+.tm-head {
+
+  margin-bottom: clamp(22px, 3vw, 32px) !important;
+
+}
+
+
+
+/* 10. Join Page Cards & Member Pass Preview Banner */
+
+.page-join .reference-card.pk-b {
+
+  margin-top: clamp(28px, 4vw, 44px) !important;
+
+  margin-bottom: 0 !important;
+
+}
+
+.gdg-pass-teaser {
+
+  margin-block: clamp(48px, 6.5vw, 76px) !important;
+
+}
+
+.join-contact-section {
+
+  margin-top: clamp(48px, 6.5vw, 76px) !important;
+
+  margin-bottom: clamp(32px, 4.5vw, 56px) !important;
+
+}
+
+
+
+/* 11. Events Page Feature Banner, Filter Bar & Sections */
+
+.event-feature {
+
+  margin-top: clamp(28px, 4vw, 44px) !important;
+
+  margin-bottom: clamp(48px, 6.5vw, 76px) !important;
+
+}
+
+.filter-bar {
+
+  margin: clamp(28px, 4vw, 44px) 0 clamp(24px, 3.5vw, 36px) !important;
+
+}
+
+.event-formats {
+
+  margin-top: clamp(56px, 7.5vw, 88px) !important;
+
+}
+
+.event-section-head {
+
+  margin-bottom: clamp(24px, 3.5vw, 36px) !important;
+
+}
+
+.event-vault {
+
+  margin-top: clamp(56px, 7.5vw, 88px) !important;
+
+}
+
+
+
+/* 12. Blog Page Editorial Feature Banner & Collections */
+
+.editorial-feature {
+
+  margin-top: clamp(28px, 4vw, 44px) !important;
+
+  margin-bottom: clamp(56px, 7.5vw, 88px) !important;
+
+}
+
+.blog-latest {
+
+  margin-top: clamp(56px, 7.5vw, 88px) !important;
+
+}
+
+.blog-latest .editorial-collections-head {
+
+  margin-bottom: clamp(24px, 3.5vw, 36px) !important;
+
+}
+
+.editorial-collections {
+
+  margin-top: clamp(56px, 7.5vw, 88px) !important;
+
+}
+
+.editorial-collections .editorial-collections-head {
+
+  margin-bottom: clamp(24px, 3.5vw, 36px) !important;
+
+}
+
+
+
+.page-certificates form.card#cf {
+
+  margin: clamp(32px, 4.5vw, 48px) auto !important;
+
+}
+
+.page-leaderboard .table-box {
+
+  margin-top: clamp(20px, 3vw, 32px) !important;
+
+  margin-bottom: clamp(20px, 3vw, 32px) !important;
+
+}
+
+
+
+/* 13. Grid Spacing Consistency */
+
+.grid, .g16-row {
+
+  gap: clamp(16px, 2.4vw, 26px) !important;
+
+}
+
+
+
+/* 14. Footer Alignment & Spacing */
+
+.v18-foot {
+
+  margin-top: clamp(56px, 8vw, 96px) !important;
+
+  padding: 0 !important;
+
+}
+
+.v18-foot-in, .v18-base {
+
+  width: min(100%, var(--site-max-width)) !important;
+
+  max-width: var(--site-max-width) !important;
+
+  padding-inline: var(--site-gutter) !important;
+
+  margin-inline: auto !important;
+
+  box-sizing: border-box !important;
+
+}
+
+.v18-cta {
+
+  padding: clamp(24px, 4.5vw, 56px) !important;
+
+  border-radius: var(--card-radius) !important;
+
+}
+
+
+
+/* 15. Mobile Phone Polish (< 640px) */
+
+@media (max-width: 640px) {
+
+  :root {
+
+    --site-gutter: 16px;
+
+    --card-pad: 18px;
+
+    --card-space: 18px;
+
+  }
+
+  html, body {
+
+    max-width: 100% !important;
+
+    overflow-x: hidden !important;
+
+  }
+
+  body {
+
+    padding-left: env(safe-area-inset-left, 0px) !important;
+
+    padding-right: env(safe-area-inset-right, 0px) !important;
+
+  }
+
+  main {
+
+    padding-inline: 16px !important;
+
+    padding-bottom: 40px !important;
+
+  }
+
+  .page-intro {
+
+    padding: 22px 18px !important;
+
+    margin: 14px 0 20px !important;
+
+  }
+
+  .card, .pp, .reference-card, .join-contact-section, .discord-first-promo, .gdg-pass-teaser {
+
+    padding: 18px !important;
+
+  }
+
+  .join-contact-links {
+
+    flex-direction: column !important;
+
+    gap: 10px !important;
+
+  }
+
+  .join-contact-links .btn {
+
+    width: 100% !important;
+
+    justify-content: center !important;
+
+    margin: 0 !important;
+
+  }
+
+  .table-box {
+
+    max-width: 100% !important;
+
+    overflow-x: auto !important;
+
+    -webkit-overflow-scrolling: touch !important;
+
+  }
+
+  .btn, button.btn, a.btn {
+
+    min-height: 42px !important;
+
+  }
+
+  .pk-stage {
+
+    margin-top: 24px !important;
+
+    margin-bottom: 36px !important;
+
+  }
+
+  .team-constellation {
+
+    margin-top: 28px !important;
+
+    margin-bottom: 16px !important;
+
+  }
+
+  .gdg-pass-teaser {
+
+    margin-block: 36px !important;
+
+  }
+
+}
+
+
+
+@media (max-width: 480px) {
+
+  h1 {
+
+    font-size: clamp(30px, 8.2vw, 42px) !important;
+
+    line-height: 1.05 !important;
+
+  }
+
+  h2 {
+
+    font-size: clamp(22px, 6.2vw, 30px) !important;
+
+    line-height: 1.15 !important;
+
+  }
+
+  .v18-cols {
+
+    grid-template-columns: 1fr !important;
+
+    gap: 28px !important;
+
+  }
+
+  .v18-base {
+
+    flex-direction: column !important;
+
+    gap: 8px !important;
+
+    text-align: center !important;
+
+    align-items: center !important;
+
+  }
+
+}
+
+
+
+/* 16. Complete Mobile Card Optimization (< 768px & < 640px) */
+#pk-bubble, .play-cursor, .cursor-dot, .cursor-ring, .v3-th {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+@media (max-width: 768px) {
+  /* 16.1 Card Decks & Rows */
+  .pk-deck {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+    width: 100% !important;
+    max-width: 360px !important;
+    margin-inline: auto !important;
+  }
+  .g16-row, .editorial-grid.g16-row, .blog-home-grid.g16-row, .grid.g16-row {
+    gap: 18px 16px !important;
+    margin-top: 20px !important;
+  }
+  .g16-row.g16-perks, .resource-runtime-grid.g16-perks {
+    gap: 18px 16px !important;
+  }
+
+  /* 16.2 v16 Glass & Orb Cards (.g16-tl, .g16-pkcard, .g16-tl-info) */
+  .g16-pkcard {
+    width: 100% !important;
+    max-width: 100% !important;
+    background: none !important;
+    border: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    cursor: pointer !important;
+  }
+  .g16-tl, .g16-tl-info {
+    width: 100% !important;
+    max-width: 360px !important;
+  }
+  .grid > .g16-tl, .g16-row > .g16-tl {
+    margin-inline: auto !important;
+  }
+  .g16-tl-card {
+    min-height: 290px !important;
+    height: 290px !important;
+    border-radius: 24px !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+  .g16-tl-info.g16-long .g16-tl-card,
+  .g16-pkcard.g16-long .g16-tl-card {
+    min-height: 315px !important;
+    height: 315px !important;
+  }
+  .g16-tl-logo {
+    transform: scale(0.68) !important;
+    transform-origin: top right !important;
+    top: 14px !important;
+    right: 14px !important;
+    width: 170px !important;
+    height: 170px !important;
+  }
+  .g16-tl-content {
+    left: 20px !important;
+    right: 20px !important;
+    bottom: 64px !important;
+  }
+  .g16-tl-title {
+    font-size: clamp(20px, 5.4vw, 24px) !important;
+    line-height: 1.15 !important;
+    letter-spacing: -0.03em !important;
+  }
+  .g16-tl-text {
+    font-size: 13px !important;
+    line-height: 1.4 !important;
+    margin-top: 6px !important;
+    max-width: 30ch !important;
+  }
+  .g16-tl-bottom {
+    left: 20px !important;
+    right: 20px !important;
+    bottom: 16px !important;
+    gap: 8px !important;
+  }
+  .g16-tl-num {
+    height: 32px !important;
+    font-size: 11.5px !important;
+    padding: 0 11px !important;
+    border-radius: 99px !important;
+  }
+  .g16-tl-more {
+    font-size: 12.5px !important;
+    padding: 7px 13px !important;
+    min-height: 32px !important;
+  }
+  .g16-tl-acts {
+    gap: 6px !important;
+  }
+  .g16-tl-act {
+    width: 32px !important;
+    height: 32px !important;
+  }
+  .g16-tl-act svg, .g16-tl-more svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+
+  /* 16.3 Event Tickets / Boarding Passes (.g16-tk) */
+  .g16-tk {
+    width: 100% !important;
+    max-width: 100% !important;
+    filter: drop-shadow(0 12px 20px rgba(17,27,46,.12)) !important;
+  }
+  .g16-tk-card {
+    grid-template-columns: 1fr 108px !important;
+    border-radius: 20px !important;
+  }
+  .g16-tk-main {
+    padding: 16px 14px !important;
+    gap: 6px !important;
+  }
+  .g16-tk-kind {
+    font-size: 11px !important;
+    padding: 3px 9px !important;
+  }
+  .g16-tk-main h3 {
+    font-size: clamp(17px, 4.4vw, 21px) !important;
+    line-height: 1.15 !important;
+  }
+  .g16-tk-main p {
+    font-size: 12.5px !important;
+    line-height: 1.35 !important;
+  }
+  .g16-tk-sum {
+    font-size: 12px !important;
+    line-height: 1.35 !important;
+  }
+  .g16-tk-cd {
+    gap: 4px !important;
+    margin-top: 4px !important;
+  }
+  .g16-tk-cd span {
+    padding: 5px 2px 4px !important;
+    font-size: 8.5px !important;
+    min-width: 0 !important;
+    border-radius: 8px !important;
+  }
+  .g16-tk-cd b {
+    font-size: 15px !important;
+    line-height: 1 !important;
+    margin-bottom: 2px !important;
+  }
+  .g16-tk-seat {
+    font-size: 11px !important;
+    margin-top: 4px !important;
+  }
+  .g16-tk-stub {
+    padding: 14px 6px !important;
+    gap: 4px !important;
+  }
+  .g16-tk-d {
+    font-size: clamp(32px, 8vw, 42px) !important;
+    line-height: 0.9 !important;
+  }
+  .g16-tk-m {
+    font-size: 11.5px !important;
+    letter-spacing: 0.1em !important;
+  }
+  .g16-tk-btn {
+    margin-top: 4px !important;
+    padding: 6px 10px !important;
+    font-size: 11.5px !important;
+    min-height: 32px !important;
+  }
+  .g16-tk-no {
+    font-size: 9.5px !important;
+  }
+
+  /* 16.4 Magazine Blog Cards (.g16-bp) */
+  .g16-bp {
+    width: 100% !important;
+    max-width: 320px !important;
+    aspect-ratio: 3/3.8 !important;
+    margin-inline: auto !important;
+    border-radius: 22px !important;
+  }
+  .g16-bp-art, .g16-bp:before, .g16-bp-sh {
+    border-radius: 22px !important;
+  }
+  .g16-bp-tag {
+    top: 12px !important;
+    left: 12px !important;
+    font-size: 11px !important;
+    padding: 4px 10px !important;
+  }
+  .g16-bp-b {
+    padding: 16px !important;
+    gap: 8px !important;
+  }
+  .g16-bp-b h3 {
+    font-size: clamp(19px, 5vw, 23px) !important;
+    line-height: 1.15 !important;
+  }
+  .g16-bp-x p {
+    font-size: 12.5px !important;
+    line-height: 1.4 !important;
+  }
+  .g16-bp-m {
+    font-size: 12px !important;
+  }
+  .g16-bp-av {
+    width: 24px !important;
+    height: 24px !important;
+    font-size: 11.5px !important;
+  }
+
+  /* 16.5 Perk & Resource Stages (.g16-pk) */
+  .g16-pk {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 22px !important;
+  }
+  .g16-pk-stage {
+    aspect-ratio: 300/165 !important;
+    max-height: 180px !important;
+  }
+  .g16-pk-in {
+    padding: 18px 16px 20px !important;
+    gap: 6px !important;
+  }
+  .g16-pk-kind {
+    font-size: 11px !important;
+  }
+  .g16-pk h3 {
+    font-size: 20px !important;
+    line-height: 1.2 !important;
+  }
+  .g16-pk p {
+    font-size: 13px !important;
+    line-height: 1.4 !important;
+  }
+  .g16-pk-tags {
+    gap: 5px !important;
+    margin: 4px 0 !important;
+  }
+  .g16-pk-tags span {
+    font-size: 11px !important;
+    padding: 3px 8px !important;
+  }
+  .g16-pk-act {
+    gap: 8px !important;
+    margin-top: 6px !important;
+  }
+  .g16-pk-go, .g16-pk-tg {
+    padding: 10px 14px !important;
+    font-size: 13px !important;
+    min-height: 40px !important;
+  }
+
+  /* 16.6 Feature Event & Editorial Feature Cards */
+  .feature-event, .editorial-feature {
+    grid-template-columns: 1fr !important;
+    min-height: auto !important;
+    padding: 20px 18px !important;
+    border-radius: 20px !important;
+    gap: 16px !important;
+  }
+  .feature-copy, .editorial-feature-copy {
+    padding: 0 !important;
+  }
+  .feature-art, .editorial-feature-art {
+    min-height: 170px !important;
+    max-height: 220px !important;
+  }
+  .feature-event h2, .editorial-feature h2 {
+    font-size: clamp(21px, 5.5vw, 26px) !important;
+    line-height: 1.15 !important;
+  }
+
+  /* 16.7 Member & Leadership Cards */
+  .member-card, .leadership-grid > .member-card, .chapter-organizers-grid .member-card {
+    min-height: auto !important;
+    height: auto !important;
+    padding: 20px 18px !important;
+    border-radius: 18px !important;
+  }
+  .leadership-grid > .member-card .member-avatar {
+    width: 88px !important;
+    height: 88px !important;
+    font-size: 30px !important;
+    margin: 6px 0 12px !important;
+  }
+  .member-avatar {
+    width: 66px !important;
+    height: 66px !important;
+    font-size: 22px !important;
+    margin: 6px 0 12px !important;
+  }
+  .member-card h3, .member-card .member-name {
+    font-size: 18px !important;
+    line-height: 1.2 !important;
+  }
+  .member-card .member-role {
+    font-size: 12.5px !important;
+  }
+
+  /* 16.8 Teaser & Promo Cards */
+  .discord-first-promo, .discord-first-promo.card {
+    grid-template-columns: 1fr !important;
+    text-align: center !important;
+    justify-items: center !important;
+    padding: 22px 18px !important;
+    gap: 14px !important;
+    border-radius: 20px !important;
+  }
+  .discord-promo-copy {
+    text-align: center !important;
+  }
+  .discord-promo-mark {
+    margin: 0 auto !important;
+  }
+  .gdg-pass-teaser {
+    padding: 20px 16px !important;
+    border-radius: 20px !important;
+  }
+  .join-contact-section {
+    padding: 22px 18px !important;
+    border-radius: 20px !important;
+  }
+
+  /* 16.9 Generic and Content Cards */
+  .card.pp, .reference-card {
+    padding: 20px 16px !important;
+    border-radius: 18px !important;
+  }
+  .track-card, .blog-card, .resource-card, .editorial-card, .perk-card {
+    min-height: auto !important;
+    height: auto !important;
+    padding: 18px 16px !important;
+    border-radius: 18px !important;
+  }
+  .track-card .track-art {
+    height: 80px !important;
+    margin-bottom: 12px !important;
+  }
+  .track-card .track-art svg {
+    width: 48px !important;
+    height: 48px !important;
+  }
+  .pk-card {
+    box-sizing: border-box !important;
+    min-height: auto !important;
+    height: auto !important;
+    padding: 18px 16px !important;
+    border-radius: 18px !important;
+  }
+  .pk-card b {
+    font-size: clamp(19px, 5vw, 23px) !important;
+    line-height: 1.2 !important;
+  }
+  .pk-card small {
+    font-size: 13px !important;
+    line-height: 1.4 !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .g16-tk-card {
+    grid-template-columns: 1fr 94px !important;
+  }
+  .g16-tk-d {
+    font-size: 32px !important;
+  }
+  .g16-tk-main {
+    padding: 14px 12px !important;
+  }
+  .g16-tl-card {
+    min-height: 280px !important;
+    height: 280px !important;
+  }
+  .g16-tl-info.g16-long .g16-tl-card,
+  .g16-pkcard.g16-long .g16-tl-card {
+    min-height: 305px !important;
+    height: 305px !important;
+  }
+  .g16-tl-logo {
+    transform: scale(0.62) !important;
+    top: 10px !important;
+    right: 10px !important;
+  }
+  .g16-tl-content {
+    left: 16px !important;
+    right: 16px !important;
+    bottom: 58px !important;
+  }
+  .g16-tl-bottom {
+    left: 16px !important;
+    right: 16px !important;
+    bottom: 14px !important;
+  }
+  .g16-tl-title {
+    font-size: clamp(19px, 5.2vw, 22px) !important;
+  }
+  .g16-tl-text {
+    font-size: 12.5px !important;
+    line-height: 1.38 !important;
+  }
+}

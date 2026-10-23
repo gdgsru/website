@@ -1,0 +1,1420 @@
+<!doctype html>
+<html lang="en">
+<head>
+<link rel="canonical" href="https://gdgsru.pages.dev/member-badge/">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Design your official GDG on Campus SR University member pass and LinkedIn post image.">
+<title>Official Member Pass · Google Developer Group on Campus SR University</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Google Developer Group on Campus · SR University Official Member Pass">
+<meta property="og:description" content="I am officially a member of Google Developer Group on Campus, SR University! Building real-world solutions with Google technologies.">
+<meta property="og:image" content="https://gdgsru.pages.dev/assets/brand/gdg-logo.svg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Google Developer Group on Campus · SR University Member Pass">
+<meta name="twitter:description" content="Official Member Pass &amp; LinkedIn Badge Studio · GDG on Campus SR University">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue: #4285F4;
+    --red: #EA4335;
+    --yellow: #FBBC04;
+    --green: #34A853;
+    --ink: #070a18;
+    --ink2: #10152e;
+    --muted: #98a2cc;
+    --bg-page: #eef1fb;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg-page);
+    min-height: 100vh;
+    padding: 0 0 60px;
+    color: #111;
+  }
+
+  /* ---- Header Nav ---- */
+  .top-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1180px;
+    margin: 0 auto 36px;
+    padding: 18px 24px;
+  }
+  .brand-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    color: #111;
+    font: 800 17px/1.1 Inter, sans-serif;
+    letter-spacing: -0.02em;
+  }
+  .brand-logo small {
+    display: block;
+    font: 500 11px/1 "JetBrains Mono", monospace;
+    color: #5f6368;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+  }
+  .brand-logo-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .btn-nav {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 18px;
+    border-radius: 99px;
+    font: 600 13.5px Inter, sans-serif;
+    text-decoration: none;
+    transition: all 0.15s ease;
+  }
+  .btn-nav.primary {
+    background: var(--blue);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(66, 133, 244, 0.28);
+  }
+  .btn-nav.primary:hover { background: #3367d6; transform: translateY(-1px); }
+  .btn-nav.outline {
+    background: #fff;
+    color: #111;
+    border: 1px solid #d5daee;
+  }
+  .btn-nav.outline:hover { background: #f8f9fa; }
+
+  /* ---- Layout ---- */
+  .layout {
+    max-width: 1180px;
+    margin: auto;
+    padding: 0 24px;
+    display: grid;
+    grid-template-columns: minmax(300px, 400px) 1fr;
+    gap: 56px;
+    align-items: start;
+  }
+  @media (max-width: 960px) {
+    .layout { grid-template-columns: minmax(0,1fr); gap: 40px; }
+    .top-nav { margin-bottom: 20px; padding: 14px 20px; }
+  }
+
+  /* ---- Left Column Form ---- */
+  .form-card { min-width:0;
+    background: #ffffff;
+    border: 1px solid #d5daee;
+    border-radius: 26px;
+    padding: clamp(22px, 3.5vw, 34px);
+    box-shadow: 0 10px 30px -10px rgba(16, 21, 46, 0.08);
+  }
+  .form-card h1, .form-card h2 {
+    font: 800 25px/1.15 "Space Grotesk", Inter, sans-serif;
+    letter-spacing: -0.03em;
+    color: #111;
+    margin-bottom: 4px;
+  }
+  .form-card .subtitle {
+    color: #6b7399;
+    font-size: 13.5px;
+    line-height: 1.4;
+    margin-bottom: 20px;
+  }
+
+  /* ---- Passcode Gate Box ---- */
+  .gate-box {
+    background: #f8fafd;
+    border: 1.5px dashed #4285f466;
+    border-radius: 18px;
+    padding: 16px 18px;
+    margin-bottom: 24px;
+    transition: all 0.25s ease;
+  }
+  .gate-box.is-unlocked {
+    background: #e6f4ea;
+    border: 1.5px solid rgba(52, 168, 83, 0.4);
+    padding: 12px 18px;
+  }
+  .gate-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .gate-title {
+    font: 700 13.5px "Space Grotesk", Inter, sans-serif;
+    color: #111;
+  }
+  .gate-tag-locked {
+    font: 700 10.5px "JetBrains Mono", monospace;
+    letter-spacing: 1px;
+    color: #c5221f;
+    background: #fce8e6;
+    padding: 3px 9px;
+    border-radius: 99px;
+  }
+  .gate-tag-unlocked {
+    font: 700 10.5px "JetBrains Mono", monospace;
+    letter-spacing: 1px;
+    color: #137333;
+    background: #ceead6;
+    padding: 3px 9px;
+    border-radius: 99px;
+    display: none;
+  }
+  .gate-box.is-unlocked .gate-tag-locked { display: none; }
+  .gate-box.is-unlocked .gate-tag-unlocked { display: inline-block; }
+  .gate-text {
+    font-size: 13px;
+    color: #5f6368;
+    line-height: 1.45;
+    margin-bottom: 12px;
+  }
+  .gate-join-btn {
+    display: block;
+    text-align: center;
+    padding: 9px 14px;
+    border-radius: 10px;
+    background: var(--blue);
+    color: #fff;
+    font: 600 13px Inter, sans-serif;
+    text-decoration: none;
+    margin-bottom: 12px;
+    transition: background 0.15s ease;
+  }
+  .gate-join-btn:hover { background: #3367d6; }
+  .gate-input-row {
+    display: flex;
+    gap: 8px;
+  }
+  .gate-input-row input {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 10px 12px;
+    border: 1px solid #d5daee;
+    border-radius: 10px;
+    font: 600 12px "JetBrains Mono", monospace;
+    text-transform: uppercase;
+    background: #fff;
+    letter-spacing: 0.5px;
+  }
+  .gate-input-row input:focus {
+    outline: none;
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.2);
+  }
+  .gate-input-row button {
+    padding: 10px 16px;
+    border-radius: 10px;
+    background: #111;
+    color: #fff;
+    border: 0;
+    font: 700 12.5px Inter, sans-serif;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s;
+  }
+  .gate-input-row button:hover { background: #2b2d30; }
+  .gate-feedback {
+    margin-top: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    display: none;
+  }
+  .gate-feedback.show { display: block; }
+  .gate-feedback.error { color: #c5221f; }
+  .gate-feedback.success { color: #137333; }
+
+  .unlocked-view {
+    display: none;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+  .gate-box.is-unlocked .unlocked-view { display: flex; }
+  .gate-box.is-unlocked .locked-view { display: none; }
+  .unlocked-label {
+    font: 600 13px Inter, sans-serif;
+    color: #137333;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-reverify {
+    font: 600 12px Inter, sans-serif;
+    color: #5f6368;
+    background: none;
+    border: none;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  /* Form Elements */
+  .form-section {
+    transition: opacity 0.25s ease;
+  }
+  .form-section.is-locked {
+    opacity: 0.55;
+    pointer-events: none;
+  }
+  .form-card label {
+    display: block;
+    font-weight: 600;
+    font-size: 13.5px;
+    margin: 16px 0 6px;
+    color: #202124;
+  }
+  .form-card input[type=text], .form-card select {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #d5daee;
+    border-radius: 12px;
+    font: inherit;
+    font-size: 14px;
+    background: #fff;
+    color: #111;
+  }
+  .form-card input[type=text]:focus, .form-card select:focus {
+    outline: none;
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.2);
+  }
+
+  /* Avatars & Photo Upload */
+  .avatars {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .avatars button {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    font-size: 22px;
+    line-height: 1;
+    background: #10152e;
+    color: #fff;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+    user-select: none;
+  }
+  .avatars button:hover {
+    transform: scale(1.1);
+  }
+  .avatars button.on {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.28);
+    background: #1b2140;
+    transform: scale(1.05);
+  }
+  .upl {
+    padding: 9px 15px;
+    border-radius: 99px;
+    border: 1px solid #d5daee;
+    background: #fff;
+    font: 600 12.5px Inter, sans-serif;
+    color: #111;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: background 0.15s;
+  }
+  .upl:hover { background: #f8f9fa; }
+
+  /* Theme Presets */
+  .themes {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-top: 6px;
+  }
+  .themes button {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    cursor: pointer;
+    box-shadow: 0 0 0 1px #d5daee;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .themes button.on {
+    box-shadow: 0 0 0 3px #111;
+    transform: scale(1.08);
+  }
+  .themes input[type=color] {
+    width: 36px;
+    height: 36px;
+    border: 0;
+    padding: 0;
+    background: none;
+    cursor: pointer;
+  }
+
+  /* Action Buttons */
+  .btns {
+    display: grid;
+    gap: 10px;
+    margin-top: 24px;
+  }
+  .btn {
+    padding: 13px 20px;
+    border-radius: 999px;
+    border: 0;
+    font: 700 14px Inter, sans-serif;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .btn:hover { transform: translateY(-2px); }
+  .btn.p {
+    background: var(--blue);
+    color: #fff;
+    box-shadow: 0 10px 24px -8px color-mix(in srgb, var(--blue) 80%, transparent);
+  }
+  .btn.li {
+    background: #0a66c2;
+    color: #fff;
+    box-shadow: 0 10px 24px -8px rgba(10, 102, 194, 0.6);
+  }
+  .btn.s {
+    background: #fff;
+    border: 1px solid #d5daee;
+    color: #111;
+  }
+  .btn.s:hover { background: #f8f9fa; }
+
+  /* ---- Right Column: Live Stage ---- */
+  .stage {
+    display: flex;
+    flex-direction: column;
+    gap: 36px;
+    align-items: center;
+    width: 100%;
+  }
+  .stage h3 {
+    font: 700 12px "JetBrains Mono", monospace;
+    letter-spacing: 2px;
+    color: #6b7399;
+    align-self: flex-start;
+    margin-bottom: -18px;
+    text-transform: uppercase;
+  }
+
+  /* ---- 3D Tilt Badge Pass ---- */
+  .tilt { perspective: 1100px; width: 100%; display: flex; justify-content: center; }
+  .badge-holder { position: relative; }
+  .badge {
+    --rx: 0deg; --ry: 0deg; --mx: 50%; --my: 30%;
+    width: 340px;
+    border-radius: 30px;
+    position: relative;
+    overflow: hidden;
+    color: #fff;
+    transform: rotateX(var(--rx)) rotateY(var(--ry));
+    transform-style: preserve-3d;
+    transition: transform .12s ease-out;
+    background:
+      radial-gradient(120% 55% at 100% 0%, color-mix(in srgb, var(--blue) 40%, transparent), transparent 60%),
+      radial-gradient(90% 50% at 0% 100%, color-mix(in srgb, var(--red) 33%, transparent), transparent 60%),
+      radial-gradient(70% 40% at 50% 50%, color-mix(in srgb, var(--green) 13%, transparent), transparent 70%),
+      linear-gradient(160deg, var(--ink2), var(--ink));
+    box-shadow: 0 40px 80px -24px #070a18cc, 0 0 0 1.5px #ffffff22 inset, 0 0 60px -10px color-mix(in srgb, var(--blue) 33%, transparent);
+  }
+  @media(max-width: 400px) {
+    .badge { width: min(340px, 100%); }
+  }
+  .badge.exporting { transform: none !important; transition: none !important; }
+  .badge::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    opacity: .5;
+    background-image: linear-gradient(#ffffff0a 1px, transparent 1px), linear-gradient(90deg, #ffffff0a 1px, transparent 1px);
+    background-size: 24px 24px;
+    mask-image: radial-gradient(80% 60% at 50% 30%, #000, transparent);
+    -webkit-mask-image: radial-gradient(80% 60% at 50% 30%, #000, transparent);
+  }
+  .badge > * { position: relative; z-index: 2; }
+
+  .slot {
+    width: 70px;
+    height: 11px;
+    border-radius: 99px;
+    margin: 14px auto 0;
+    background: #00000088;
+    box-shadow: inset 0 1px 4px #000, 0 1px 0 #ffffff1f;
+  }
+  .bar { display: flex; height: 6px; margin-top: 14px; }
+  .bar i { flex: 1; }
+  .bar i:nth-child(1) { background: var(--blue); }
+  .bar i:nth-child(2) { background: var(--red); }
+  .bar i:nth-child(3) { background: var(--yellow); }
+  .bar i:nth-child(4) { background: var(--green); }
+
+  .top { padding: 20px 24px 0; display: flex; justify-content: flex-start; align-items: center; gap: 12px; }
+  .top .dots { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+  .top .dots b { width: 11px; height: 11px; border-radius: 50%; }
+  .brandtxt b { display: block; font: 700 18px "Space Grotesk", sans-serif; letter-spacing: -.3px; line-height: 1.1; color: #fff; }
+  .brandtxt span { display: flex; align-items: center; gap: 7px; margin-top: 6px; font: 700 11px "JetBrains Mono", monospace; letter-spacing: 1.2px; color: #fff; }
+  .brandtxt u { text-decoration: none; background: var(--yellow); color: #111; padding: 3px 8px; border-radius: 6px; letter-spacing: .5px; }
+
+  .hero { padding: 24px 24px 18px; text-align: center; }
+  .avwrap { position: relative; width: 140px; margin: 0 auto; }
+  .ring {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    padding: 4px;
+    background: conic-gradient(var(--blue), var(--red), var(--yellow), var(--green), var(--blue));
+    box-shadow: 0 0 50px color-mix(in srgb, var(--blue) 53%, transparent);
+  }
+  .av {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: #1b2140;
+    display: grid;
+    place-items: center;
+    font-size: 40px;
+    font-family: "Space Grotesk", Inter, sans-serif;
+    line-height: 1;
+    border: 5px solid var(--ink2);
+    overflow: hidden;
+    color: #fff;
+    user-select: none;
+  }
+  .av img { width: 100%; height: 100%; object-fit: cover; }
+  .name {
+    font: 700 30px/1.05 "Space Grotesk", Inter, sans-serif;
+    margin-top: 20px;
+    letter-spacing: -.8px;
+    word-break: break-word;
+    background: linear-gradient(90deg, #fff, #cfe0ff 50%, #fff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .roll { font: 500 13px "JetBrains Mono", monospace; color: var(--muted); margin-top: 8px; letter-spacing: 1.2px; }
+  .track {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+    padding: 9px 18px;
+    border-radius: 99px;
+    font-weight: 700;
+    font-size: 13px;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--blue) 20%, transparent), color-mix(in srgb, var(--red) 20%, transparent));
+    border: 1px solid #ffffff33;
+    color: #fff;
+  }
+
+  .perf { position: relative; height: 30px; margin-top: 14px; }
+  .perf::before, .perf::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--bg-page);
+  }
+  .perf::before { left: -15px; }
+  .perf::after { right: -15px; }
+  .perf hr { position: absolute; top: 14px; left: 24px; right: 24px; border: 0; border-top: 2px dashed #ffffff30; }
+
+  .foot { display: flex; justify-content: space-between; align-items: center; padding: 4px 24px 26px; }
+  .foot small { display: block; font: 500 9px "JetBrains Mono", monospace; letter-spacing: 1px; color: var(--muted); }
+  .foot strong { display: block; font-size: 15px; margin-top: 4px; color: #fff; }
+  .foot .vf { display: flex; align-items: center; gap: 6px; font: 700 11px "JetBrains Mono", monospace; color: var(--yellow); margin-top: 9px; letter-spacing: 1px; }
+  .qr { width: 88px; height: 88px; background: #fff; border-radius: 14px; padding: 7px; }
+  .qr svg { width: 100%; height: 100%; display: block; }
+
+  /* Lock Curtain on Physical Badge */
+  .badge-curtain {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    background: rgba(7, 10, 24, 0.82);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    text-align: center;
+    border-radius: 30px;
+    transition: opacity 0.3s ease;
+  }
+  .badge-curtain.hidden { display: none !important; }
+  .curtain-glyph {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    display: grid;
+    place-items: center;
+    margin-bottom: 14px;
+    font-size: 26px;
+    line-height: 1;
+    color: #FBBC04;
+    user-select: none;
+  }
+  .badge-curtain strong {
+    font: 700 20px "Space Grotesk", sans-serif;
+    color: #fff;
+    margin-bottom: 8px;
+  }
+  .badge-curtain p {
+    font-size: 13px;
+    color: #c4cbeb;
+    line-height: 1.45;
+    max-width: 240px;
+  }
+
+  /* ---- LinkedIn Share Card (1200x627) ---- */
+  .sharebox { width: 100%; max-width: 720px; }
+  .sharescale {
+    width: 720px;
+    height: 376px;
+    overflow: hidden;
+    border-radius: 16px;
+    box-shadow: 0 20px 50px -20px #070a1888;
+  }
+  @media(max-width: 760px) {
+    .sharescale { width: 100%; height: auto; aspect-ratio: 1200/627; }
+  }
+  .share {
+    width: 1200px;
+    height: 627px;
+    transform-origin: top left;
+    transform: scale(.6);
+    position: relative;
+    overflow: hidden;
+    color: #fff;
+    background:
+      radial-gradient(60% 90% at 85% 40%, color-mix(in srgb, var(--blue) 35%, transparent), transparent 60%),
+      radial-gradient(50% 70% at 10% 100%, color-mix(in srgb, var(--red) 27%, transparent), transparent 60%),
+      radial-gradient(40% 60% at 40% 0%, color-mix(in srgb, var(--yellow) 20%, transparent), transparent 60%),
+      linear-gradient(135deg, var(--ink2), var(--ink));
+  }
+  .share::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(#ffffff08 1px, transparent 1px), linear-gradient(90deg, #ffffff08 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  .share .copy {
+    position: absolute;
+    left: 70px;
+    top: 0;
+    bottom: 0;
+    width: 600px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    z-index: 2;
+  }
+  .share .eyebrow {
+    font: 700 16px "JetBrains Mono", monospace;
+    letter-spacing: 3px;
+    color: var(--yellow);
+  }
+  .share h2 {
+    font: 700 54px/1.06 "Space Grotesk", sans-serif;
+    letter-spacing: -2px;
+    margin-top: 18px;
+    color: #fff;
+  }
+  .share h2 span {
+    background: linear-gradient(90deg, var(--blue), var(--yellow), var(--red));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .share .univ {
+    display: inline-block;
+    align-self: flex-start;
+    margin-top: 26px;
+    font: 700 28px "Space Grotesk", sans-serif;
+    letter-spacing: 2px;
+    background: var(--yellow);
+    color: #111;
+    padding: 8px 20px;
+    border-radius: 12px;
+  }
+  .share .chips { display: flex; gap: 12px; margin-top: 30px; }
+  .share .chips i {
+    font: 600 16px "JetBrains Mono", monospace;
+    font-style: normal;
+    padding: 9px 16px;
+    border-radius: 99px;
+    border: 1px solid #ffffff33;
+    background: #ffffff10;
+    color: #fff;
+  }
+  .share .badge {
+    position: absolute;
+    right: 90px;
+    top: 50%;
+    margin-top: -290px;
+    transform: rotate(5deg) scale(.98);
+    box-shadow: 0 50px 100px -20px #000;
+  }
+  .share .badge .perf::before, .share .badge .perf::after { background: #080b20; }
+
+  /* ---- Themes ---- */
+  :root[data-theme="neon"] { --blue:#7c5cff; --red:#ff3d9a; --yellow:#00e5ff; --green:#00ffa3; --ink:#06030f; --ink2:#150c2e; }
+  :root[data-theme="sunset"] { --blue:#ff7a45; --red:#ff3d6e; --yellow:#ffc233; --green:#c24dff; --ink:#12060b; --ink2:#2a0f1c; }
+  :root[data-theme="emerald"] { --blue:#00c98d; --red:#00a3ff; --yellow:#d9ff3f; --green:#00ffa3; --ink:#021210; --ink2:#06302a; }
+  :root[data-theme="gold"] { --blue:#d4af37; --red:#f5e6a8; --yellow:#e8c25a; --green:#b8860b; --ink:#080808; --ink2:#1c1a14; }
+  :root[data-theme="ocean"] { --blue:#2f80ff; --red:#00d4ff; --yellow:#7df9ff; --green:#5b6bff; --ink:#030a1c; --ink2:#0a1f44; }
+  :root[data-theme="rose"] { --blue:#ff5c8a; --red:#ff9e7d; --yellow:#ffd1dc; --green:#c77dff; --ink:#14060f; --ink2:#2e0f24; }
+
+  /* ---- LinkedIn Share Guidance Modal ---- */
+  .share-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(7, 10, 24, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: modalFadeIn 0.2s ease;
+  }
+  @keyframes modalFadeIn {
+    from { opacity: 0; transform: scale(0.98); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  .share-modal {
+    background: #ffffff;
+    width: 100%;
+    max-width: 520px;
+    border-radius: 24px;
+    padding: 28px 24px;
+    box-shadow: 0 25px 70px -15px rgba(7, 10, 24, 0.4);
+    position: relative;
+    border: 1px solid #e1e6f5;
+  }
+  .share-modal-close {
+    position: absolute;
+    top: 16px;
+    right: 18px;
+    background: #f0f3fa;
+    border: none;
+    font-size: 24px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    color: #444;
+    transition: all 0.15s;
+    line-height: 1;
+  }
+  .share-modal-close:hover {
+    background: #e2e7f3;
+    color: #000;
+  }
+  .share-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .share-modal-badge {
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    background: #e8f3ff;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+  }
+  .share-modal-header h3 {
+    font: 700 20px "Space Grotesk", Inter, sans-serif;
+    color: #070a18;
+    margin-bottom: 4px;
+  }
+  .share-modal-header p {
+    font-size: 13.5px;
+    color: #5f6368;
+    line-height: 1.4;
+    margin: 0;
+  }
+  .share-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+  .step-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    background: #f8fafd;
+    border: 1px solid #e1e8f5;
+    border-radius: 14px;
+    padding: 14px 16px;
+  }
+  .step-badge {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #34A853;
+    color: #fff;
+    font: 700 13px Inter, sans-serif;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .step-content strong {
+    display: block;
+    font: 700 14px Inter, sans-serif;
+    color: #070a18;
+    margin-bottom: 3px;
+  }
+  .step-content p {
+    font-size: 13px;
+    color: #555e75;
+    line-height: 1.4;
+    margin: 0;
+  }
+  .share-modal-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .btn-modal-primary {
+    flex: 1;
+    min-width: 170px;
+    background: #0A66C2;
+    color: #fff;
+    border: none;
+    border-radius: 99px;
+    padding: 13px 20px;
+    font: 700 14px Inter, sans-serif;
+    cursor: pointer;
+    transition: transform 0.15s, background 0.15s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    text-decoration: none;
+  }
+  .btn-modal-primary:hover {
+    background: #004182;
+    transform: translateY(-1px);
+  }
+  .btn-modal-secondary {
+    background: #f1f3f9;
+    color: #070a18;
+    border: 1px solid #d5daee;
+    border-radius: 99px;
+    padding: 13px 18px;
+    font: 600 13.5px Inter, sans-serif;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-modal-secondary:hover {
+    background: #e4e8f3;
+  }
+</style>
+    <script src="/config.js" defer></script>
+    <script src="/assets/js/vendor/supabase.js" defer></script>
+</head>
+<body>
+
+<header class="top-nav">
+  <a href="/" class="brand-logo" aria-label="GDG SR University Home">
+    <span class="brand-logo-mark" aria-hidden="true">
+      <svg viewBox="185 345 710 390" width="34" height="19" role="img" aria-label="Google Developer Group logo">
+        <line x1="279" y1="540" x2="432" y2="430" stroke="#EA4335" stroke-width="128" stroke-linecap="round"/>
+        <line x1="279" y1="540" x2="432" y2="650" stroke="#4285F4" stroke-width="128" stroke-linecap="round"/>
+        <line x1="648" y1="650" x2="801" y2="540" stroke="#FBBC04" stroke-width="128" stroke-linecap="round"/>
+        <line x1="648" y1="430" x2="801" y2="540" stroke="#34A853" stroke-width="128" stroke-linecap="round"/>
+      </svg>
+    </span>
+    <span>Google Developer Group <small>SR University · Member Pass Studio</small></span>
+  </a>
+
+  <div class="nav-actions">
+    <a href="https://gdg.community.dev/gdg-on-campus-sr-university-warangal-india/" target="_blank" rel="noopener" class="btn-nav primary">
+      Join Chapter ↗
+    </a>
+    <a href="/join/" class="btn-nav outline">
+      ← Back to Site
+    </a>
+  </div>
+</header>
+
+<div class="layout" role="main">
+  <!-- Left Column: Controls & Gate -->
+  <div class="form-card">
+    <h1>Claim your member pass</h1>
+    <p class="subtitle">Customize your official pass and share your membership on LinkedIn.</p>
+
+    <!-- Passcode Gate -->
+    <div class="gate-box" id="gate-box">
+      <div class="locked-view">
+        <div class="gate-header">
+          <span class="gate-title">Passcode Access Gate</span>
+          <span class="gate-tag-locked">LOCKED</span>
+        </div>
+        <p class="gate-text">Join our chapter on Google Community Dev or enter your member passcode to unlock pass customization and exports.</p>
+        <a href="https://gdg.community.dev/gdg-on-campus-sr-university-warangal-india/" target="_blank" rel="noopener" class="gate-join-btn">
+          Join Official Chapter ↗
+        </a>
+        <div class="gate-input-row">
+          <input type="text" id="in-passcode" aria-label="Access passcode" placeholder="Passcode (e.g. GDGSRU)" autocomplete="off" spellcheck="false">
+          <button type="button" id="btn-verify">Unlock Pass</button>
+        </div>
+        <div class="gate-feedback" id="gate-feedback"></div>
+      </div>
+
+      <div class="unlocked-view">
+        <span class="unlocked-label">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Member Pass Unlocked
+        </span>
+        <button type="button" class="btn-reverify" id="btn-reverify">Change Code</button>
+      </div>
+    </div>
+
+    <!-- Customization Form Controls -->
+    <div class="form-section is-locked" id="form-section">
+      <label for="in-name">Full Name</label>
+      <input type="text" id="in-name" aria-label="Badge member name" value="SRU Developer">
+
+      <label for="in-roll">College Roll Number</label>
+      <input type="text" id="in-roll" aria-label="Roll number or member identifier" value="26-SRU-MEMBER">
+
+      <label for="in-track">Primary Technology Track</label>
+      <select id="in-track">
+        <option value="AI &amp; Machine Learning">AI &amp; Machine Learning</option>
+        <option value="Android Development">Android Development</option>
+        <option value="Cloud &amp; DevOps">Cloud &amp; DevOps</option>
+        <option value="Flutter &amp; Cross-Platform">Flutter &amp; Cross-Platform</option>
+        <option value="Web Development">Web Development</option>
+        <option value="Open Source &amp; Systems">Open Source &amp; Systems</option>
+      </select>
+
+      <label>Select Avatar or Upload Photo</label>
+      <div class="avatars" id="avatars">
+        <button class="on" data-av="🤖" title="Android Bot">🤖</button>
+        <button data-av="✨" title="Sparkle">✨</button>
+        <button data-av="🦖" title="Chrome Dino">🦖</button>
+        <button data-av="☁️" title="Google Cloud">☁️</button>
+        <button data-av="🐦" title="Flutter Bird">🐦</button>
+        <button data-av="🚀" title="Rocket">🚀</button>
+        <button data-av="💻" title="Developer Laptop">💻</button>
+        <button data-av="⚡" title="Lightning Bolt">⚡</button>
+        <button data-av="💡" title="Creative Idea">💡</button>
+        <button data-av="&lt;/&gt;" title="Code">&lt;/&gt;</button>
+        <label class="upl" style="margin:0" title="Upload your own photo">📷 Upload<input type="file" id="photo" accept="image/*" hidden aria-label="Upload badge profile photo"></label>
+      </div>
+
+      <label>Colour Theme</label>
+      <div class="themes" id="themes">
+        <button data-t="google" class="on" title="Google" style="background:conic-gradient(#4285F4,#EA4335,#FBBC04,#34A853,#4285F4)"></button>
+        <button data-t="neon" title="neon" style="background:conic-gradient(#7c5cff,#ff3d9a,#00e5ff,#7c5cff)"></button>
+        <button data-t="sunset" title="sunset" style="background:conic-gradient(#ff7a45,#ff3d6e,#ffc233,#ff7a45)"></button>
+        <button data-t="emerald" title="emerald" style="background:conic-gradient(#00c98d,#00a3ff,#d9ff3f,#00c98d)"></button>
+        <button data-t="gold" title="gold" style="background:conic-gradient(#d4af37,#f5e6a8,#b8860b,#d4af37)"></button>
+        <button data-t="ocean" title="ocean" style="background:conic-gradient(#2f80ff,#00d4ff,#5b6bff,#2f80ff)"></button>
+        <button data-t="rose" title="rose" style="background:conic-gradient(#ff5c8a,#ff9e7d,#c77dff,#ff5c8a)"></button>
+        <span style="font-size:12px;color:#6b7399;margin-left:4px">Custom</span>
+        <input type="color" id="c1" value="#4285F4" title="Primary" aria-label="Primary accent color">
+        <input type="color" id="c2" value="#EA4335" title="Secondary" aria-label="Secondary accent color">
+      </div>
+
+      <div class="btns">
+        <a href="https://www.linkedin.com/feed/?shareActive=true" target="_blank" rel="noopener noreferrer" class="btn li" id="share-li">Share on LinkedIn ↗</a>
+        <button class="btn p" id="dl-post">Download LinkedIn Post Image</button>
+        <button class="btn s" id="dl-badge">Download Badge Only (PNG)</button>
+        <button class="btn s" id="copy">Copy Caption</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Live 3D Badge + LinkedIn Post Stage -->
+  <div class="stage">
+    <h2 style="font-size:inherit;font-weight:inherit;letter-spacing:inherit;text-transform:inherit;margin:0;display:inline">YOUR BADGE · MOVE YOUR MOUSE</h3>
+    <div class="tilt" id="tilt">
+      <div class="badge-holder">
+        <div class="badge" id="badge"></div>
+        <div class="badge-curtain" id="badge-curtain">
+          <div class="curtain-glyph">🤖</div>
+          <strong>Member Pass Locked</strong>
+          <p>Enter your member passcode to unlock full customization and high-resolution downloads.</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 style="font-size:inherit;font-weight:inherit;letter-spacing:inherit;text-transform:inherit;margin:0;display:inline">LINKEDIN POST PREVIEW · 1200×627</h3>
+    <div class="sharebox">
+      <div class="sharescale">
+        <div class="share" id="share">
+          <div class="copy">
+            <div class="eyebrow">● OFFICIAL MEMBER · 2026</div>
+            <h2>I'm officially a member of <span>Google Developer Group on Campus</span></h2>
+            <div class="univ">SR UNIVERSITY</div>
+            <div class="chips">
+              <i data-b="track-chip">AI &amp; Machine Learning</i>
+              <i>#BuildWithGoogle</i>
+            </div>
+          </div>
+          <div class="badge" id="badge2"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LinkedIn Share Guidance Modal -->
+<div class="share-modal-backdrop" id="share-modal" role="dialog" aria-modal="true" style="display:none">
+  <div class="share-modal">
+    <button class="share-modal-close" id="close-modal" aria-label="Close modal">&times;</button>
+    <div class="share-modal-header">
+      <div class="share-modal-badge">
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="#0A66C2"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9v8.37H9.25V10.9H6.46M7.86 6.78c-.9 0-1.63.73-1.63 1.63s.73 1.63 1.63 1.63c.9 0 1.63-.73 1.63-1.63s-.73-1.63-1.63-1.63Z"/></svg>
+      </div>
+      <div>
+        <h3>Share Your Pass on LinkedIn</h3>
+        <p>Complete these 2 quick steps in your open LinkedIn window:</p>
+      </div>
+    </div>
+    <div class="share-steps">
+      <div class="step-card">
+        <div class="step-badge">✓</div>
+        <div class="step-content">
+          <strong>1. Official Banner Ready</strong>
+          <p>Your 1200×627 banner was downloaded to your device &amp; copied to your clipboard. In LinkedIn, press <b>Ctrl + V</b> or click the <b>Media</b> icon to attach it.</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <div class="step-badge">✓</div>
+        <div class="step-content">
+          <strong>2. Caption Text Ready</strong>
+          <p>Your member announcement caption is copied to your clipboard. Simply paste it (<b>Ctrl + V</b>) into your post text box.</p>
+        </div>
+      </div>
+    </div>
+    <div class="share-modal-actions">
+      <a href="https://www.linkedin.com/feed/?shareActive=true" target="_blank" rel="noopener noreferrer" class="btn-modal-primary" id="btn-reopen-feed">Open LinkedIn Feed ↗</a>
+      <button type="button" class="btn-modal-secondary" id="btn-copy-again">Copy Caption Again</button>
+    </div>
+  </div>
+</div>
+
+<script src="/assets/vendor/html-to-image.min.js"></script>
+<script>
+(() => {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const state = { avatar: '🤖', photo: null, isUnlocked: false };
+
+  // 1. Passcode Gate (Cryptographically Secured - SHA-256 Validated)
+  // Default leaked codes rotated and removed. Managed dynamically via Supabase database & rotated hashes.
+  const PASSCODE_HASHES = new Set([
+    "46047f3afc08047826433c1a99744259fd927fab6e3c06d08cdcdf41def5ad9d",
+    "6a3552cefba16875ce5f159fdbffbe904b393c05bec4d38ba51a4987c5b20bd3",
+    "44bb64554641d376d2cb12dd19eddf3a699f4e2982730013fa68c366340f684a",
+    "a3ff75b23580e9f91bfbc0a1eb40d803fc0eda22f1a928f9dac1c2f9ffce23c7",
+    "79fbc426fc2792146c620ea2f916e1a1cd7e6aa2af398c5ca327d8179f1adec4"
+  ]);
+  // Load active passcodes dynamically from Supabase database
+  const initDbPasscodes = () => {
+    if (window.supabase && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
+      try {
+        const sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+        sb.from("site_settings").select("value").eq("key", "member_badge_passcodes").maybeSingle().then(res => {
+          if (res && res.data && res.data.value && Array.isArray(res.data.value)) {
+            res.data.value.forEach(item => {
+              if (item && item.code && item.active !== false) {
+                PASSCODE_HASHES.add(sha256(item.code.trim().toUpperCase()));
+              }
+            });
+          }
+        }).catch(() => {});
+      } catch (_) {}
+    }
+  };
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initDbPasscodes, { once: true });
+  } else {
+    initDbPasscodes();
+  }
+
+  try {
+    const custom = JSON.parse(localStorage.getItem('gdg_member_passcodes') || '[]');
+    if (Array.isArray(custom)) {
+      custom.forEach(item => {
+        if (item && item.code && item.active !== false) {
+          PASSCODE_HASHES.add(sha256(item.code.trim().toUpperCase()));
+        }
+      });
+    }
+  } catch(e) {}
+
+  function sha256(ascii) {
+    function rightRotate(value, amount) { return (value >>> amount) | (value << (32 - amount)); }
+    var mathPow = Math.pow, maxWord = mathPow(2, 32), lengthProperty = 'length', i, j, result = '', words = [];
+    var asciiBitLength = ascii[lengthProperty] * 8, hash = [], k = [], primeCounter = 0, isComposite = {};
+    for (var candidate = 2; primeCounter < 64; candidate++) {
+      if (!isComposite[candidate]) {
+        for (i = 0; i < 313; i += candidate) isComposite[i] = candidate;
+        hash[primeCounter] = (mathPow(candidate, 0.5) * maxWord) | 0;
+        k[primeCounter++] = (mathPow(candidate, 1 / 3) * maxWord) | 0;
+      }
+    }
+    ascii += '\x80';
+    while ((ascii[lengthProperty] % 64) - 56) ascii += '\x00';
+    for (i = 0; i < ascii[lengthProperty]; i++) {
+      j = ascii.charCodeAt(i);
+      words[i >> 2] |= j << ((3 - i) % 4) * 8;
+    }
+    words[words[lengthProperty]] = (asciiBitLength / maxWord) | 0;
+    words[words[lengthProperty]] = asciiBitLength;
+    for (j = 0; j < words[lengthProperty]; ) {
+      var w = words.slice(j, (j += 16)), oldHash = hash;
+      hash = hash.slice(0, 8);
+      for (i = 0; i < 64; i++) {
+        var w15 = w[i - 15], w2 = w[i - 2], a = hash[0], e = hash[4];
+        var temp1 = hash[7] + (rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25)) +
+          ((e & hash[5]) ^ (~e & hash[6])) + k[i] +
+          (w[i] = (i < 16) ? w[i] : (w[i - 16] + (rightRotate(w15, 7) ^ rightRotate(w15, 18) ^ (w15 >>> 3)) + w[i - 7] + (rightRotate(w2, 17) ^ rightRotate(w2, 19) ^ (w2 >>> 10))) | 0);
+        var temp2 = (rightRotate(a, 2) ^ rightRotate(a, 13) ^ rightRotate(a, 22)) + ((a & hash[1]) ^ (a & hash[2]) ^ (hash[1] & hash[2]));
+        hash = [(temp1 + temp2) | 0].concat(hash);
+        hash[4] = (hash[4] + temp1) | 0;
+      }
+      for (i = 0; i < 8; i++) hash[i] = (hash[i] + oldHash[i]) | 0;
+    }
+    for (i = 0; i < 8; i++) {
+      for (j = 3; j + 1; j--) {
+        var b = (hash[i] >> (j * 8)) & 255;
+        result += (b < 16 ? 0 : '') + b.toString(16);
+      }
+    }
+    return result;
+  }
+
+  function unlockStudio() {
+    state.isUnlocked = true;
+    $('gate-box').classList.add('is-unlocked');
+    $('form-section').classList.remove('is-locked');
+    $('badge-curtain').classList.add('hidden');
+    try { localStorage.setItem('gdg_pass_unlocked', '1'); } catch(e){}
+  }
+
+  function lockStudio() {
+    state.isUnlocked = false;
+    $('gate-box').classList.remove('is-unlocked');
+    $('form-section').classList.add('is-locked');
+    $('badge-curtain').classList.remove('hidden');
+    try { localStorage.removeItem('gdg_pass_unlocked'); } catch(e){}
+  }
+
+  function verifyPasscode(inputVal) {
+    let raw = (inputVal || $('in-passcode').value || '').trim().toUpperCase();
+    raw = raw.replace(/[\s\u200B-\u200D\uFEFF]/g, '');
+    const fb = $('gate-feedback');
+    if (!raw) {
+      fb.textContent = 'Please enter your member passcode';
+      fb.className = 'gate-feedback show error';
+      return false;
+    }
+    const candidates = [
+      raw,
+      raw.replace(/^GDGSRU[-_:]?/, 'GDGSRU-'),
+      'GDGSRU-' + raw.replace(/^GDGSRU[-_:]?/, ''),
+      raw.replace(/^GDGSRU[-_:]?/, '')
+    ];
+    const isMatch = candidates.some(c => PASSCODE_HASHES.has(sha256(c)));
+    if (isMatch) {
+      fb.textContent = 'Passcode verified successfully!';
+      fb.className = 'gate-feedback show success';
+      setTimeout(() => { fb.className = 'gate-feedback'; }, 2000);
+      unlockStudio();
+      return true;
+    } else {
+      fb.textContent = 'Invalid member passcode. Check chapter announcements.';
+      fb.className = 'gate-feedback show error';
+      return false;
+    }
+  }
+
+  $('btn-verify').onclick = () => verifyPasscode();
+  $('in-passcode').onkeydown = e => { if (e.key === 'Enter') verifyPasscode(); };
+  $('btn-reverify').onclick = lockStudio;
+
+  // 2. Badge Markup Builder
+  const badgeHTML = () => `
+    <div class="slot"></div>
+    <div class="bar"><i></i><i></i><i></i><i></i></div>
+    <div class="top">
+      <span class="dots">
+        <b style="background:var(--blue)"></b>
+        <b style="background:var(--red)"></b>
+        <b style="background:var(--yellow)"></b>
+        <b style="background:var(--green)"></b>
+      </span>
+      <div class="brandtxt">
+        <b>Google Developer Group</b>
+        <span><u>on Campus</u>SR UNIVERSITY</span>
+      </div>
+    </div>
+    <div class="hero">
+      <div class="avwrap">
+        <div class="ring"><div class="av" data-b="av"></div></div>
+      </div>
+      <div class="name" data-b="name"></div>
+      <div class="roll" data-b="roll"></div>
+      <div class="track" data-b="track"></div>
+    </div>
+    <div class="perf"><hr></div>
+    <div class="foot">
+      <div>
+        <small>GOOGLE DEVELOPER GROUP ON CAMPUS</small>
+        <strong>SR University · 2026</strong>
+        <div class="vf">MEMBER PASS</div>
+      </div>
+      <div class="qr"><svg viewBox="0 0 21 21" shape-rendering="crispEdges" data-b="qr"></svg></div>
+    </div>`;
+
+  $('badge').innerHTML = badgeHTML();
+  $('badge2').innerHTML = badgeHTML();
+
+  const all = k => document.querySelectorAll(`[data-b="${k}"]`);
+  const setText = (k, v, html) => all(k).forEach(e => html ? e.innerHTML = v : e.textContent = v);
+
+  function qr(seed) {
+    let h = 2166136261;
+    for (const c of seed) h = Math.imul(h ^ c.charCodeAt(0), 16777619);
+    const rnd = () => (h = Math.imul(h ^ (h >>> 15), 2246822507) >>> 0, (h & 1023) / 1023);
+    let o = '';
+    const f = (x, y) => `<rect x="${x}" y="${y}" width="7" height="7" fill="#070a18"/><rect x="${x+1}" y="${y+1}" width="5" height="5" fill="#fff"/><rect x="${x+2}" y="${y+2}" width="3" height="3" fill="#070a18"/>`;
+    for (let y = 0; y < 21; y++) for (let x = 0; x < 21; x++) {
+      if (!((x < 8 && y < 8) || (x > 12 && y < 8) || (x < 8 && y > 12)) && rnd() > .52) {
+        o += `<rect x="${x}" y="${y}" width="1" height="1" fill="#070a18"/>`;
+      }
+    }
+    return o + f(0, 0) + f(14, 0) + f(0, 14);
+  }
+
+  function render() {
+    const name = $('in-name').value.trim() || 'Your Name';
+    const roll = $('in-roll').value.trim() || 'ROLL-NUMBER';
+    const track = $('in-track').value;
+    setText('name', name);
+    setText('roll', roll);
+    setText('track', track);
+    setText('track-chip', track);
+    all('qr').forEach(e => e.innerHTML = qr(roll + name));
+    all('av').forEach(e => {
+      if (state.photo) {
+        e.innerHTML = `<img src="${state.photo}" alt="">`;
+        e.style.fontSize = '';
+      } else {
+        e.textContent = state.avatar;
+        e.style.fontSize = (state.avatar.length > 2) ? '22px' : '40px';
+      }
+    });
+  }
+  ['in-name', 'in-roll', 'in-track'].forEach(id => $(id).addEventListener('input', render));
+
+  // Avatar Selection
+  document.querySelectorAll('#avatars button').forEach(b => {
+    b.onclick = () => {
+      document.querySelectorAll('#avatars button').forEach(x => x.classList.remove('on'));
+      b.classList.add('on');
+      state.avatar = b.dataset.av || b.textContent.trim();
+      state.photo = null;
+      render();
+    };
+  });
+  $('photo').onchange = e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = () => {
+      state.photo = r.result;
+      document.querySelectorAll('#avatars button').forEach(x => x.classList.remove('on'));
+      render();
+    };
+    r.readAsDataURL(f);
+  };
+
+  // 3D Tilt + Foil Glow
+  const tilt = $('tilt'), badge = $('badge');
+  tilt.addEventListener('pointermove', e => {
+    const r = badge.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+    badge.style.setProperty('--ry', ((x - .5) * 22) + 'deg');
+    badge.style.setProperty('--rx', ((.5 - y) * 22) + 'deg');
+    badge.style.setProperty('--mx', (x * 100) + '%');
+    badge.style.setProperty('--my', (y * 100) + '%');
+  });
+  tilt.addEventListener('pointerleave', () => {
+    ['--rx', '--ry'].forEach(p => badge.style.setProperty(p, '0deg'));
+    badge.style.setProperty('--mx', '50%');
+    badge.style.setProperty('--my', '30%');
+  });
+
+  // High-Res Banner & Pass Exports
+  async function save(node, file, opts = {}) {
+    const els = node.classList.contains('badge') ? [node] : [];
+    els.forEach(e => e.classList.add('exporting'));
+    try {
+      const url = await htmlToImage.toPng(node, { backgroundColor: null, ...opts });
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = file;
+      a.click();
+    } finally {
+      els.forEach(e => e.classList.remove('exporting'));
+    }
+  }
+
+  $('dl-badge').onclick = () => save($('badge'), 'google-developer-group-sru-badge.png', { pixelRatio: 3 });
+  $('dl-post').onclick = () => save($('share'), 'google-developer-group-sru-linkedin-post.png', { pixelRatio: 2, width: 1200, height: 627, style: { transform: 'none' } });
+
+  const caption = () => {
+    const track = $('in-track').value.replace(/&amp;/g, '&');
+    return `🚀 Officially a member of Google Developer Group on Campus, SR University!\n\nI'll be building in ${track} alongside an amazing community of developers, learning with Google technologies and shipping real-world projects this season.\n\nLooking forward to the workshops, hackathons, and collaborative sessions ahead.\n\n#GoogleDeveloperGroup #OnCampus #SRUniversity #BuildWithGoogle #GDGSRU`;
+  };
+
+  $('copy').onclick = async () => {
+    await navigator.clipboard.writeText(caption());
+    $('copy').textContent = 'Copied ✓';
+    setTimeout(() => $('copy').textContent = 'Copy Caption', 1800);
+  };
+
+  // LinkedIn Share Modal Controls
+  function showShareModal() {
+    const modal = $('share-modal');
+    if (modal) modal.style.display = 'flex';
+  }
+  function hideShareModal() {
+    const modal = $('share-modal');
+    if (modal) modal.style.display = 'none';
+  }
+  $('close-modal').onclick = hideShareModal;
+  $('share-modal').onclick = e => { if (e.target === $('share-modal')) hideShareModal(); };
+  $('btn-copy-again').onclick = async () => {
+    try {
+      await navigator.clipboard.writeText(caption());
+      $('btn-copy-again').textContent = 'Copied ✓';
+      setTimeout(() => $('btn-copy-again').textContent = 'Copy Caption Again', 1800);
+    } catch(e) {}
+  };
+
+  // Direct LinkedIn Share Click Handler (Guaranteed zero popup blocker issues)
+  $('share-li').addEventListener('click', (e) => {
+    if (!state.isUnlocked) {
+      e.preventDefault();
+      const fb = $('gate-feedback');
+      fb.textContent = 'Please enter your member passcode above to unlock pass exports.';
+      fb.className = 'gate-feedback show error';
+      $('in-passcode').focus();
+      return;
+    }
+
+    // 1. Immediately copy announcement caption to clipboard
+    try {
+      navigator.clipboard.writeText(caption());
+    } catch (err) {}
+
+    // 2. Trigger download of the 1200x627 LinkedIn post banner
+    save($('share'), 'google-developer-group-sru-linkedin-post.png', {
+      pixelRatio: 2,
+      width: 1200,
+      height: 627,
+      style: { transform: 'none' }
+    });
+
+    // 3. Show guidance modal on this studio tab
+    showShareModal();
+
+    // The native <a> navigation launches https://www.linkedin.com/feed/?shareActive=true in a new tab
+  });
+
+  // Color Theme Presets
+  const rootEl = document.documentElement;
+  const customProps = ['--blue', '--red', '--yellow', '--green'];
+  function clearCustom() { customProps.forEach(p => rootEl.style.removeProperty(p)); }
+
+  document.querySelectorAll('#themes button').forEach(b => {
+    b.onclick = () => {
+      document.querySelectorAll('#themes button').forEach(x => x.classList.remove('on'));
+      b.classList.add('on');
+      clearCustom();
+      b.dataset.t === 'google' ? rootEl.removeAttribute('data-theme') : rootEl.setAttribute('data-theme', b.dataset.t);
+    };
+  });
+
+  function custom() {
+    document.querySelectorAll('#themes button').forEach(x => x.classList.remove('on'));
+    rootEl.removeAttribute('data-theme');
+    const a = $('c1').value, b = $('c2').value;
+    rootEl.style.setProperty('--blue', a);
+    rootEl.style.setProperty('--red', b);
+    rootEl.style.setProperty('--yellow', `color-mix(in srgb, ${b} 65%, #fff)`);
+    rootEl.style.setProperty('--green', `color-mix(in srgb, ${a} 55%, ${b})`);
+    rootEl.style.setProperty('--ink', `color-mix(in srgb, ${a} 8%, #050510)`);
+    rootEl.style.setProperty('--ink2', `color-mix(in srgb, ${a} 18%, #0a0c1c)`);
+  }
+  $('c1').oninput = custom;
+  $('c2').oninput = custom;
+
+  // Responsive LinkedIn Share Scaler
+  function fit() {
+    const box = document.querySelector('.sharescale');
+    if (!box) return;
+    const s = box.clientWidth / 1200;
+    $('share').style.transform = `scale(${s})`;
+    box.style.height = (627 * s) + 'px';
+  }
+  addEventListener('resize', fit);
+
+  // Auto-unlock from URL or localStorage
+  const urlCode = new URLSearchParams(window.location.search).get('code');
+  if (urlCode && verifyPasscode(urlCode)) {
+    // Unlocked via direct URL
+  } else if (localStorage.getItem('gdg_pass_unlocked') === '1') {
+    unlockStudio();
+  }
+
+  render();
+  fit();
+})();
+</script>
+</body>
+</html>

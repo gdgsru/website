@@ -1,0 +1,82 @@
+[
+  {
+    "route": "/",
+    "errors": [],
+    "networkFailures": [],
+    "pass": true
+  },
+  {
+    "route": "/events/",
+    "errors": [],
+    "networkFailures": [],
+    "pass": true
+  },
+  {
+    "route": "/team/",
+    "errors": [],
+    "networkFailures": [],
+    "pass": true
+  },
+  {
+    "route": "/blog/",
+    "errors": [],
+    "networkFailures": [
+      "401 https://isfhqbytrbilceqddnll.supabase.co/rest/v1/blog_series?select=title%2Cdescription%2Ccolor%2Cslug&status=eq.published&order=sort_order.asc"
+    ],
+    "pass": false
+  },
+  {
+    "route": "/join/",
+    "errors": [],
+    "networkFailures": [],
+    "pass": true
+  },
+  {
+    "route": "/certificates/",
+    "errors": [],
+    "networkFailures": [],
+    "pass": true
+  },
+  {
+    "route": "/verify/",
+    "errors": [],
+    "networkFailures": [],
+    "pass": true
+  },
+  {
+    "route": "/leaderboard/",
+    "errors": [],
+    "networkFailures": [],
+    "pass": true
+  },
+  {
+    "route": "/resources/",
+    "errors": [],
+    "networkFailures": [],
+    "pass": true
+  },
+  {
+    "route": "/privacy/",
+    "errors": [],
+    "networkFailures": [],
+    "pass": true
+  },
+  {
+    "route": "/404.html",
+    "errors": [],
+    "networkFailures": [],
+    "pass": true
+  },
+  {
+    "route": "/member-badge/",
+    "errors": [],
+    "networkFailures": [],
+    "pass": true
+  },
+  {
+    "route": "/mission-control.html",
+    "errors": [],
+    "networkFailures": [],
+    "pass": true
+  }
+]
