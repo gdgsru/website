@@ -147,11 +147,28 @@
   }
 
   async function uploadToStorage(sb, path, blob) {
-    const { error } = await sb.storage.from('certificate-logos').upload(path, blob, {
+    let { error } = await sb.storage.from('certificate-logos').upload(path, blob, {
       contentType: blob.type || 'image/png',
       upsert: true,
     });
-    if (error) throw error;
+    if (error && (error.message?.toLowerCase().includes('not found') || error.statusCode === '404' || error.status === 404)) {
+      try {
+        const { error: createErr } = await sb.storage.createBucket('certificate-logos', { public: false });
+        if (!createErr) {
+          const retry = await sb.storage.from('certificate-logos').upload(path, blob, {
+            contentType: blob.type || 'image/png',
+            upsert: true,
+          });
+          error = retry.error;
+        }
+      } catch (_) {}
+    }
+    if (error) {
+      if (error.message?.toLowerCase().includes('bucket not found')) {
+        throw new Error('Storage bucket "certificate-logos" does not exist in Supabase. Please create the "certificate-logos" bucket under Supabase Storage.');
+      }
+      throw error;
+    }
     return path;
   }
 
