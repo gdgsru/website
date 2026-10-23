@@ -213,6 +213,8 @@ Deno.serve(async (req) => {
     });
   }
 
+  const gdgCustomLogo = (layout as any)?.gdg_logo_path ? await img((layout as any).gdg_logo_path) : '';
+
   const lines = String(ec.curriculum_text).split(/\n+/).map((s) => s.trim()).filter(Boolean).slice(0, 12);
   const longD = longDate(ec.event_date);
 
@@ -234,6 +236,7 @@ Deno.serve(async (req) => {
     dev_tag: (layout as any)?.dev_tag || '',
     node_pill: (layout as any)?.node_pill || '',
     partner_sticker: (layout as any)?.partner_sticker || '',
+    gdg_custom_logo: gdgCustomLogo,
     cohosts,
     sponsors,
     signatories,

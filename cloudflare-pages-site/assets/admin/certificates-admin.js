@@ -1030,7 +1030,7 @@
 
             <!-- 5. GDG Logo, Partner Logos & Details -->
             <div class="mc-card">
-              <div style="display:flex;justify-content:space-between;align-items:center">
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
                 <div>
                   <h3 style="margin:0;font-size:15px">GDG Logo, Partner Logos & Details</h3>
                   <p style="margin:2px 0 0;font-size:12px;color:var(--ink-2)">Sponsors, co-hosts, and authorized signatures.</p>
@@ -1040,6 +1040,27 @@
                   <button type="button" class="btn o sm" id="btn-add-sig" ${(currentEc.signatories || []).length >= 2 ? 'disabled' : ''}>+ Add Signatory</button>
                 </div>
               </div>
+
+              <!-- GDG Chapter Logo Uploader -->
+              <div style="background:var(--sunk,#f8f9fa);padding:12px 14px;border-radius:var(--r-m);border:1px solid var(--line);margin-top:12px">
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+                  <div>
+                    <b style="font-size:12.5px;display:block">GDG Chapter Logo:</b>
+                    <span id="gdg-logo-status" style="font-size:11.5px;color:var(--ink-2)">${currentEc.layout?.gdg_logo_path ? 'Custom Logo Uploaded' : 'Using Default Vector Logo (&lt; &gt;)'}</span>
+                  </div>
+                  <div style="display:flex;gap:8px;align-items:center">
+                    <label class="btn o sm" style="cursor:pointer;font-size:11.5px;display:inline-flex;align-items:center;gap:6px">
+                      📷 Upload GDG Logo
+                      <input type="file" id="inp-gdg-logo-file" accept=".png,.jpg,.jpeg,.svg,.webp" style="display:none">
+                    </label>
+                    <button type="button" class="btn o sm" id="btn-reset-gdg-logo" style="font-size:11.5px;color:var(--r);${currentEc.layout?.gdg_logo_path ? '' : 'display:none;'}">✕ Reset to Default</button>
+                  </div>
+                </div>
+                <div id="gdg-logo-preview-thumb" style="margin-top:8px;${currentEc.layout?.gdg_logo_path ? '' : 'display:none;'}">
+                  <img id="gdg-logo-img" src="" alt="GDG Logo" style="max-height:48px;max-width:240px;object-fit:contain;background:#fff;padding:4px 8px;border-radius:6px;border:1px solid var(--line)">
+                </div>
+              </div>
+
               <div id="partners-list-wrap" style="display:flex;flex-direction:column;gap:8px;margin-top:10px"></div>
               <div id="sigs-list-wrap" style="display:flex;flex-direction:column;gap:8px;margin-top:10px"></div>
             </div>
@@ -1122,6 +1143,8 @@
         </div>
       `;
 
+      // Wire GDG Logo uploader
+      initGdgLogoUploader();
       // Wire Partners list
       renderPartnersList();
       // Wire Signatories list
@@ -1343,6 +1366,71 @@
       }
     }
 
+    /* Helper: GDG Chapter Logo */
+    function initGdgLogoUploader() {
+      const gdgLogoInp = $('#inp-gdg-logo-file');
+      const gdgLogoReset = $('#btn-reset-gdg-logo');
+      const gdgLogoStatus = $('#gdg-logo-status');
+      const gdgLogoThumb = $('#gdg-logo-preview-thumb');
+      const gdgLogoImg = $('#gdg-logo-img');
+
+      const currentLogoPath = currentEc.layout?.gdg_logo_path;
+      if (currentLogoPath) {
+        if (currentEc.gdg_logo_dataUrl) {
+          if (gdgLogoImg) gdgLogoImg.src = currentEc.gdg_logo_dataUrl;
+          if (gdgLogoThumb) gdgLogoThumb.style.display = 'block';
+        } else {
+          getStorageDataUrl(sb, currentLogoPath).then((url) => {
+            if (url) {
+              currentEc.gdg_logo_dataUrl = url;
+              if (gdgLogoImg) gdgLogoImg.src = url;
+              if (gdgLogoThumb) gdgLogoThumb.style.display = 'block';
+              updateStudioPreview();
+            }
+          });
+        }
+      }
+
+      if (gdgLogoInp) {
+        gdgLogoInp.onchange = async (e) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+          try {
+            const blob = await processImageUpload(file, 800);
+            const path = `logos/${selectedEventId}/gdg_logo_${Date.now()}.png`;
+            await uploadToStorage(sb, path, blob);
+            if (!currentEc.layout) currentEc.layout = {};
+            currentEc.layout.gdg_logo_path = path;
+            currentEc.gdg_logo_dataUrl = URL.createObjectURL(blob);
+
+            if (gdgLogoStatus) gdgLogoStatus.textContent = 'Custom Logo Uploaded';
+            if (gdgLogoThumb) gdgLogoThumb.style.display = 'block';
+            if (gdgLogoImg) gdgLogoImg.src = currentEc.gdg_logo_dataUrl;
+            if (gdgLogoReset) gdgLogoReset.style.display = 'inline-flex';
+
+            adminMessage('GDG Chapter Logo uploaded successfully.', true);
+            await updateStudioPreview();
+          } catch (err) {
+            adminMessage(authErrorText(err));
+          }
+        };
+      }
+
+      if (gdgLogoReset) {
+        gdgLogoReset.onclick = async () => {
+          if (!confirm('Reset to standard GDG vector logo?')) return;
+          if (!currentEc.layout) currentEc.layout = {};
+          currentEc.layout.gdg_logo_path = null;
+          currentEc.gdg_logo_dataUrl = null;
+          if (gdgLogoStatus) gdgLogoStatus.textContent = 'Using Default Vector Logo (< >)';
+          if (gdgLogoThumb) gdgLogoThumb.style.display = 'none';
+          if (gdgLogoReset) gdgLogoReset.style.display = 'none';
+          adminMessage('GDG Logo reset to default vector.', true);
+          await updateStudioPreview();
+        };
+      }
+    }
+
     /* Helper: Partners list */
     function renderPartnersList() {
       const wrap = $('#partners-list-wrap');
@@ -1497,6 +1585,13 @@
         });
       }
 
+      // Inline GDG Chapter Logo if uploaded
+      let gdgCustomLogo = currentEc.gdg_logo_dataUrl || '';
+      if (!gdgCustomLogo && currentEc.layout?.gdg_logo_path) {
+        gdgCustomLogo = await getStorageDataUrl(sb, currentEc.layout.gdg_logo_path);
+        currentEc.gdg_logo_dataUrl = gdgCustomLogo;
+      }
+
       const previewName = $('#inp-preview-name')?.value.trim() || 'Asha Rao';
       const lines = String(currentEc.curriculum_text || '').split(/\n+/).map((s) => s.trim()).filter(Boolean);
 
@@ -1523,6 +1618,7 @@
         dev_tag: devTag,
         node_pill: nodePill,
         partner_sticker: partnerSticker,
+        gdg_custom_logo: gdgCustomLogo,
         cohosts,
         sponsors,
         signatories,

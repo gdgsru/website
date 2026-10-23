@@ -149,7 +149,7 @@
     ['host_chapter', 'Chapter Name'],
     ['date', 'Date Text (blank = event date)'],
   ];
-  const PLACEHOLDERS = ['recipient_name', 'credential_id', 'event_name', 'event_subtitle', 'event_venue', 'event_category', 'duration', 'tags', 'issuer_name', 'chapter', 'host_chapter', 'date', 'date_short', 'logo_url', 'track', 'skills', 'dev_tag', 'node_pill', 'partner_sticker', 'dossier_tag', 'custom_field_defs'].concat(FIELD_DEFS.map((f) => f[0])).filter((v, i, a) => a.indexOf(v) === i);
+  const PLACEHOLDERS = ['recipient_name', 'credential_id', 'event_name', 'event_subtitle', 'event_venue', 'event_category', 'duration', 'tags', 'issuer_name', 'chapter', 'host_chapter', 'date', 'date_short', 'logo_url', 'gdg_custom_logo', 'track', 'skills', 'dev_tag', 'node_pill', 'partner_sticker', 'dossier_tag', 'custom_field_defs'].concat(FIELD_DEFS.map((f) => f[0])).filter((v, i, a) => a.indexOf(v) === i);
 
   const fmtDate = (d, opts) => { try { return new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kolkata', ...opts }).format(d); } catch { return ''; } };
   const num = (v, d, lo, hi) => { const n = Number(v); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : d; };
@@ -176,6 +176,7 @@
       event_name: f.event_name || p.event_title || '',
       host_chapter: f.host_chapter || f.chapter || '',
       chapter: f.host_chapter || f.chapter || '',
+      gdg_custom_logo: f.gdg_custom_logo || '',
       date: long,
       date_short: short,
       watermark_year: f.watermark_year || (valid ? String(d.getFullYear()) : currentYear),
