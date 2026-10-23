@@ -397,13 +397,65 @@
 
   function renderShell(main) {
     document.body.classList.add('mc-app');
+    const email = adminUser?.email || '';
+    const initial = (email.split('@')[0] || 'AD').slice(0, 2).toUpperCase();
     main.innerHTML = `<div class="mc-shell"><a class="mc-skip" href="#mc-main">Skip to content</a>
-<aside class="mc-rail" id="mc-rail"><a class="mc-brand" href="#/overview" aria-label="Mission Control home"><div class="mc-brand-row">${gdgLogoSvg}<div><b>Mission Control</b><small>GDG on Campus · SRU</small></div></div></a>
-<nav aria-label="Sections">${NAV.map(([g, items]) => `<div class="mc-navgroup">${g ? `<p>${esc(g)}</p>` : ''}${items.map(([id, label, ic]) => `<a href="#/${id}" data-nav="${id}">${icon(ic)}<span>${esc(label)}</span></a>`).join('')}</div>`).join('')}</nav>
-<div class="mc-rail-foot"><a href="/" target="_blank" rel="noopener">${icon('ext')}<span>View public site</span></a><button type="button" id="mc-signout">${icon('out')}<span>Sign out</span></button><p title="${esc(adminUser?.email || '')}">${esc(adminUser?.email || 'Authorised admin')}</p></div></aside>
+<aside class="mc-rail" id="mc-rail">
+  <div class="mc-rail-accent"></div>
+  <a class="mc-brand" href="#/overview" aria-label="Mission Control home">
+    <div class="mc-brand-row">
+      ${gdgLogoSvg}
+      <div>
+        <b>Mission Control</b>
+        <small class="mc-brand-sub">GDG on Campus · SRU</small>
+      </div>
+    </div>
+  </a>
+  <nav aria-label="Sections" class="mc-rail-nav">
+    ${NAV.map(([g, items]) => `
+      <div class="mc-navgroup">
+        ${g ? `<p class="mc-navgroup-title">${esc(g)}</p>` : ''}
+        ${items.map(([id, label, ic]) => `
+          <a href="#/${id}" data-nav="${id}" class="mc-nav-link">
+            ${icon(ic, 'mc-nav-i')}
+            <span class="mc-nav-text">${esc(label)}</span>
+          </a>
+        `).join('')}
+      </div>
+    `).join('')}
+  </nav>
+  <div class="mc-rail-foot">
+    <a href="/" target="_blank" rel="noopener" class="mc-rail-ext" title="Open public chapter website in new tab">${icon('ext')}<span>View Public Site</span></a>
+    <div class="mc-admin-profile">
+      <div class="mc-admin-avatar" title="${esc(email)}">${esc(initial)}</div>
+      <div class="mc-admin-info">
+        <b class="mc-admin-role">Organizer</b>
+        <small class="mc-admin-email" title="${esc(email)}">${esc(email || 'organizer@sru.edu.in')}</small>
+      </div>
+      <button type="button" id="mc-signout" class="mc-signout-btn" title="Sign out of Mission Control" aria-label="Sign out">${icon('out')}</button>
+    </div>
+  </div>
+</aside>
 <div class="mc-scrim mc-rail-scrim" id="mc-rail-scrim"></div>
-<div class="mc-main"><header class="mc-top"><button type="button" class="mc-icon-btn mc-menu" id="mc-menu" aria-label="Open navigation" aria-controls="mc-rail">${icon('menu')}</button><div class="mc-crumb"><h1 id="admin-page-title">Overview</h1></div><div class="mc-top-actions" id="mc-page-actions"></div><button type="button" class="mc-search" id="mc-search" aria-label="Search and jump to anything">${icon('search')}<span>Search or jump to</span><kbd>Ctrl K</kbd></button></header>
-<main id="mc-main" class="mc-content" tabindex="-1"><div id="admin-result" aria-live="polite"></div><div id="admin-workspace"></div></main></div></div>`;
+<div class="mc-main">
+  <header class="mc-top">
+    <button type="button" class="mc-icon-btn mc-menu" id="mc-menu" aria-label="Open navigation" aria-controls="mc-rail">${icon('menu')}</button>
+    <div class="mc-crumb">
+      <span class="mc-crumb-kicker">GDG on Campus SR University</span>
+      <h1 id="admin-page-title">Overview</h1>
+    </div>
+    <div class="mc-top-center">
+      <div class="mc-status-pill" title="Supabase Database & Storage online"><span class="mc-live-dot"></span><span>Online</span></div>
+    </div>
+    <div class="mc-top-actions" id="mc-page-actions"></div>
+    <a href="/" target="_blank" rel="noopener" class="mc-top-link" title="Open public website">${icon('ext')}<span>Site ↗</span></a>
+    <button type="button" class="mc-search" id="mc-search" aria-label="Search and jump to anything">${icon('search')}<span>Quick search</span><kbd>Ctrl K</kbd></button>
+  </header>
+  <main id="mc-main" class="mc-content" tabindex="-1">
+    <div id="admin-result" aria-live="polite"></div>
+    <div id="admin-workspace"></div>
+  </main>
+</div></div>`;
     $('#mc-signout', main).addEventListener('click', async () => { manualSignOut = true; await sb.auth.signOut(); manualSignOut = false; adminUser = null; MC.user = null; renderLogin(main); });
     const rail = $('#mc-rail', main), openRail = (v) => { rail.classList.toggle('open', v); $('#mc-rail-scrim', main).classList.toggle('open', v); };
     $('#mc-menu', main).addEventListener('click', () => openRail(true));

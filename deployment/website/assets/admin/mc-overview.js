@@ -45,11 +45,11 @@
     const items = attention(d);
     const published = d.team.filter((m) => m.status === 'published').length;
     const glance = [
-      ['events', 'Published events', live.length, `${events.filter((e) => e.status === 'draft').length} in draft`],
-      ['certificates', 'Certificates open', (certs.data || []).filter((c) => c.claims_enabled).length, 'events people can claim from'],
-      ['team', 'People on the team page', published, `${d.team.length - published} hidden`],
-      ['blog', 'Blog posts live', (blog.data || []).filter((b) => b.status === 'published').length, ''],
-      ['resources', 'Resources live', (res.data || []).filter((b) => b.status === 'published').length, '']
+      { id: 'events', label: 'Published Events', n: live.length, s: `${events.filter((e) => e.status === 'draft').length} in draft`, ic: 'calendar', c: 'blue' },
+      { id: 'certificates', label: 'Certificates Open', n: (certs.data || []).filter((c) => c.claims_enabled).length, s: 'student claims open', ic: 'award', c: 'green' },
+      { id: 'team', label: 'Team Members', n: published, s: `${d.team.length - published} in draft`, ic: 'users', c: 'yellow' },
+      { id: 'blog', label: 'Published Articles', n: (blog.data || []).filter((b) => b.status === 'published').length, s: 'blog stories live', ic: 'doc', c: 'red' },
+      { id: 'resources', label: 'Resource Library', n: (res.data || []).filter((b) => b.status === 'published').length, s: 'materials online', ic: 'library', c: 'blue' }
     ];
     const activity = (log.data || []).map((a) => {
       const verb = VERB[a.action] || (a.action || '').replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase());
@@ -57,16 +57,36 @@
       return `<li><span>${esc(verb)} ${esc(noun)}</span><time>${esc(ago(a.created_at))}</time></li>`;
     }).join('');
 
-    const hero = focus ? `<section class="mc-focus" aria-labelledby="focus-t"><div class="mc-focus-head"><div><h2 id="focus-t">${focus.pinned_next_session ? 'Pinned next session' : upcoming.includes(focus) ? 'Coming up' : 'Needs wrapping up'}</h2><p class="mc-focus-title">${esc(focus.title)}</p><p class="muted">${esc(when(focus.start_at))}${focus.start_at ? ` · ${esc(until(focus.start_at))}` : ''}${focus.venue ? ` · ${esc(focus.venue)}` : ''}</p></div><div class="mc-actions"><button type="button" class="button-outline" data-go="events" data-id="${esc(focus.id)}">${icon('edit')}Edit</button><button type="button" data-go="attendance" data-event="${esc(focus.id)}">${icon('check')}Attendance</button></div></div>${pipeline(focus, facts[focus.id])}</section>`
-      : `<section class="mc-focus empty"><h2>No event on the board</h2><p class="muted">Create your first event and its progress will be tracked here, from draft to certificates.</p><button type="button" data-go="events" data-id="new">${icon('plus')}New event</button></section>`;
+    const hero = focus ? `<section class="mc-focus" aria-labelledby="focus-t">
+      <div class="mc-focus-head">
+        <div>
+          <span class="mc-focus-tag ${focus.pinned_next_session ? 'pinned' : 'upcoming'}">${icon(focus.pinned_next_session ? 'spark' : 'calendar')}<span>${focus.pinned_next_session ? 'Pinned Next Session' : upcoming.includes(focus) ? 'Upcoming Event' : 'Recent Event'}</span></span>
+          <h2 id="focus-t" class="mc-focus-title">${esc(focus.title)}</h2>
+          <p class="muted mc-focus-meta">${icon('calendar')}<span>${esc(when(focus.start_at))}</span>${focus.start_at ? `<span class="mc-badge blue">${esc(until(focus.start_at))}</span>` : ''}${focus.venue ? `<span>· ${esc(focus.venue)}</span>` : ''}</p>
+        </div>
+        <div class="mc-actions">
+          <button type="button" class="button-outline" data-go="events" data-id="${esc(focus.id)}">${icon('edit')}Edit event</button>
+          <button type="button" data-go="attendance" data-event="${esc(focus.id)}">${icon('check')}Attendance</button>
+        </div>
+      </div>
+      <div class="mc-focus-pipeline">
+        <span class="mc-pipeline-label">Progress:</span>
+        ${pipeline(focus, facts[focus.id])}
+      </div>
+    </section>`
+      : `<section class="mc-focus empty">
+        <h2>No event on the board</h2>
+        <p class="muted">Create your first event and its progress will be tracked here, from draft to certificates.</p>
+        <button type="button" data-go="events" data-id="new">${icon('plus')}New event</button>
+      </section>`;
 
     MC.setWorkspace('Overview', `<div class="mc-grid-2">
 <div class="mc-col">${hero}
-<section class="mc-card"><div class="mc-card-head"><h2>Needs attention</h2><span class="mc-count">${items.length}</span></div>${items.length ? `<ul class="mc-todo">${items.slice(0, 8).map((i, n) => `<li class="${i.lvl}"><span class="pip" aria-hidden="true"></span><div><b>${esc(i.t)}</b><small>${esc(i.s)}</small></div><button type="button" class="button-outline" data-todo="${n}">${esc(i.a)}</button></li>`).join('')}</ul>` : '<p class="mc-ok">Everything is in order. Nothing needs your attention.</p>'}</section>
+<section class="mc-card"><div class="mc-card-head"><h2>Needs attention</h2><span class="mc-count ${items.length ? 'warn' : 'ok'}">${items.length}</span></div>${items.length ? `<ul class="mc-todo">${items.slice(0, 8).map((i, n) => `<li class="${i.lvl}"><span class="mc-todo-icon ${i.lvl}">${icon(i.lvl === 'warn' ? 'alert' : 'spark')}</span><div class="mc-todo-body"><b>${esc(i.t)}</b><small>${esc(i.s)}</small></div><button type="button" class="button-outline small" data-todo="${n}">${esc(i.a)} ↗</button></li>`).join('')}</ul>` : '<div class="mc-empty-ok"><span class="mc-ok-badge">✓</span><span>Everything is in order. All events and chapter profiles are up to date!</span></div>'}</section>
 <section class="mc-card"><div class="mc-card-head"><h2>All events</h2><button type="button" class="text-link" data-go="events">Manage events</button></div>${events.length ? `<ul class="mc-rows">${events.slice(0, 6).map((e) => `<li><div><b>${esc(e.title)}</b><small>${esc(when(e.start_at))} · ${esc(e.status)}</small></div>${pipeline(e, facts[e.id])}</li>`).join('')}</ul>` : '<p class="muted">No events yet.</p>'}</section></div>
-<div class="mc-col"><section class="mc-card"><div class="mc-card-head"><h2>Chapter at a glance</h2></div><ul class="mc-glance">${glance.map(([r, l, n, s]) => `<li><button type="button" data-go="${r}"><strong>${n}</strong><span><b>${esc(l)}</b>${s ? `<small>${esc(s)}</small>` : ''}</span>${icon('chev')}</button></li>`).join('')}</ul></section>
-<section class="mc-card"><div class="mc-card-head"><h2>Quick actions</h2></div><div class="mc-quick"><button type="button" class="button-outline" data-go="events" data-id="new">${icon('plus')}New event</button><button type="button" class="button-outline" data-go="team" data-id="new">${icon('plus')}Team member</button><button type="button" class="button-outline" data-go="badges">${icon('idcard')}Member Badges</button><button type="button" class="button-outline" data-go="resources" data-id="new">${icon('plus')}Resource</button><button type="button" class="button-outline" data-go="settings">${icon('settings')}Social links</button></div></section>
-<section class="mc-card"><div class="mc-card-head"><h2>Recent changes</h2></div>${activity ? `<ul class="mc-feed">${activity}</ul>` : '<p class="muted">Changes you make will be listed here.</p>'}</section></div></div>`);
+<div class="mc-col"><section class="mc-card"><div class="mc-card-head"><h2>Chapter at a glance</h2><span class="muted small">Quick metrics</span></div><div class="mc-kpi-grid">${glance.map((g) => `<button type="button" class="mc-kpi-card mc-kpi-${g.c}" data-go="${g.id}"><div class="mc-kpi-top"><span class="mc-kpi-icon ${g.c}">${icon(g.ic)}</span><strong class="mc-kpi-num">${g.n}</strong></div><div class="mc-kpi-body"><b>${esc(g.label)}</b>${g.s ? `<small>${esc(g.s)}</small>` : ''}</div></button>`).join('')}</div></section>
+<section class="mc-card"><div class="mc-card-head"><h2>Quick actions</h2></div><div class="mc-quick-grid"><button type="button" class="mc-quick-btn blue" data-go="events" data-id="new">${icon('plus')}<span>New event</span></button><button type="button" class="mc-quick-btn green" data-go="attendance">${icon('check')}<span>Attendance</span></button><button type="button" class="mc-quick-btn yellow" data-go="team" data-id="new">${icon('users')}<span>Add member</span></button><button type="button" class="mc-quick-btn red" data-go="blog" data-id="new">${icon('doc')}<span>New blog</span></button><button type="button" class="mc-quick-btn blue" data-go="resources" data-id="new">${icon('library')}<span>New resource</span></button><button type="button" class="mc-quick-btn slate" data-go="settings">${icon('settings')}<span>Site settings</span></button></div></section>
+<section class="mc-card"><div class="mc-card-head"><h2>Recent activity</h2></div>${activity ? `<ul class="mc-feed">${activity}</ul>` : '<p class="muted">Changes you make will be listed here.</p>'}</section></div></div>`);
 
     const ws = MC.$('#admin-workspace');
     ws.onclick = (e) => {

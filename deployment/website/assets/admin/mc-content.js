@@ -57,7 +57,8 @@
       $('#mc-total').textContent = `${l.length} of ${rows.length}`;
     };
     const counts = (s) => s === 'all' ? rows.length : rows.filter((r) => r.status === s).length;
-    MC.setWorkspace(cfg.title, `<p class="mc-lead">${esc(cfg.lead)}</p><div class="mc-toolbar"><label class="mc-find">${icon('search')}<input type="search" id="mc-q" placeholder="Search ${esc(cfg.title.toLowerCase())}" aria-label="Search"></label><div class="mc-chips" role="group" aria-label="Filter by status">${['all', ...cfg.statuses].map((s) => `<button type="button" data-status="${s}" aria-pressed="${s === 'all'}">${s === 'all' ? 'All' : s[0].toUpperCase() + s.slice(1)} <span>${counts(s)}</span></button>`).join('')}</div><span class="muted small" id="mc-total"></span></div><ul class="mc-list" id="mc-list"></ul>`,
+    const summaryHTML = `<div class="mc-summary-bar"><div class="mc-sum-item"><span class="mc-sum-val">${rows.length}</span><span class="mc-sum-label">Total</span></div><div class="mc-sum-item ok"><span class="mc-sum-dot green"></span><span class="mc-sum-val">${counts('published')}</span><span class="mc-sum-label">Published</span></div><div class="mc-sum-item warn"><span class="mc-sum-dot yellow"></span><span class="mc-sum-val">${counts('draft')}</span><span class="mc-sum-label">Drafts</span></div>${cfg.statuses.includes('archived') ? `<div class="mc-sum-item"><span class="mc-sum-dot gray"></span><span class="mc-sum-val">${counts('archived')}</span><span class="mc-sum-label">Archived</span></div>` : ''}</div>`;
+    MC.setWorkspace(cfg.title, `<p class="mc-lead">${esc(cfg.lead)}</p>${summaryHTML}<div class="mc-toolbar"><div class="mc-find">${icon('search')}<input type="search" id="mc-q" placeholder="Search ${esc(cfg.title.toLowerCase())}…" aria-label="Search ${esc(cfg.title)}"><button type="button" class="mc-find-clear" id="mc-q-clear" aria-label="Clear search" hidden>×</button></div><div class="mc-chips" role="group" aria-label="Filter by status">${['all', ...cfg.statuses].map((s) => `<button type="button" data-status="${s}" aria-pressed="${s === 'all'}" class="mc-chip-btn ${s}">${s === 'all' ? 'All' : s[0].toUpperCase() + s.slice(1)} <span class="mc-chip-count">${counts(s)}</span></button>`).join('')}</div><span class="muted small" id="mc-total"></span></div><ul class="mc-list" id="mc-list"></ul>`,
       `<button type="button" data-new>${icon('plus')}${esc(cfg.newLabel)}</button>`);
     drawList();
 
@@ -67,11 +68,17 @@
         title: isNew ? cfg.newLabel : `Edit: ${row[cfg.titleKey]}`, subtitle: cfg.drawerNote || '', wide: true,
         onClose: () => { if (!MC.rendering && MC.route().sub) history.replaceState(null, '', `#/${cfg.key}`); },
         body: `<form id="entity-form" class="mc-form">${cfg.fields.map((f) => field(f)).join('')}<input type="hidden" name="id">${cfg.drawerExtra ? cfg.drawerExtra(row) : ''}</form>`,
-        footer: `${isNew ? '' : `<button type="button" class="danger" id="entity-del">${icon('trash')}Delete</button>`}<span class="grow"></span><button type="button" class="button-outline" data-close>Cancel</button><button type="submit" form="entity-form">Save</button>`
+        footer: `${isNew ? '' : `<button type="button" class="danger" id="entity-del">${icon('trash')}Delete</button>`}<span class="grow"></span><button type="button" class="button-outline" data-close>Cancel</button><button type="submit" form="entity-form" class="mc-btn-primary">${icon('check')}Save changes <kbd class="mc-key-hint">Ctrl S</kbd></button>`
       });
       const form = $('#entity-form', d.el);
       fill(form, row || {}, cfg.fields);
       if (isNew) cfg.fields.forEach((f) => { if (f.default !== undefined && form.elements[f.key] && f.type !== 'checkbox') form.elements[f.key].value = f.default; });
+      d.el.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+          e.preventDefault();
+          form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+        }
+      });
       form.addEventListener('click', (e) => {
         const btn = e.target.closest('.mc-md-tab');
         if (!btn) return;
@@ -122,7 +129,19 @@
     };
 
     const ws = $('#admin-workspace'), top = $('#mc-page-actions');
-    $('#mc-q').addEventListener('input', (e) => { q = e.target.value.trim().toLowerCase(); drawList(); });
+    const qIn = $('#mc-q'), qClear = $('#mc-q-clear');
+    qIn.addEventListener('input', (e) => {
+      q = e.target.value.trim().toLowerCase();
+      if (qClear) qClear.hidden = !q;
+      drawList();
+    });
+    qClear?.addEventListener('click', () => {
+      qIn.value = '';
+      q = '';
+      qClear.hidden = true;
+      qIn.focus();
+      drawList();
+    });
     ws.onclick = (e) => {
       const s = e.target.closest('[data-status]'); if (s) { status = s.dataset.status; $$('[data-status]', ws).forEach((b) => b.setAttribute('aria-pressed', String(b === s))); drawList(); return; }
       const ed = e.target.closest('[data-edit]'); if (ed) return go(cfg.key, {}, ed.dataset.edit);
@@ -217,7 +236,7 @@
       { key: 'sort_order', label: 'Display order', type: 'number', default: 0, help: 'Lower numbers come first.' },
       { key: 'featured', label: 'Featured', type: 'checkbox' }
     ],
-    row: (r) => `<li class="mc-item"><div class="mc-item-main"><b>${esc(r.title)}</b><small>${esc(r.author || 'No author')} · ${esc(r.category || 'No category')}</small><span class="mc-tags">${r.featured ? '<span class="tag">Featured</span>' : ''}<span class="status s-${esc(r.status)}">${esc(r.status)}</span></span></div><div class="mc-item-actions"><button type="button" class="button-outline" data-edit="${esc(r.id)}">${icon('edit')}Edit</button>${safeUrl(r.external_url) ? `<a class="mc-icon-btn" href="${esc(safeUrl(r.external_url))}" target="_blank" rel="noopener" aria-label="Open article" title="Open article">${icon('ext')}</a>` : ''}</div></li>`,
+    row: (r) => `<li class="mc-item">${safeUrl(r.image_url) ? `<div class="mc-item-thumb"><img src="${esc(safeUrl(r.image_url))}" alt="" loading="lazy"></div>` : ''}<div class="mc-item-main"><b>${esc(r.title)}</b><small>${esc(r.author || 'No author')} · ${esc(r.category || 'No category')}</small><span class="mc-tags">${r.featured ? '<span class="tag">Featured</span>' : ''}<span class="status s-${esc(r.status)}">${esc(r.status)}</span></span></div><div class="mc-item-actions"><button type="button" class="button-outline" data-edit="${esc(r.id)}">${icon('edit')}Edit</button>${safeUrl(r.external_url) ? `<a class="mc-icon-btn" href="${esc(safeUrl(r.external_url))}" target="_blank" rel="noopener" aria-label="Open article" title="Open article">${icon('ext')}</a>` : ''}</div></li>`,
     validate: (f) => safeUrl(f.external_url) ? '' : 'Enter a valid http:// or https:// article link.',
     wire: (form, row, d) => {
       const url = form.elements.external_url, b = document.createElement('button');
@@ -255,7 +274,7 @@
       { key: 'limitations', label: 'Limits and usage notes', type: 'textarea', full: true, preview: true, rows: 4 }, { key: 'eligibility', label: 'Who is eligible', type: 'textarea', full: true, preview: true, rows: 4 },
       { key: 'sort_order', label: 'Display order', type: 'number', default: 0 }, { key: 'featured', label: 'Featured', type: 'checkbox' }
     ],
-    row: (r) => `<li class="mc-item"><div class="mc-item-main"><b>${esc(r.title)}</b><small>${r.kind === 'gdg' ? 'GDG SRU library' : 'Free resources'} · ${esc(r.category || r.resource_type || '')}</small><span class="mc-tags">${r.featured ? '<span class="tag">Featured</span>' : ''}<span class="status s-${esc(r.status)}">${esc(r.status)}</span></span></div><div class="mc-item-actions"><button type="button" class="button-outline" data-edit="${esc(r.id)}">${icon('edit')}Edit</button></div></li>`,
+    row: (r) => `<li class="mc-item">${safeUrl(r.image_url) ? `<div class="mc-item-thumb"><img src="${esc(safeUrl(r.image_url))}" alt="" loading="lazy"></div>` : ''}<div class="mc-item-main"><b>${esc(r.title)}</b><small>${r.kind === 'gdg' ? 'GDG SRU library' : 'Free resources'} · ${esc(r.category || r.resource_type || '')}</small><span class="mc-tags">${r.featured ? '<span class="tag">Featured</span>' : ''}<span class="tag blue">${esc(r.resource_type || 'material')}</span><span class="status s-${esc(r.status)}">${esc(r.status)}</span></span></div><div class="mc-item-actions"><button type="button" class="button-outline" data-edit="${esc(r.id)}">${icon('edit')}Edit</button>${safeUrl(r.destination_url) ? `<a class="mc-icon-btn" href="${esc(safeUrl(r.destination_url))}" target="_blank" rel="noopener" aria-label="Open resource" title="Open resource">${icon('ext')}</a>` : ''}</div></li>`,
     validate: (f) => f.destination_url && !safeUrl(f.destination_url) ? 'Enter a valid resource link.' : '',
     drawerExtra: (row) => row ? `<div class="mc-upload full"><h3>Attach a file</h3><p class="muted small">PDF, PPT/PPTX, TXT, MP4, WebM or ZIP up to 50 MB. Uploaded files are public to anyone with the link, so never upload private lists or restricted material.</p><input type="file" id="res-file" accept="application/pdf,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain,video/mp4,video/webm,application/zip"><button type="button" class="button-outline" id="res-upload">${icon('upload')}Upload and use as the link</button></div>` : '',
     wire: (form, row, d) => {

@@ -125,8 +125,14 @@
     const d = drawer.open({ title: isNew ? 'Add a team member' : m.name, subtitle: isNew ? 'Fill in the card and it appears on the site once Published.' : 'Changes show in the preview straight away.', wide: true,
       onClose: () => { if (!MC.rendering && MC.route().sub) history.replaceState(null, '', '#/team'); },
       body: `<div class="mc-studio"><div class="mc-studio-form">${memberForm(m, data.deps || [])}</div><aside class="mc-studio-preview" aria-label="Preview"><div class="mc-preview-bar"><b>Live preview</b><button type="button" class="button-outline" id="preview-flip">${icon('flip')}Flip card</button></div><div id="preview-host"></div><p class="muted small">This is the real site card. Click it to flip it.</p></aside></div>`,
-      footer: `${isNew ? '' : `<button type="button" class="danger" id="member-del">${icon('trash')}Delete</button>`}<span class="grow"></span><button type="button" class="button-outline" data-close>Cancel</button><button type="submit" form="member-form">Save</button>` });
+      footer: `${isNew ? '' : `<button type="button" class="danger" id="member-del">${icon('trash')}Delete</button>`}<span class="grow"></span><button type="button" class="button-outline" data-close>Cancel</button><button type="submit" form="member-form" class="mc-btn-primary">${icon('check')}Save profile <kbd class="mc-key-hint">Ctrl S</kbd></button>` });
     const form = $('#member-form', d.el), frame = previewFrame();
+    d.el.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+      }
+    });
     $('#preview-host', d.el).appendChild(frame);
     const kindOf = () => data.deps?.find((x) => x.name === form.elements.department.value)?.kind || 'department';
     const push = () => { const v = readMember(form, m); frame.send({ type: 'card', member: { ...v, status: undefined }, kind: kindOf(), index: Math.max(0, data.members.findIndex((x) => x.id === m.id)) }); };
@@ -256,8 +262,14 @@
     const d0 = dep || { name: '', slug: '', heading: '', description: '', blurb: '', kind: 'department', visible: true, sort_order: (data.deps.length + 1) * 10 };
     const d = drawer.open({ title: dep ? `Edit ${dep.name}` : 'Add a department', subtitle: 'Shown as a section on the team page.',
       body: `<form id="dep-form" class="mc-form"><label>Name<input name="name" required value="${esc(d0.name)}"><small class="muted">People are matched to this exact name.</small></label><label>Section heading<input name="heading" value="${esc(d0.heading)}" placeholder="Same as the name"></label><label class="full">Sentence under the heading<input name="description" value="${esc(d0.description)}"></label><label class="full">Short line on the hero map<input name="blurb" value="${esc(d0.blurb)}"></label><label>Type<select name="kind">${[['department', 'Department'], ['leadership', 'Leadership (large featured card for the Lead)'], ['advisory', 'Advisory board']].map(([v, l]) => `<option value="${v}"${d0.kind === v ? ' selected' : ''}>${l}</option>`).join('')}</select></label><label class="check"><input type="checkbox" name="visible"${d0.visible ? ' checked' : ''}> Show this section on the site</label></form>`,
-      footer: `${dep ? `<button type="button" class="danger" id="dep-del">${icon('trash')}Delete</button>` : ''}<span class="grow"></span><button type="button" class="button-outline" data-close>Cancel</button><button type="submit" form="dep-form">Save</button>` });
+      footer: `${dep ? `<button type="button" class="danger" id="dep-del">${icon('trash')}Delete</button>` : ''}<span class="grow"></span><button type="button" class="button-outline" data-close>Cancel</button><button type="submit" form="dep-form" class="mc-btn-primary">${icon('check')}Save department <kbd class="mc-key-hint">Ctrl S</kbd></button>` });
     const form = $('#dep-form', d.el);
+    d.el.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+      }
+    });
     form.addEventListener('submit', (e) => { e.preventDefault(); withSaving(form, async () => {
       const f = Object.fromEntries(new FormData(form)), name = String(f.name).trim(); if (!name) return toast('Give the department a name.');
       const row = { name, heading: String(f.heading || '').trim(), description: String(f.description || '').trim(), blurb: String(f.blurb || '').trim(), kind: f.kind, visible: form.elements.visible.checked, slug: dep?.slug || (f.kind === 'leadership' ? 'leadership' : f.kind === 'advisory' ? 'advisory' : slugify(name)), updated_at: new Date().toISOString() };
