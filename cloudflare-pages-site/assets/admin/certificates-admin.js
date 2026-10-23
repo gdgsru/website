@@ -506,78 +506,135 @@
       }
 
       const rows = records || [];
+      const currentEv = events.find((e) => e.id === selectedEventId) || currentEventObj;
       const purgeDate = rows[0]?.purge_at ? new Date(rows[0].purge_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : '1 year after event';
+      const eventDateStr = currentEv?.start_at ? new Date(currentEv.start_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Date not set';
 
       root.innerHTML = `
         <div style="display:flex;flex-direction:column;gap:18px">
-          <!-- Top Stats & Import Card -->
-          <div class="mc-card">
-            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+          <!-- Multi-Event Context Header Banner -->
+          <div style="background:var(--card,#fff);border:2px solid var(--line);border-radius:var(--r-m);padding:16px 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;box-shadow:var(--sh-s,0 2px 8px rgba(0,0,0,0.04))">
+            <div style="display:flex;align-items:center;gap:12px">
+              <span style="font-size:28px">📋</span>
               <div>
-                <h3 style="margin:0 0 4px">Event Attendance Roster</h3>
-                <p style="margin:0;font-size:13px;color:var(--ink-2)"><b>${rows.length}</b> attendees registered for this event. Retention purge date: <b>${purgeDate}</b>.</p>
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
+                  <span class="tag t1" style="font-size:10.5px;font-weight:700;letter-spacing:0.5px">EVENT ROSTER</span>
+                  <span style="font-size:12px;color:var(--ink-2)">📅 ${esc(eventDateStr)}</span>
+                </div>
+                <h2 style="margin:0;font-size:18px;font-weight:900;color:var(--ink-0)">${esc(currentEv?.title || 'Selected Event')}</h2>
               </div>
-              <div style="display:flex;gap:8px">
-                <button type="button" class="btn sm" id="att-btn-open-import">📥 Upload / Import CSV</button>
-                ${rows.length ? `<button type="button" class="btn o sm" id="att-btn-clear" style="color:var(--r)">Delete Roster</button>` : ''}
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <span class="tag ${rows.length ? 't3' : 't2'}" style="font-size:12px;font-weight:700;padding:5px 12px">${rows.length} Confirmed Attendees</span>
+              ${rows.length ? `<button type="button" class="btn o sm" id="att-btn-export" style="font-size:12px">📥 Export CSV</button>` : ''}
+              <button type="button" class="btn sm" id="att-btn-open-import">➕ Add / Import Attendees</button>
+            </div>
+          </div>
+
+          <!-- Import / Add Attendees Card -->
+          <div id="att-import-box" style="display:none;" class="mc-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+              <h3 style="margin:0;font-size:15px">Add or Import Attendees</h3>
+              <button type="button" class="btn o sm" id="att-btn-cancel-import">✕ Close</button>
+            </div>
+
+            <!-- Single Attendee Quick Add -->
+            <div style="background:var(--sunk,#f8f9fa);padding:12px 14px;border-radius:var(--r-m);border:1px solid var(--line);margin-bottom:16px">
+              <b style="font-size:12px;display:block;margin-bottom:8px">Quick Add Single Attendee:</b>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)) auto;gap:8px;align-items:flex-end">
+                <div class="mc-f-group" style="margin:0">
+                  <label style="font-size:11px">Full Name *</label>
+                  <input type="text" id="att-quick-name" placeholder="e.g. Asha Rao" style="font-size:12px;padding:6px 10px">
+                </div>
+                <div class="mc-f-group" style="margin:0">
+                  <label style="font-size:11px">Roll Number (optional)</label>
+                  <input type="text" id="att-quick-roll" placeholder="e.g. 26BCE1001" style="font-size:12px;padding:6px 10px">
+                </div>
+                <div class="mc-f-group" style="margin:0">
+                  <label style="font-size:11px">Email (optional)</label>
+                  <input type="email" id="att-quick-email" placeholder="e.g. asha@example.com" style="font-size:12px;padding:6px 10px">
+                </div>
+                <button type="button" class="btn sm" id="att-btn-quick-add" style="height:32px;font-size:12px;font-weight:700">+ Add</button>
               </div>
             </div>
 
-            <!-- Import Collapse Box -->
-            <div id="att-import-box" style="display:none;margin-top:12px;padding:16px;background:var(--sunk,#f8f9fa);border-radius:var(--r-m);border:1px solid var(--line)">
-              <h4 style="margin:0 0 6px;font-size:13px">Import Attendees</h4>
-              <p style="font-size:12px;color:var(--ink-2);margin:0 0 10px">Upload a CSV with <code>name</code>, optional <code>roll_no</code>, <code>email</code>, and <code>status</code>. Or paste names below.</p>
-              
-              <div class="mc-f-row" style="margin-bottom:10px">
-                <label class="btn o sm" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px">
-                  📁 Choose CSV File
-                  <input type="file" id="att-file-input" accept=".csv,.txt" style="display:none">
-                </label>
-                <label class="check" style="font-size:12px;display:flex;align-items:center;gap:6px">
-                  <input type="checkbox" id="att-chk-replace"> Replace existing roster
-                </label>
-              </div>
-
-              <textarea id="att-paste-area" rows="4" placeholder="Name, Roll No, Email&#10;Asha Rao, 26BCE1001, asha@example.com&#10;Rahul Verma, 26BCE1002" style="font-family:monospace;font-size:12px;width:100%;margin-bottom:10px;box-sizing:border-box"></textarea>
-              
-              <div style="display:flex;justify-content:flex-end;gap:8px">
-                <button type="button" class="btn o sm" id="att-btn-cancel-import">Cancel</button>
-                <button type="button" class="btn sm" id="att-btn-run-import">Start Import</button>
-              </div>
-              <div id="att-import-feedback" style="margin-top:8px;font-size:12px"></div>
+            <!-- Bulk CSV / Text Import -->
+            <h4 style="margin:0 0 6px;font-size:13px">Bulk CSV Import:</h4>
+            <p style="font-size:12px;color:var(--ink-2);margin:0 0 10px">Upload a CSV file containing <code>name</code>, optional <code>roll_no</code>, <code>email</code>, or paste comma-separated lines below.</p>
+            
+            <div class="mc-f-row" style="margin-bottom:10px">
+              <label class="btn o sm" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px">
+                📁 Choose CSV File
+                <input type="file" id="att-file-input" accept=".csv,.txt" style="display:none">
+              </label>
+              <label class="check" style="font-size:12px;display:flex;align-items:center;gap:6px">
+                <input type="checkbox" id="att-chk-replace"> Replace entire existing roster
+              </label>
             </div>
+
+            <textarea id="att-paste-area" rows="4" placeholder="Name, Roll No, Email&#10;Asha Rao, 26BCE1001, asha@example.com&#10;Rahul Verma, 26BCE1002, rahul@example.com" style="font-family:monospace;font-size:12px;width:100%;margin-bottom:10px;box-sizing:border-box"></textarea>
+            
+            <div style="display:flex;justify-content:flex-end;gap:8px">
+              <button type="button" class="btn sm" id="att-btn-run-import">Start Bulk Import</button>
+            </div>
+            <div id="att-import-feedback" style="margin-top:8px;font-size:12px"></div>
           </div>
 
           <!-- Attendee Table Card -->
           <div class="mc-card">
-            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
-              <input type="text" id="att-search" placeholder="Search attendees by name, roll, or email…" style="font-size:13px;padding:6px 12px;border-radius:var(--r-m);border:1px solid var(--line);min-width:280px">
-              <span id="att-filter-count" style="font-size:12px;color:var(--ink-3)">Showing ${rows.length} of ${rows.length}</span>
+            <!-- Top Search and Filter Bar -->
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+              <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                <input type="text" id="att-search" placeholder="Search attendees by name, roll, or email…" style="font-size:13px;padding:7px 12px;border-radius:var(--r-m);border:1px solid var(--line);min-width:300px">
+                <span id="att-filter-count" style="font-size:12px;color:var(--ink-2);font-weight:600">Showing ${rows.length} of ${rows.length}</span>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center">
+                ${rows.length ? `<button type="button" class="btn o sm" id="att-btn-clear" style="color:var(--r);font-size:11px">Delete Entire Roster</button>` : ''}
+              </div>
             </div>
 
-            <div style="overflow-x:auto;max-height:480px">
+            <!-- Bulk Multi-Select Action Bar (Shows when 1+ checkboxes are checked) -->
+            <div id="att-bulk-bar" style="display:none;background:#FEF2F2;border:1.5px solid #F87171;border-radius:var(--r-m);padding:10px 16px;margin-bottom:14px;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:16px">☑️</span>
+                <span style="font-weight:800;color:#991B1B;font-size:13px" id="att-selected-count">0 attendees selected</span>
+              </div>
+              <div style="display:flex;gap:8px">
+                <button type="button" class="btn o sm" id="att-btn-deselect-all" style="font-size:12px;background:#fff">Deselect All</button>
+                <button type="button" class="btn sm" id="att-btn-bulk-delete" style="background:#DC2626;color:#fff;border-color:#DC2626;font-size:12px;font-weight:700">🗑️ Delete Selected (<span id="att-del-count">0</span>)</button>
+              </div>
+            </div>
+
+            <!-- Table -->
+            <div style="overflow-x:auto;max-height:520px;border:1px solid var(--line);border-radius:var(--r-m)">
               <table style="width:100%;border-collapse:collapse;font-size:13px;text-align:left">
                 <thead>
                   <tr style="border-bottom:1.5px solid var(--line);background:var(--sunk,#f8f9fa)">
+                    <th style="width:40px;padding:10px 12px;text-align:center">
+                      <input type="checkbox" id="att-chk-all" style="cursor:pointer" title="Select all visible attendees">
+                    </th>
                     <th style="padding:10px 12px">Attendee Name</th>
                     <th style="padding:10px 12px">Roll Number</th>
                     <th style="padding:10px 12px">Email</th>
                     <th style="padding:10px 12px">Status</th>
-                    <th style="padding:10px 12px">Action</th>
+                    <th style="padding:10px 12px;text-align:right">Action</th>
                   </tr>
                 </thead>
                 <tbody id="att-table-body">
                   ${rows.length ? rows.map((r) => `
                     <tr style="border-bottom:1px solid var(--line)" data-att-row="${esc(r.id)}">
-                      <td style="padding:10px 12px;font-weight:600">${esc(r.attendee_name)}</td>
+                      <td style="padding:10px 12px;text-align:center">
+                        <input type="checkbox" class="att-chk" data-id="${esc(r.id)}" style="cursor:pointer">
+                      </td>
+                      <td style="padding:10px 12px;font-weight:700">${esc(r.attendee_name)}</td>
                       <td style="padding:10px 12px;font-family:monospace">${esc(r.roll_no || '—')}</td>
                       <td style="padding:10px 12px;color:var(--ink-2)">${esc(r.attendee_email || '—')}</td>
                       <td style="padding:10px 12px"><span class="tag ${r.attendance_status === 'attended' ? 't3' : 't2'}" style="font-size:11px">${esc(r.attendance_status)}</span></td>
-                      <td style="padding:10px 12px">
-                        <button type="button" class="btn o sm" data-del-att="${esc(r.id)}" style="padding:2px 8px;font-size:11px;color:var(--r)">✕</button>
+                      <td style="padding:10px 12px;text-align:right">
+                        <button type="button" class="btn o sm" data-del-att="${esc(r.id)}" style="padding:2px 8px;font-size:11px;color:var(--r)" title="Delete single attendee">✕</button>
                       </td>
                     </tr>
-                  `).join('') : `<tr><td colspan="5" style="padding:24px;text-align:center;color:var(--ink-3)">No attendees on record for this event yet.</td></tr>`}
+                  `).join('') : `<tr><td colspan="6" style="padding:32px;text-align:center;color:var(--ink-3)">No attendees on record for this event yet. Click "Add / Import Attendees" above.</td></tr>`}
                 </tbody>
               </table>
             </div>
@@ -599,7 +656,40 @@
         reader.readAsText(file);
       };
 
-      // Run import
+      // Quick Add Single Attendee
+      $('#att-btn-quick-add').onclick = async () => {
+        const nameInp = $('#att-quick-name');
+        const rollInp = $('#att-quick-roll');
+        const emailInp = $('#att-quick-email');
+        const name = (nameInp?.value || '').trim();
+        const roll = (rollInp?.value || '').trim();
+        const email = (emailInp?.value || '').trim();
+
+        if (!name || name.length < 3) {
+          return adminMessage('Please enter a valid attendee name (min 3 characters).');
+        }
+
+        const singleRow = [{
+          attendee_name: name,
+          roll_no: roll || null,
+          attendee_email: email || null,
+          attendance_status: 'attended',
+        }];
+
+        try {
+          await importNames(selectedEventId, singleRow, false);
+          adminMessage(`Added "${name}" to attendance roster.`, true);
+          nameInp.value = '';
+          if (rollInp) rollInp.value = '';
+          if (emailInp) emailInp.value = '';
+          await renderAttendanceTab();
+          refreshPublishTab();
+        } catch (err) {
+          adminMessage(authErrorText(err));
+        }
+      };
+
+      // Run bulk import
       $('#att-btn-run-import').onclick = async () => {
         const text = $('#att-paste-area').value.trim();
         const replace = $('#att-chk-replace').checked;
@@ -622,7 +712,102 @@
         }
       };
 
-      // Delete attendee
+      // Export CSV
+      const exportBtn = $('#att-btn-export');
+      if (exportBtn) {
+        exportBtn.onclick = () => {
+          if (!rows.length) return;
+          const headers = ['Attendee Name', 'Roll Number', 'Email', 'Status'];
+          const lines = [headers.join(',')];
+          rows.forEach((r) => {
+            const escCsv = (s) => `"${String(s || '').replace(/"/g, '""')}"`;
+            lines.push([
+              escCsv(r.attendee_name),
+              escCsv(r.roll_no),
+              escCsv(r.attendee_email),
+              escCsv(r.attendance_status),
+            ].join(','));
+          });
+          const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          const safeTitle = (currentEv?.title || 'event').toLowerCase().replace(/[^a-z0-9]+/g, '_');
+          a.download = `${safeTitle}_attendance_roster.csv`;
+          a.click();
+          URL.revokeObjectURL(url);
+          adminMessage('Attendance roster CSV downloaded.', true);
+        };
+      }
+
+      // Checkbox Selection Logic
+      const selectAllChk = $('#att-chk-all');
+      const bulkBar = $('#att-bulk-bar');
+      const selectedCountEl = $('#att-selected-count');
+      const delCountEl = $('#att-del-count');
+
+      function updateBulkBar() {
+        const checkedBoxes = Array.from($$('.att-chk:checked', root));
+        const count = checkedBoxes.length;
+        if (count > 0) {
+          bulkBar.style.display = 'flex';
+          selectedCountEl.textContent = `${count} attendee${count > 1 ? 's' : ''} selected`;
+          delCountEl.textContent = String(count);
+        } else {
+          bulkBar.style.display = 'none';
+        }
+        // Update header checkbox indeterminate/checked state
+        const visibleBoxes = Array.from($$('.att-chk', root)).filter((cb) => cb.closest('tr').style.display !== 'none');
+        if (visibleBoxes.length > 0) {
+          const visibleChecked = visibleBoxes.filter((cb) => cb.checked).length;
+          selectAllChk.checked = visibleChecked === visibleBoxes.length;
+          selectAllChk.indeterminate = visibleChecked > 0 && visibleChecked < visibleBoxes.length;
+        } else {
+          selectAllChk.checked = false;
+          selectAllChk.indeterminate = false;
+        }
+      }
+
+      // Select All Toggle
+      selectAllChk.onchange = () => {
+        const visibleBoxes = Array.from($$('.att-chk', root)).filter((cb) => cb.closest('tr').style.display !== 'none');
+        visibleBoxes.forEach((cb) => { cb.checked = selectAllChk.checked; });
+        updateBulkBar();
+      };
+
+      // Individual row checkboxes
+      $$('.att-chk', root).forEach((cb) => {
+        cb.onchange = updateBulkBar;
+      });
+
+      // Deselect All button
+      $('#att-btn-deselect-all').onclick = () => {
+        $$('.att-chk', root).forEach((cb) => { cb.checked = false; });
+        updateBulkBar();
+      };
+
+      // Batch Delete Selected
+      $('#att-btn-bulk-delete').onclick = async () => {
+        const checked = Array.from($$('.att-chk:checked', root)).map((cb) => cb.dataset.id);
+        if (!checked.length) return;
+        if (!confirm(`Are you sure you want to permanently delete ${checked.length} selected attendee(s)?`)) return;
+
+        const delBtn = $('#att-btn-bulk-delete');
+        delBtn.disabled = true;
+        delBtn.textContent = 'Deleting…';
+
+        try {
+          const { error: delErr } = await sb.from('attendance_records').delete().in('id', checked);
+          if (delErr) throw delErr;
+          adminMessage(`Successfully deleted ${checked.length} attendee(s).`, true);
+          await renderAttendanceTab();
+          refreshPublishTab();
+        } catch (err) {
+          adminMessage(authErrorText(err));
+        }
+      };
+
+      // Single Delete Attendee
       $$('[data-del-att]', root).forEach((btn) => {
         btn.onclick = async () => {
           if (!confirm('Remove this attendee from the roster?')) return;
@@ -635,7 +820,7 @@
         };
       });
 
-      // Clear roster
+      // Clear entire roster
       const clearBtn = $('#att-btn-clear');
       if (clearBtn) {
         clearBtn.onclick = async () => {
@@ -653,6 +838,16 @@
         const q = e.target.value.toLowerCase().trim();
         const trs = $$('#att-table-body tr', root);
         let visible = 0;
+        trs.forEach((tr) => {
+          const text = tr.textContent.toLowerCase();
+          const show = text.includes(q);
+          tr.style.display = show ? '' : 'none';
+          if (show) visible++;
+        });
+        $('#att-filter-count').textContent = `Showing ${visible} of ${rows.length}`;
+        updateBulkBar();
+      };
+    }
         trs.forEach((tr) => {
           const text = tr.textContent.toLowerCase();
           const show = text.includes(q);
