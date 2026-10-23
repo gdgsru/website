@@ -156,6 +156,13 @@
   }
 
   async function uploadToStorage(sb, path, blob) {
+    if (window.MC?.uploadStorage) {
+      await window.MC.uploadStorage('certificate-logos', path, blob, {
+        isPublic: false,
+        contentType: blob.type || 'image/png'
+      });
+      return path;
+    }
     let { error } = await sb.storage.from('certificate-logos').upload(path, blob, {
       contentType: blob.type || 'image/png',
       upsert: true,

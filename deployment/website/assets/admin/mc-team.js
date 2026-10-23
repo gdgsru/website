@@ -141,16 +141,15 @@
     const setPhoto = (url) => { form.elements.photo_url.value = url || ''; $('#photo-thumb', d.el).innerHTML = url ? `<img src="${esc(url)}" alt="" style="object-position:${esc(pos.value)}">` : '<span>No photo</span>'; push(); };
     form.elements.photo_url.addEventListener('change', () => setPhoto(safeUrl(form.elements.photo_url.value)));
     const syncRepo = () => { const r = $('#photo-reposition', d.el); if (r) r.hidden = !safeUrl(form.elements.photo_url.value); }; form.elements.photo_url.addEventListener('change', syncRepo); syncRepo();
-    $('#photo-clear', d.el).addEventListener('click', () => { setPhoto(''); d.el.dispatchEvent(new Event('input', { bubbles: true })); });
+    $('#photo-clear', d.el).addEventListener('click', () => { setPhoto(''); d.markDirty?.(); });
     $('#photo-reposition', d.el)?.addEventListener('click', async (ev) => {
       const url = safeUrl(form.elements.photo_url.value); if (!url) return toast('Upload or link a photo first.');
       const b = ev.currentTarget; b.disabled = true;
       try {
         const blob = await cropPhoto(url); if (!blob) return;
         const key = slugify(form.elements.member_code.value || form.elements.name.value || 'member'), path = `team/${key}-${Date.now().toString(36)}.webp`;
-        const up = await sb().storage.from('site-assets').upload(path, blob, { upsert: true, cacheControl: '3600', contentType: 'image/webp' });
-        if (up.error) throw up.error;
-        pos.value = '50% 50%'; readPos(); setPhoto(sb().storage.from('site-assets').getPublicUrl(up.data.path).data.publicUrl); toast('Photo updated. Save to publish the change.', true);
+        const up = await MC.uploadStorage('site-assets', path, blob, { isPublic: true, contentType: 'image/webp' });
+        pos.value = '50% 50%'; readPos(); setPhoto(up.publicUrl); d.markDirty?.(); toast('Photo updated. Save to publish the change.', true);
       } catch (e) { toast(authErrorText(e)); } finally { b.disabled = false; }
     });
     $('#photo-upload', d.el).addEventListener('click', async (ev) => {
@@ -160,9 +159,8 @@
       try {
         const blob = await cropPhoto(file); if (!blob) return;
         const key = slugify(form.elements.member_code.value || form.elements.name.value || 'member'), path = `team/${key}-${Date.now().toString(36)}.webp`;
-        const up = await sb().storage.from('site-assets').upload(path, blob, { upsert: true, cacheControl: '3600', contentType: 'image/webp' });
-        if (up.error) throw up.error;
-        setPhoto(sb().storage.from('site-assets').getPublicUrl(up.data.path).data.publicUrl); d.el.dispatchEvent(new Event('input', { bubbles: true })); toast('Photo uploaded. Save to publish the change.', true);
+        const up = await MC.uploadStorage('site-assets', path, blob, { isPublic: true, contentType: 'image/webp' });
+        setPhoto(up.publicUrl); d.markDirty?.(); toast('Photo uploaded. Save to publish the change.', true);
       } catch (e) { toast(authErrorText(e)); } finally { b.disabled = false; b.lastChild.textContent = 'Upload photo'; }
     });
 
@@ -201,7 +199,12 @@
       const have = byCode.get(String(s.member_code).toLowerCase()) || byName.get(s.name.trim().toLowerCase());
       let photoUrl = have?.photo_url || null;
       if (!photoUrl && s.photo_path) {
-        try { const blob = await (await fetch(s.photo_path)).blob(); const up = await sb().storage.from('site-assets').upload(`team/${s.member_code}.webp`, blob, { upsert: true, cacheControl: '3600', contentType: 'image/webp' }); if (up.error) throw up.error; photoUrl = sb().storage.from('site-assets').getPublicUrl(up.data.path).data.publicUrl; photos++; } catch (e) { console.warn('Photo skipped', s.name, e); }
+        try {
+          const blob = await (await fetch(s.photo_path)).blob();
+          const up = await MC.uploadStorage('site-assets', `team/${s.member_code}.webp`, blob, { isPublic: true, contentType: 'image/webp' });
+          photoUrl = up.publicUrl;
+          photos++;
+        } catch (e) { console.warn('Photo skipped', s.name, e); }
       }
       if (!have) {
         const { legacy_title, photo_path, ...row } = s;

@@ -23,7 +23,12 @@
     const id = `f-${f.key}`, req = f.required ? ' required' : '';
     let input;
     if (f.type === 'select') input = `<select name="${f.key}" id="${id}">${(typeof f.options === 'function' ? f.options(v) : f.options).map((o) => `<option value="${esc(o.value)}">${esc(o.label)}</option>`).join('')}</select>`;
-    else if (f.type === 'textarea') input = `<textarea name="${f.key}" id="${id}" rows="${f.rows || 4}"${req}></textarea>`;
+    else if (f.type === 'textarea') {
+      if (f.preview) {
+        return `<div class="mc-field ${f.full ? 'full' : ''}"><div class="mc-md-editor"><div class="mc-md-head"><label for="${id}"><b>${esc(f.label)}</b></label><div class="mc-md-tabs" role="tablist"><button type="button" class="mc-md-tab active" data-tab-for="${id}" data-tab="write">${icon('edit')}Write</button><button type="button" class="mc-md-tab" data-tab-for="${id}" data-tab="preview">${icon('eye')}Live preview</button></div></div><textarea name="${f.key}" id="${id}" rows="${f.rows || 5}" class="mc-md-input"${req}></textarea><div id="${id}-preview" class="mc-md-preview" hidden></div><small class="muted mc-md-hint">Markdown supported: **bold**, *italic*, # heading, - bullet, [link](url), \`code\`, &gt; quote.</small></div></div>`;
+      }
+      input = `<textarea name="${f.key}" id="${id}" rows="${f.rows || 4}"${req}></textarea>`;
+    }
     else if (f.type === 'checkbox') return `<label class="check full"><input type="checkbox" name="${f.key}"> ${esc(f.label)}</label>`;
     else input = `<input name="${f.key}" id="${id}" type="${f.type || 'text'}"${req}${f.placeholder ? ` placeholder="${esc(f.placeholder)}"` : ''}${f.type === 'number' ? ' step="1"' : ''}>`;
     return `<label class="${f.full ? 'full' : ''}">${esc(f.label)}${input}${f.help ? `<small class="muted">${esc(f.help)}</small>` : ''}</label>`;
@@ -67,6 +72,35 @@
       const form = $('#entity-form', d.el);
       fill(form, row || {}, cfg.fields);
       if (isNew) cfg.fields.forEach((f) => { if (f.default !== undefined && form.elements[f.key] && f.type !== 'checkbox') form.elements[f.key].value = f.default; });
+      form.addEventListener('click', (e) => {
+        const btn = e.target.closest('.mc-md-tab');
+        if (!btn) return;
+        e.preventDefault();
+        const targetId = btn.dataset.tabFor;
+        const mode = btn.dataset.tab;
+        const editor = btn.closest('.mc-md-editor');
+        const ta = $(`#${targetId}`, form);
+        const prev = $(`#${targetId}-preview`, form);
+        if (!ta || !prev) return;
+        $$('.mc-md-tab', editor).forEach((b) => b.classList.toggle('active', b === btn));
+        if (mode === 'preview') {
+          prev.innerHTML = MC.renderMarkdown(ta.value);
+          ta.hidden = true;
+          prev.hidden = false;
+        } else {
+          ta.hidden = false;
+          prev.hidden = true;
+          ta.focus();
+        }
+      });
+      form.addEventListener('input', (e) => {
+        if (e.target.matches('.mc-md-input')) {
+          const prev = $(`#${e.target.id}-preview`, form);
+          if (prev && !prev.hidden) {
+            prev.innerHTML = MC.renderMarkdown(e.target.value);
+          }
+        }
+      });
       cfg.wire?.(form, row, d, extra);
       form.addEventListener('submit', (e) => { e.preventDefault(); withSaving(form, async () => {
         const f = formObject(form), id = f.id; delete f.id;
@@ -107,7 +141,7 @@
     { key: 'slug', label: 'Web address', required: true, help: 'Becomes /events/your-slug' },
     { key: 'category', label: 'Category', type: 'select', default: 'Other', options: (current) => eventCategoryOptions(current) },
     { key: 'summary', label: 'One-line summary', full: true },
-    { key: 'description', label: 'Description', type: 'textarea', rows: 5, full: true },
+    { key: 'description', label: 'Description', type: 'textarea', rows: 6, full: true, preview: true },
     { key: 'start_at', label: 'Starts (IST)', type: 'datetime' },
     { key: 'end_at', label: 'Ends (IST)', type: 'datetime' },
     { key: 'venue', label: 'Venue', nullable: true },
@@ -161,7 +195,7 @@
     fields: [
       { key: 'title', label: 'Series name', required: true, full: true },
       { key: 'slug', label: 'Link name', required: true, placeholder: 'build-logs', help: 'Lowercase letters, numbers and hyphens only.' },
-      { key: 'description', label: 'What this series covers', type: 'textarea', full: true },
+      { key: 'description', label: 'What this series covers', type: 'textarea', full: true, preview: true, rows: 4 },
       { key: 'color', label: 'Colour', type: 'select', default: 'b', options: [{ value: 'b', label: 'Blue' }, { value: 'g', label: 'Green' }, { value: 'y', label: 'Yellow' }, { value: 'r', label: 'Red' }] },
       { key: 'status', label: 'Status', type: 'select', default: 'published', options: STATUS },
       { key: 'sort_order', label: 'Display order', type: 'number', default: 0, help: 'Lower numbers come first.' }
@@ -177,7 +211,7 @@
       { key: 'title', label: 'Article title', required: true, full: true },
       { key: 'author', label: 'Author' }, { key: 'category', label: 'Category' },
       { key: 'series_id', label: 'Series', type: 'select', nullable: true, options: (current) => seriesOptions(current) },
-      { key: 'description', label: 'Short description', type: 'textarea', full: true },
+      { key: 'description', label: 'Short description', type: 'textarea', full: true, preview: true, rows: 5 },
       { key: 'image_url', label: 'Preview image link', type: 'url', nullable: true, full: true, placeholder: 'https://' },
       { key: 'status', label: 'Status', type: 'select', default: 'draft', options: STATUS },
       { key: 'sort_order', label: 'Display order', type: 'number', default: 0, help: 'Lower numbers come first.' },
@@ -185,7 +219,7 @@
     ],
     row: (r) => `<li class="mc-item"><div class="mc-item-main"><b>${esc(r.title)}</b><small>${esc(r.author || 'No author')} · ${esc(r.category || 'No category')}</small><span class="mc-tags">${r.featured ? '<span class="tag">Featured</span>' : ''}<span class="status s-${esc(r.status)}">${esc(r.status)}</span></span></div><div class="mc-item-actions"><button type="button" class="button-outline" data-edit="${esc(r.id)}">${icon('edit')}Edit</button>${safeUrl(r.external_url) ? `<a class="mc-icon-btn" href="${esc(safeUrl(r.external_url))}" target="_blank" rel="noopener" aria-label="Open article" title="Open article">${icon('ext')}</a>` : ''}</div></li>`,
     validate: (f) => safeUrl(f.external_url) ? '' : 'Enter a valid http:// or https:// article link.',
-    wire: (form) => {
+    wire: (form, row, d) => {
       const url = form.elements.external_url, b = document.createElement('button');
       b.type = 'button'; b.className = 'button-outline'; b.textContent = 'Fetch article details'; url.closest('label').insertAdjacentElement('afterend', b);
       b.addEventListener('click', async () => {
@@ -194,6 +228,11 @@
         const { data, error } = await sb().functions.invoke('fetch-blog-metadata', { body: { url: u } }); b.disabled = false; b.textContent = old;
         if (error || data?.error) return toast(data?.error || 'Details could not be fetched. You can type them in.');
         let n = 0; ['title', 'author', 'description', 'image_url', 'category'].forEach((k) => { const el = form.elements[k], v = String(data?.[k] || '').trim(); if (el && v && !el.value.trim()) { el.value = v; n++; } });
+        if (n) {
+          d?.markDirty?.();
+          const prev = $('#f-description-preview', form);
+          if (prev && !prev.hidden) prev.innerHTML = MC.renderMarkdown(form.elements.description.value);
+        }
         toast(n ? `Filled ${n} field${n === 1 ? '' : 's'}. Review them before saving.` : 'Nothing new to fill. Existing fields were kept.', true);
       });
     }
@@ -207,19 +246,19 @@
     newLabel: 'New resource', empty: 'No resources yet.',
     fields: [
       { key: 'kind', label: 'Shelf', type: 'select', default: 'external', options: [{ value: 'external', label: 'Free resources' }, { value: 'gdg', label: 'GDG SRU library' }] },
-      { key: 'title', label: 'Title', required: true }, { key: 'description', label: 'Description', type: 'textarea', full: true },
+      { key: 'title', label: 'Title', required: true }, { key: 'description', label: 'Description', type: 'textarea', full: true, preview: true, rows: 5 },
       { key: 'category', label: 'Category' }, { key: 'resource_type', label: 'Material type', type: 'select', default: 'link', options: RT },
       { key: 'destination_url', label: 'Resource link', type: 'url', nullable: true, full: true, placeholder: 'https://' },
       { key: 'image_url', label: 'Logo or image link', type: 'url', nullable: true, full: true, placeholder: 'https://' },
       { key: 'access_type', label: 'Access', type: 'select', default: 'free', options: [{ value: 'free', label: 'Free' }, { value: 'free_tier', label: 'Free tier' }, { value: 'student_access', label: 'Student access' }, { value: 'restricted', label: 'Restricted' }] },
       { key: 'status', label: 'Visibility', type: 'select', default: 'draft', options: [...STATUS, { value: 'hidden', label: 'Hidden' }] },
-      { key: 'limitations', label: 'Limits and usage notes', type: 'textarea', full: true }, { key: 'eligibility', label: 'Who is eligible', type: 'textarea', full: true },
+      { key: 'limitations', label: 'Limits and usage notes', type: 'textarea', full: true, preview: true, rows: 4 }, { key: 'eligibility', label: 'Who is eligible', type: 'textarea', full: true, preview: true, rows: 4 },
       { key: 'sort_order', label: 'Display order', type: 'number', default: 0 }, { key: 'featured', label: 'Featured', type: 'checkbox' }
     ],
     row: (r) => `<li class="mc-item"><div class="mc-item-main"><b>${esc(r.title)}</b><small>${r.kind === 'gdg' ? 'GDG SRU library' : 'Free resources'} · ${esc(r.category || r.resource_type || '')}</small><span class="mc-tags">${r.featured ? '<span class="tag">Featured</span>' : ''}<span class="status s-${esc(r.status)}">${esc(r.status)}</span></span></div><div class="mc-item-actions"><button type="button" class="button-outline" data-edit="${esc(r.id)}">${icon('edit')}Edit</button></div></li>`,
     validate: (f) => f.destination_url && !safeUrl(f.destination_url) ? 'Enter a valid resource link.' : '',
     drawerExtra: (row) => row ? `<div class="mc-upload full"><h3>Attach a file</h3><p class="muted small">PDF, PPT/PPTX, TXT, MP4, WebM or ZIP up to 50 MB. Uploaded files are public to anyone with the link, so never upload private lists or restricted material.</p><input type="file" id="res-file" accept="application/pdf,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain,video/mp4,video/webm,application/zip"><button type="button" class="button-outline" id="res-upload">${icon('upload')}Upload and use as the link</button></div>` : '',
-    wire: (form, row) => {
+    wire: (form, row, d) => {
       const btn = $('#res-upload'); if (!btn || !row) return;
       btn.addEventListener('click', async () => {
         const file = $('#res-file').files?.[0]; if (!file) return toast('Choose a file first.');
@@ -228,13 +267,19 @@
         if (!types[file.type]) return toast('This file type is not allowed. Use PDF, PPT/PPTX, TXT, MP4, WebM or ZIP.');
         btn.disabled = true;
         const name = String(file.name || 'resource').replace(/[^a-zA-Z0-9._-]+/g, '-').slice(-100), path = `${row.id}/${Date.now()}-${name}`;
-        const up = await sb().storage.from('resource-files').upload(path, file, { upsert: false, cacheControl: '3600', contentType: file.type });
-        if (up.error) { btn.disabled = false; return toast(authErrorText(up.error)); }
-        const url = sb().storage.from('resource-files').getPublicUrl(up.data.path).data.publicUrl;
-        const saved = await sb().from('resources').update({ destination_url: url, resource_type: types[file.type] }).eq('id', row.id); btn.disabled = false;
-        if (saved.error) return toast(authErrorText(saved.error));
-        form.elements.destination_url.value = url; form.elements.resource_type.value = types[file.type];
-        await audit('upload_resource', 'resources', row.id); toast('File uploaded and attached.', true);
+        try {
+          const up = await MC.uploadStorage('resource-files', path, file, { isPublic: true, contentType: file.type });
+          const url = up.publicUrl;
+          const saved = await sb().from('resources').update({ destination_url: url, resource_type: types[file.type] }).eq('id', row.id);
+          if (saved.error) throw saved.error;
+          form.elements.destination_url.value = url; form.elements.resource_type.value = types[file.type];
+          d?.markDirty?.();
+          await audit('upload_resource', 'resources', row.id); toast('File uploaded and attached.', true);
+        } catch (e) {
+          toast(authErrorText(e) || 'Failed to upload resource file.');
+        } finally {
+          btn.disabled = false;
+        }
       });
     }
   };

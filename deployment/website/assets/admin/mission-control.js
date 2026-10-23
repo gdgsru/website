@@ -109,7 +109,7 @@
     let el = null, prev = null, state = null;
     async function close(force = false) {
       if (!el) return true;
-      if (!force && state?.dirty && !(await confirmDialog({ title: 'Discard your changes?', body: 'You have edits that have not been saved.', confirm: 'Discard', danger: true }))) return false;
+      if (!force && state?.dirty && !(await confirmDialog({ title: 'Discard your unsaved changes?', body: 'You have edits in this drawer that have not been saved. If you leave now, your draft will be lost.', confirm: 'Discard Changes', danger: true }))) return false;
       if (!el) return true;
       el.classList.remove('open');
       const gone = el; el = null; const cb = state?.onClose; state = null; cb?.();
@@ -127,13 +127,22 @@
       state = { dirty: false, onClose };
       el.addEventListener('click', (e) => { if (e.target.closest('[data-close]')) close(); });
       el.addEventListener('input', () => { if (state) state.dirty = true; });
+      el.addEventListener('change', () => { if (state) state.dirty = true; });
       document.body.appendChild(el); document.body.classList.add('mc-lock');
       const mine = el;
       requestAnimationFrame(() => { mine.classList.add('open'); (mine.querySelector('[autofocus],input:not([type=hidden]):not([type=file]),textarea,select') || mine.querySelector('button'))?.focus({ preventScroll: true }); });
-      return { el, root: el.querySelector('.mc-drawer'), body: el.querySelector('.mc-drawer-body'), close, clean: () => { if (state) state.dirty = false; } };
+      return {
+        el,
+        root: el.querySelector('.mc-drawer'),
+        body: el.querySelector('.mc-drawer-body'),
+        close,
+        clean: () => { if (state) state.dirty = false; },
+        markDirty: () => { if (state) state.dirty = true; },
+        get isDirty() { return Boolean(state?.dirty); }
+      };
     }
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && el && !$('.mc-modal')) close(); });
-    return { open, close, get isOpen() { return !!el; } };
+    return { open, close, get isOpen() { return !!el; }, get isDirty() { return Boolean(state?.dirty); } };
   })();
 
   /* ---------- session ---------- */
@@ -174,6 +183,151 @@
   }
   async function audit(action, table, record) { try { await sb.from('audit_logs').insert({ actor_id: adminUser?.id || null, action, table_name: table, record_id: String(record || '') }); } catch { /* RLS is the authority; this log is supplementary. */ } }
   async function upsertSetting(key, value) { return await sb.from('site_settings').upsert({ key, value, updated_at: new Date().toISOString(), updated_by: adminUser.id }, { onConflict: 'key' }); }
+
+  /* ---------- Storage buckets auto-provisioning & resilient uploads ---------- */
+  const BUCKET_DEFS = {
+    'site-assets': { public: true, fileSizeLimit: 12582912, mimeTypes: ['image/png', 'image/jpeg', 'image/webp'] },
+    'resource-files': { public: true, fileSizeLimit: 52428800, mimeTypes: ['application/pdf', 'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 'text/plain', 'video/mp4', 'video/webm', 'application/zip'] },
+    'certificate-logos': { public: false, fileSizeLimit: 5242880, mimeTypes: ['image/png', 'image/jpeg'] }
+  };
+
+  async function ensureStorageBucket(bucketId) {
+    if (!sb) return false;
+    const def = BUCKET_DEFS[bucketId] || { public: true };
+    try {
+      const { data: bucket, error: getErr } = await sb.storage.getBucket(bucketId);
+      if (!getErr && bucket) return true;
+      const opts = { public: def.public };
+      if (def.fileSizeLimit) opts.fileSizeLimit = def.fileSizeLimit;
+      if (def.mimeTypes) opts.allowedMimeTypes = def.mimeTypes;
+      const { error: createErr } = await sb.storage.createBucket(bucketId, opts);
+      if (!createErr || /already exists/i.test(createErr.message || '')) return true;
+      console.warn(`Could not auto-provision bucket "${bucketId}":`, createErr);
+      return false;
+    } catch (err) {
+      console.warn(`Exception provisioning bucket "${bucketId}":`, err);
+      return false;
+    }
+  }
+
+  async function ensureAllBuckets() {
+    if (!sb || !adminUser) return;
+    try {
+      await Promise.allSettled(Object.keys(BUCKET_DEFS).map((id) => ensureStorageBucket(id)));
+    } catch (e) {
+      console.warn('ensureAllBuckets encountered an error:', e);
+    }
+  }
+
+  async function uploadStorage(bucketId, path, fileOrBlob, options = {}) {
+    if (!sb) throw new Error('Supabase client is not configured.');
+    const isPublic = options.isPublic ?? (bucketId !== 'certificate-logos');
+    const contentType = options.contentType || fileOrBlob.type || (bucketId === 'site-assets' ? 'image/webp' : 'application/octet-stream');
+    const upsert = options.upsert !== false;
+    const cacheControl = options.cacheControl || '3600';
+
+    let res = await sb.storage.from(bucketId).upload(path, fileOrBlob, {
+      upsert,
+      cacheControl,
+      contentType
+    });
+
+    if (res.error) {
+      const isMissing = res.error.statusCode === 404 ||
+        res.error.statusCode === '404' ||
+        /not found|bucket_not_found/i.test(res.error.message || res.error.error || '');
+      if (isMissing) {
+        const provisioned = await ensureStorageBucket(bucketId);
+        if (provisioned) {
+          res = await sb.storage.from(bucketId).upload(path, fileOrBlob, {
+            upsert,
+            cacheControl,
+            contentType
+          });
+        }
+      }
+    }
+
+    if (res.error) throw res.error;
+
+    let publicUrl = '';
+    if (isPublic) {
+      const { data } = sb.storage.from(bucketId).getPublicUrl(res.data.path);
+      publicUrl = data?.publicUrl || '';
+    }
+
+    return {
+      data: res.data,
+      path: res.data.path,
+      publicUrl
+    };
+  }
+
+  /* ---------- Lightweight, secure Markdown renderer for previews ---------- */
+  function renderMarkdown(md) {
+    if (!md || !String(md).trim()) {
+      return '<p class="mc-preview-empty"><em>Nothing to preview. Enter markdown formatting in the Write tab.</em></p>';
+    }
+    let out = esc(String(md));
+
+    // Code blocks
+    out = out.replace(/```([a-z0-9_-]*)\n([\s\S]*?)```/g, (_, lang, code) => {
+      return `<pre><code class="${lang ? 'lang-' + lang : ''}">${code.trim()}</code></pre>`;
+    });
+
+    // Inline code
+    out = out.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+
+    // Headings
+    out = out.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+    out = out.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+    out = out.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+
+    // Blockquotes
+    out = out.replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>');
+
+    // Bold & italic
+    out = out.replace(/\*\*\*([^\*\n]+)\*\*\*/g, '<strong><em>$1</em></strong>');
+    out = out.replace(/\*\*([^\*\n]+)\*\*/g, '<strong>$1</strong>');
+    out = out.replace(/\*([^\*\n]+)\*/g, '<em>$1</em>');
+    out = out.replace(/___([^_\n]+)___/g, '<strong><em>$1</em></strong>');
+    out = out.replace(/__([^_\n]+)__/g, '<strong>$1</strong>');
+    out = out.replace(/_([^_\n]+)_/g, '<em>$1</em>');
+
+    // Safe links
+    out = out.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, url) => {
+      const u = safeUrl(url.trim());
+      return u ? `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${label}</a>` : label;
+    });
+
+    // Unordered lists
+    out = out.replace(/(?:^[ \t]*[-*]\s+(.*(?:\n|$)))+/gim, (match) => {
+      const items = match.trim().split('\n').map((ln) => {
+        const item = ln.replace(/^[ \t]*[-*]\s+/, '').trim();
+        return item ? `<li>${item}</li>` : '';
+      }).filter(Boolean).join('');
+      return `<ul>${items}</ul>`;
+    });
+
+    // Ordered lists
+    out = out.replace(/(?:^[ \t]*\d+\.\s+(.*(?:\n|$)))+/gim, (match) => {
+      const items = match.trim().split('\n').map((ln) => {
+        const item = ln.replace(/^[ \t]*\d+\.\s+/, '').trim();
+        return item ? `<li>${item}</li>` : '';
+      }).filter(Boolean).join('');
+      return `<ol>${items}</ol>`;
+    });
+
+    // Paragraphs
+    const blocks = out.split(/\n{2,}/).map((blk) => {
+      const trimmed = blk.trim();
+      if (!trimmed) return '';
+      if (/^<(h[1-6]|ul|ol|pre|blockquote)/i.test(trimmed)) return trimmed;
+      return `<p>${trimmed.replace(/\n/g, '<br>')}</p>`;
+    }).filter(Boolean);
+
+    return blocks.join('\n');
+  }
   async function withSaving(form, fn) {
     const btn = form.querySelector('button[type="submit"]') || (form.id ? $(`button[form="${form.id}"]`) : null);
     const label = btn ? btn.textContent : '';
@@ -440,6 +594,7 @@
     $, $$, esc, safeUrl, slugify, normalizeEmail, textValue, msg, formObject, istToIso, isoToIst, when, ago, until, icon,
     toast, adminMessage: toast, clearToast, confirmDialog, drawer, authErrorText, audit, upsertSetting, withSaving, loadScriptOnce,
     cached, dropCache, setWorkspace, go, render, route: parseRoute, eventFacts, pipeline, bindDeleteButtons, defaultSocials,
+    ensureStorageBucket, ensureAllBuckets, uploadStorage, renderMarkdown,
     get sb() { return sb; }, user: null, pages: {}, ICON
   };
   MC.renderAdminTab = () => render();
@@ -447,6 +602,7 @@
 
   async function startApp(main) {
     renderShell(main);
+    ensureAllBuckets().catch((e) => console.warn('Bucket provisioning background task:', e));
     if (!location.hash || location.hash === '#') location.replace('#/overview');
     await render();
   }
@@ -463,6 +619,37 @@
     if (recovering) return renderPasswordUpdate(main);
     await startApp(main);
   }
-  window.addEventListener('hashchange', () => { clearToast(); render(); });
+
+  let lastConfirmedHash = location.hash || '#/overview';
+  let revertingHash = false;
+  window.addEventListener('hashchange', async () => {
+    if (revertingHash) return;
+    if (drawer.isOpen && drawer.isDirty) {
+      const discard = await confirmDialog({
+        title: 'Discard your unsaved changes?',
+        body: 'You have edits in this drawer that have not been saved. If you leave now, your draft will be lost.',
+        confirm: 'Discard Changes',
+        danger: true
+      });
+      if (!discard) {
+        revertingHash = true;
+        location.hash = lastConfirmedHash;
+        setTimeout(() => { revertingHash = false; }, 60);
+        return;
+      }
+      await drawer.close(true);
+    }
+    lastConfirmedHash = location.hash;
+    clearToast();
+    render();
+  });
+
+  window.addEventListener('beforeunload', (e) => {
+    if (drawer.isOpen && drawer.isDirty) {
+      e.preventDefault();
+      e.returnValue = 'You have unsaved changes in Mission Control.';
+      return e.returnValue;
+    }
+  });
   document.addEventListener('DOMContentLoaded', boot);
 })();

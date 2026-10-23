@@ -331,11 +331,13 @@
       if(!['image/png','image/jpeg','image/webp'].includes(file.type))return adminMessage('Choose a PNG, JPEG, or WebP image.');
       if(file.size>5*1024*1024)return adminMessage('The logo must be 5 MB or smaller.');
       const ext=({'image/png':'png','image/jpeg':'jpg','image/webp':'webp'})[file.type],path=`brand/logo.${ext}`;
-      const upload=await sb.storage.from('site-assets').upload(path,file,{upsert:true,cacheControl:'3600',contentType:file.type});
-      if(upload.error)return adminMessage(authErrorText(upload.error));
-      const publicUrl=sb.storage.from('site-assets').getPublicUrl(upload.data.path).data.publicUrl;
-      const saved=await upsertSetting('brand_logo_url',publicUrl);if(saved.error)return adminMessage(authErrorText(saved.error));
-      await audit('update','site_settings','brand_logo_url');adminMessage('Logo updated.',true);await adminSettings();
+      try {
+        const upload=await MC.uploadStorage('site-assets',path,file,{isPublic:true,contentType:file.type});
+        const saved=await upsertSetting('brand_logo_url',upload.publicUrl);if(saved.error)return adminMessage(authErrorText(saved.error));
+        await audit('update','site_settings','brand_logo_url');adminMessage('Logo updated.',true);await adminSettings();
+      } catch (err) {
+        adminMessage(authErrorText(err));
+      }
     };
     $('#clear-logo')?.addEventListener('click',async()=>{
       if(!confirm('Remove the custom logo and restore the original Google-colour mark?'))return;

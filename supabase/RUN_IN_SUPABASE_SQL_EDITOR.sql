@@ -269,13 +269,27 @@ end $$;
 update public.attendance_records set purge_at = null;
 
 -- ============================================================
--- 5. Private storage bucket for partner and signature images
+-- 5. Storage buckets (site-assets, resource-files, certificate-logos)
 -- ============================================================
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values ('certificate-logos', 'certificate-logos', false, 1048576, array['image/png', 'image/jpeg'])
+values ('site-assets', 'site-assets', true, 12582912, array['image/png', 'image/jpeg', 'image/webp'])
+on conflict (id) do update
+  set public = true,
+      file_size_limit = 12582912,
+      allowed_mime_types = array['image/png', 'image/jpeg', 'image/webp'];
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('resource-files', 'resource-files', true, 52428800, array['application/pdf', 'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 'text/plain', 'video/mp4', 'video/webm', 'application/zip'])
+on conflict (id) do update
+  set public = true,
+      file_size_limit = 52428800,
+      allowed_mime_types = array['application/pdf', 'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 'text/plain', 'video/mp4', 'video/webm', 'application/zip'];
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('certificate-logos', 'certificate-logos', false, 5242880, array['image/png', 'image/jpeg'])
 on conflict (id) do update
   set public = false,
-      file_size_limit = 1048576,
+      file_size_limit = 5242880,
       allowed_mime_types = array['image/png', 'image/jpeg'];
 
 -- ============================================================
@@ -507,5 +521,16 @@ create policy cert_logos_admin on storage.objects
   for all to authenticated
   using (bucket_id = 'certificate-logos')
   with check (bucket_id = 'certificate-logos');
+
+-- Storage: public read & admin manage for site-assets and resource-files
+drop policy if exists site_assets_public_read on storage.objects;
+drop policy if exists site_assets_admin_all on storage.objects;
+create policy site_assets_public_read on storage.objects for select to anon, authenticated using (bucket_id = 'site-assets');
+create policy site_assets_admin_all on storage.objects for all to authenticated using (bucket_id = 'site-assets') with check (bucket_id = 'site-assets');
+
+drop policy if exists resource_files_public_read on storage.objects;
+drop policy if exists resource_files_admin_all on storage.objects;
+create policy resource_files_public_read on storage.objects for select to anon, authenticated using (bucket_id = 'resource-files');
+create policy resource_files_admin_all on storage.objects for all to authenticated using (bucket_id = 'resource-files') with check (bucket_id = 'resource-files');
 
 commit;
