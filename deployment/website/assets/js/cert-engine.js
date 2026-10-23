@@ -13,8 +13,13 @@
   const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   /* ---------- URLs ---------- */
-  const IMG_URL = /^(https:\/\/[^\s"'<>]+|data:image\/(png|jpe?g|webp|gif);base64,[a-z0-9+/=]+)$/i;
-  const okUrl = (u) => { const t = String(u || '').trim(); return t.startsWith('#') || IMG_URL.test(t); };
+  const okUrl = (u) => {
+    const t = String(u || '').trim();
+    if (!t) return false;
+    if (t.startsWith('#')) return true;
+    if (t.startsWith('blob:') || t.startsWith('data:image/')) return true;
+    return /^https?:\/\/[^\s"'<>]+$/i.test(t);
+  };
   const urlKey = (k) => /(^|_)(url|logo|img|image|photo|src)$/.test(k);
 
   /* ---------- Template language ({{key}}, {{#key}}..{{/key}}, {{^key}}..{{/key}}) ---------- */

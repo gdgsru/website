@@ -146,6 +146,15 @@
     return blob;
   }
 
+  function blobToDataUrl(blob) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result || '');
+      reader.onerror = () => resolve('');
+      reader.readAsDataURL(blob);
+    });
+  }
+
   async function uploadToStorage(sb, path, blob) {
     let { error } = await sb.storage.from('certificate-logos').upload(path, blob, {
       contentType: blob.type || 'image/png',
@@ -1398,16 +1407,17 @@
           try {
             const blob = await processImageUpload(file, 800);
             const path = `logos/${selectedEventId}/gdg_logo_${Date.now()}.png`;
-            await uploadToStorage(sb, path, blob);
+            const dataUrl = await blobToDataUrl(blob);
             if (!currentEc.layout) currentEc.layout = {};
             currentEc.layout.gdg_logo_path = path;
-            currentEc.gdg_logo_dataUrl = URL.createObjectURL(blob);
+            currentEc.gdg_logo_dataUrl = dataUrl;
 
             if (gdgLogoStatus) gdgLogoStatus.textContent = 'Custom Logo Uploaded';
             if (gdgLogoThumb) gdgLogoThumb.style.display = 'block';
-            if (gdgLogoImg) gdgLogoImg.src = currentEc.gdg_logo_dataUrl;
+            if (gdgLogoImg) gdgLogoImg.src = dataUrl;
             if (gdgLogoReset) gdgLogoReset.style.display = 'inline-flex';
 
+            await uploadToStorage(sb, path, blob);
             adminMessage('GDG Chapter Logo uploaded successfully.', true);
             await updateStudioPreview();
           } catch (err) {
@@ -1489,12 +1499,13 @@
           try {
             const blob = await processImageUpload(file, 600);
             const path = `partners/${selectedEventId}/${crypto.randomUUID()}.png`;
-            await uploadToStorage(sb, path, blob);
+            const dataUrl = await blobToDataUrl(blob);
+            p.dataUrl = dataUrl;
             p.logo_path = path;
-            p.dataUrl = URL.createObjectURL(blob);
+            await uploadToStorage(sb, path, blob);
             adminMessage('Partner logo uploaded successfully.', true);
             renderPartnersList();
-            updateStudioPreview();
+            await updateStudioPreview();
           } catch (err) {
             adminMessage(authErrorText(err));
           }
@@ -1514,7 +1525,7 @@
             <input type="text" class="s-name" value="${esc(s.name)}" placeholder="Signatory Name" style="font-size:12px;padding:4px 8px;flex:1">
             <input type="text" class="s-role" value="${esc(s.role)}" placeholder="Role / Title" style="font-size:12px;padding:4px 8px;flex:1">
             <label class="btn o sm" style="cursor:pointer;padding:3px 8px;font-size:11px">
-              ${s.image_path ? 'Change Signature' : 'Upload Image'}
+              ${(s.image_path || s.dataUrl) ? 'Change Signature (✓)' : 'Upload Image'}
               <input type="file" class="s-file" accept=".png,.jpg,.jpeg,.svg" style="display:none">
             </label>
           </div>
@@ -1537,12 +1548,13 @@
           try {
             const blob = await processImageUpload(file, 600);
             const path = `signatures/${selectedEventId}/${idx + 1}.png`;
-            await uploadToStorage(sb, path, blob);
+            const dataUrl = await blobToDataUrl(blob);
+            s.dataUrl = dataUrl;
             s.image_path = path;
-            s.dataUrl = URL.createObjectURL(blob);
+            await uploadToStorage(sb, path, blob);
             adminMessage('Signature image uploaded.', true);
             renderSignatoriesList();
-            updateStudioPreview();
+            await updateStudioPreview();
           } catch (err) {
             adminMessage(authErrorText(err));
           }
