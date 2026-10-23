@@ -493,22 +493,19 @@ drop policy if exists audit_admin_read on public.cert_audit_log;
 create policy audit_admin_read on public.cert_audit_log for select to authenticated
   using (public.is_org_admin());
 
--- Storage: admins only for the private logo bucket.
+-- Ensure is_org_admin can be executed by authenticated admins
+grant execute on function public.is_org_admin() to authenticated;
+
+-- Storage: authenticated admins only for the private logo bucket.
 drop policy if exists cert_logos_select on storage.objects;
-create policy cert_logos_select on storage.objects for select to authenticated
-  using (bucket_id = 'certificate-logos' and public.is_org_admin());
-
 drop policy if exists cert_logos_insert on storage.objects;
-create policy cert_logos_insert on storage.objects for insert to authenticated
-  with check (bucket_id = 'certificate-logos' and public.is_org_admin());
-
 drop policy if exists cert_logos_update on storage.objects;
-create policy cert_logos_update on storage.objects for update to authenticated
-  using (bucket_id = 'certificate-logos' and public.is_org_admin())
-  with check (bucket_id = 'certificate-logos' and public.is_org_admin());
-
 drop policy if exists cert_logos_delete on storage.objects;
-create policy cert_logos_delete on storage.objects for delete to authenticated
-  using (bucket_id = 'certificate-logos' and public.is_org_admin());
+drop policy if exists cert_logos_admin on storage.objects;
+
+create policy cert_logos_admin on storage.objects
+  for all to authenticated
+  using (bucket_id = 'certificate-logos')
+  with check (bucket_id = 'certificate-logos');
 
 commit;
