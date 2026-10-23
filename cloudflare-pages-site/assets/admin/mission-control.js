@@ -73,7 +73,10 @@
     spark: 'M12 4c.7 4.6 3.4 7.3 8 8-4.6.7-7.3 3.4-8 8-.7-4.6-3.4-7.3-8-8 4.6-.7 7.3-3.4 8-8z',
     chev: 'm9 6 6 6-6 6',
     upload: 'M12 16V5M7.5 9.5 12 5l4.5 4.5M5 19h14',
-    download: 'M12 5v11M7.5 11.5 12 16l4.5-4.5M5 19h14'
+    download: 'M12 5v11M7.5 11.5 12 16l4.5-4.5M5 19h14',
+    clock: 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zm0-15v5l3.5 2',
+    help: 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zm0-4.5h.01M9.5 9.5a2.5 2.5 0 0 1 5 0c0 1.5-1.5 2-2.5 3v1',
+    refresh: 'M20 4v5h-5M4 20v-5h5M20 9A9 9 0 0 0 5.7 5.7L4 9M4 15a9 9 0 0 0 14.3 3.3L20 15'
   };
   const icon = (n, cls = '') => `<svg class="mc-i ${cls}" viewBox="0 0 24 24" aria-hidden="true"><path d="${ICON[n] || ICON.spark}"/></svg>`;
 
@@ -390,10 +393,10 @@
     [null, [['overview', 'Overview', 'home']]],
     ['Run events', [['events', 'Events', 'calendar'], ['attendance', 'Attendance', 'check'], ['certificates', 'Certificates', 'award'], ['badges', 'Member Badges', 'idcard'], ['leaderboard', 'Leaderboard', 'trophy']]],
     ['Publish', [['team', 'Team', 'users'], ['blog', 'Blog', 'doc'], ['blog-series', 'Blog series', 'doc'], ['resources', 'Resource Hub', 'library']]],
-    ['Site', [['settings', 'Settings', 'settings']]]
+    ['Site', [['settings', 'Settings', 'settings'], ['audit', 'Activity Log', 'clock']]]
   ];
   const TITLES = Object.fromEntries(NAV.flatMap(([, items]) => items.map(([id, label]) => [id, label])));
-  const MODULE_FOR = { overview: 'mc-overview.js', events: 'mc-content.js', blog: 'mc-content.js', 'blog-series': 'mc-content.js', resources: 'mc-content.js', team: 'mc-team.js', badges: 'mc-extra.js', leaderboard: 'mc-extra.js', settings: 'mc-extra.js' };
+  const MODULE_FOR = { overview: 'mc-overview.js', events: 'mc-content.js', blog: 'mc-content.js', 'blog-series': 'mc-content.js', resources: 'mc-content.js', team: 'mc-team.js', badges: 'mc-extra.js', leaderboard: 'mc-extra.js', settings: 'mc-extra.js', audit: 'mc-extra.js' };
 
   function renderShell(main) {
     document.body.classList.add('mc-app');
@@ -445,11 +448,12 @@
       <h1 id="admin-page-title">Overview</h1>
     </div>
     <div class="mc-top-center">
-      <div class="mc-status-pill" title="Supabase Database & Storage online"><span class="mc-live-dot"></span><span>Online</span></div>
+      <button type="button" class="mc-status-pill mc-status-btn" id="mc-status-pill" title="Click to view System Health & Diagnostics"><span class="mc-live-dot"></span><span>Online</span></button>
     </div>
     <div class="mc-top-actions" id="mc-page-actions"></div>
     <a href="/" target="_blank" rel="noopener" class="mc-top-link" title="Open public website">${icon('ext')}<span>Site ↗</span></a>
     <button type="button" class="mc-search" id="mc-search" aria-label="Search and jump to anything">${icon('search')}<span>Quick search</span><kbd>Ctrl K</kbd></button>
+    <button type="button" class="mc-icon-btn mc-help-btn" id="mc-help-btn" title="Keyboard Shortcuts (?)" aria-label="Keyboard Shortcuts">${icon('help')}</button>
   </header>
   <main id="mc-main" class="mc-content" tabindex="-1">
     <div id="admin-result" aria-live="polite"></div>
@@ -462,6 +466,8 @@
     $('#mc-rail-scrim', main).addEventListener('click', () => openRail(false));
     rail.addEventListener('click', (e) => { if (e.target.closest('a[data-nav]')) openRail(false); });
     $('#mc-search', main).addEventListener('click', openPalette);
+    $('#mc-status-pill', main)?.addEventListener('click', openHealthModal);
+    $('#mc-help-btn', main)?.addEventListener('click', openShortcutsModal);
     armIdleLogout(main);
     const ws = $('#admin-workspace', main);
     ws.addEventListener('invalid', (e) => { const el = e.target; const lab = (el.closest('label')?.firstChild?.textContent || el.name || 'A field').trim(); toast(lab + ': ' + (el.validationMessage || 'please check this field.')); }, true);
@@ -554,6 +560,164 @@
       return items;
     }, 60000);
   }
+  /* ---------- system health & diagnostics modal ---------- */
+  let healthModalEl = null;
+  async function openHealthModal() {
+    if (healthModalEl || !adminUser) return;
+    healthModalEl = document.createElement('div');
+    healthModalEl.id = 'mc-health-modal';
+    healthModalEl.className = 'mc-modal';
+    healthModalEl.innerHTML = `
+      <div class="mc-dialog mc-health-dialog" role="dialog" aria-modal="true" aria-labelledby="mc-diag-t">
+        <header>
+          <div>
+            <h2 id="mc-diag-t">System Health & Storage Diagnostics</h2>
+            <p class="muted small">Real-time status of database connection, active storage buckets, and auth session.</p>
+          </div>
+          <button type="button" class="mc-icon-btn" id="mc-diag-close" aria-label="Close">${icon('x')}</button>
+        </header>
+        <div class="mc-dialog-body" id="mc-diag-body">
+          <div class="mc-loading" role="status"><span>Testing Supabase latency and storage buckets…</span></div>
+        </div>
+        <footer>
+          <button type="button" class="button-outline" id="mc-diag-reprovision">${icon('refresh')}Re-verify Buckets</button>
+          <span class="grow"></span>
+          <button type="button" class="button" id="mc-diag-ok">Close</button>
+        </footer>
+      </div>
+    `;
+    document.body.appendChild(healthModalEl);
+    const close = () => { healthModalEl?.remove(); healthModalEl = null; };
+    $('#mc-diag-close', healthModalEl).onclick = close;
+    $('#mc-diag-ok', healthModalEl).onclick = close;
+    healthModalEl.onclick = (e) => { if (e.target === healthModalEl) close(); };
+
+    async function runDiagnostics() {
+      const body = $('#mc-diag-body', healthModalEl);
+      if (!body) return;
+      body.innerHTML = `<div class="mc-loading" role="status"><span>Testing Supabase latency and storage buckets…</span></div>`;
+      
+      const t0 = performance.now();
+      let dbOk = false, dbErr = '', latency = 0;
+      try {
+        const { error } = await sb.from('site_settings').select('key').limit(1);
+        latency = Math.round(performance.now() - t0);
+        if (error) dbErr = error.message; else dbOk = true;
+      } catch (err) {
+        dbErr = err.message || String(err);
+      }
+
+      const bucketChecks = await Promise.all(Object.entries(BUCKET_DEFS).map(async ([bName, bDef]) => {
+        try {
+          const { data, error } = await sb.storage.getBucket(bName);
+          return { name: bName, isPublic: bDef.public, sizeLimit: bDef.fileSizeLimit, ok: !error, error: error?.message };
+        } catch (e) {
+          return { name: bName, isPublic: bDef.public, sizeLimit: bDef.fileSizeLimit, ok: false, error: e.message };
+        }
+      }));
+
+      body.innerHTML = `
+        <div class="mc-diag-grid">
+          <div class="mc-diag-item ${dbOk ? 'ok' : 'err'}">
+            <div class="mc-diag-head">
+              <b>Supabase Database Connection</b>
+              <span class="mc-status-tag ${dbOk ? 'ok' : 'err'}">${dbOk ? 'Connected' : 'Error'}</span>
+            </div>
+            <p class="muted small">${dbOk ? `Roundtrip latency: <strong>${latency} ms</strong>` : `Error: ${esc(dbErr)}`}</p>
+          </div>
+
+          <div class="mc-diag-item">
+            <div class="mc-diag-head">
+              <b>Active Admin Session</b>
+              <span class="mc-status-tag ok">Authenticated</span>
+            </div>
+            <p class="muted small">User: <strong>${esc(adminUser.email)}</strong> · Role: <strong>Chapter Organizer</strong></p>
+          </div>
+        </div>
+
+        <h3 style="margin:16px 0 8px;font-size:14px;color:var(--ink)">Storage Buckets</h3>
+        <div class="mc-diag-buckets">
+          ${bucketChecks.map(b => `
+            <div class="mc-bucket-row ${b.ok ? 'ok' : 'warn'}">
+              <div class="mc-bucket-info">
+                <strong>${esc(b.name)}</strong>
+                <small class="muted">${b.isPublic ? 'Public bucket' : 'Private bucket'} · Max ${Math.round(b.sizeLimit / (1024 * 1024))} MB</small>
+              </div>
+              <span class="mc-status-tag ${b.ok ? 'ok' : 'err'}">${b.ok ? '✓ Ready' : 'Needs Provisioning'}</span>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    runDiagnostics();
+
+    $('#mc-diag-reprovision', healthModalEl).onclick = async () => {
+      const btn = $('#mc-diag-reprovision', healthModalEl);
+      btn.disabled = true; btn.textContent = 'Repairing…';
+      try {
+        await ensureAllBuckets();
+        toast('All storage buckets verified & auto-provisioned.', true);
+      } catch (e) {
+        toast('Bucket auto-provisioning warning: ' + (e.message || String(e)));
+      } finally {
+        btn.disabled = false; btn.innerHTML = `${icon('refresh')}Re-verify Buckets`;
+        runDiagnostics();
+      }
+    };
+  }
+
+  /* ---------- keyboard shortcuts help modal ---------- */
+  let shortcutsModalEl = null;
+  function openShortcutsModal() {
+    if (shortcutsModalEl || !adminUser) return;
+    shortcutsModalEl = document.createElement('div');
+    shortcutsModalEl.id = 'mc-shortcuts-modal';
+    shortcutsModalEl.className = 'mc-modal';
+    const isMac = typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+    const mod = isMac ? '⌘' : 'Ctrl';
+    shortcutsModalEl.innerHTML = `
+      <div class="mc-dialog mc-shortcuts-dialog" role="dialog" aria-modal="true" aria-labelledby="mc-sc-t">
+        <header>
+          <div>
+            <h2 id="mc-sc-t">Keyboard Shortcuts</h2>
+            <p class="muted small">Accelerate your workflow in Mission Control with simple keystrokes.</p>
+          </div>
+          <button type="button" class="mc-icon-btn" id="mc-sc-close" aria-label="Close">${icon('x')}</button>
+        </header>
+        <div class="mc-dialog-body">
+          <div class="mc-shortcut-list">
+            <div class="mc-sc-row">
+              <span class="mc-sc-desc">Quick Search & Command Palette</span>
+              <span class="mc-sc-keys"><kbd class="mc-key-hint">${mod}</kbd> + <kbd class="mc-key-hint">K</kbd></span>
+            </div>
+            <div class="mc-sc-row">
+              <span class="mc-sc-desc">Quick-save current drawer (Events, Blog, Team, etc.)</span>
+              <span class="mc-sc-keys"><kbd class="mc-key-hint">${mod}</kbd> + <kbd class="mc-key-hint">S</kbd></span>
+            </div>
+            <div class="mc-sc-row">
+              <span class="mc-sc-desc">Close drawer, modal dialog, or command search</span>
+              <span class="mc-sc-keys"><kbd class="mc-key-hint">Esc</kbd></span>
+            </div>
+            <div class="mc-sc-row">
+              <span class="mc-sc-desc">Open this keyboard shortcuts cheat-sheet</span>
+              <span class="mc-sc-keys"><kbd class="mc-key-hint">?</kbd></span>
+            </div>
+          </div>
+        </div>
+        <footer>
+          <span class="grow"></span>
+          <button type="button" class="button" id="mc-sc-ok">Got it</button>
+        </footer>
+      </div>
+    `;
+    document.body.appendChild(shortcutsModalEl);
+    const close = () => { shortcutsModalEl?.remove(); shortcutsModalEl = null; };
+    $('#mc-sc-close', shortcutsModalEl).onclick = close;
+    $('#mc-sc-ok', shortcutsModalEl).onclick = close;
+    shortcutsModalEl.onclick = (e) => { if (e.target === shortcutsModalEl) close(); };
+  }
+
   async function openPalette() {
     if (paletteEl || !adminUser) return;
     const prev = document.activeElement;
@@ -594,6 +758,10 @@
   }
   document.addEventListener('keydown', (e) => {
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k' && adminUser) { e.preventDefault(); if (paletteEl) { paletteEl.remove(); paletteEl = null; } else openPalette(); }
+    else if (e.key === '?' && adminUser && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName) && !document.activeElement?.isContentEditable) {
+      e.preventDefault();
+      openShortcutsModal();
+    }
   });
 
   /* ---------- event pipeline (shared by Overview and Events) ---------- */
@@ -646,7 +814,7 @@
     $, $$, esc, safeUrl, slugify, normalizeEmail, textValue, msg, formObject, istToIso, isoToIst, when, ago, until, icon,
     toast, adminMessage: toast, clearToast, confirmDialog, drawer, authErrorText, audit, upsertSetting, withSaving, loadScriptOnce,
     cached, dropCache, setWorkspace, go, render, route: parseRoute, eventFacts, pipeline, bindDeleteButtons, defaultSocials,
-    ensureStorageBucket, ensureAllBuckets, uploadStorage, renderMarkdown,
+    ensureStorageBucket, ensureAllBuckets, uploadStorage, renderMarkdown, openHealthModal, openShortcutsModal,
     get sb() { return sb; }, user: null, pages: {}, ICON
   };
   MC.renderAdminTab = () => render();

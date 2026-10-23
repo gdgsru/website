@@ -842,11 +842,12 @@
             <h4 style="margin:0 0 6px;font-size:13px">Bulk CSV Import:</h4>
             <p style="font-size:12px;color:var(--ink-2);margin:0 0 10px">Upload a CSV file containing <code>name</code>, optional <code>roll_no</code>, <code>email</code>, or paste comma-separated lines below.</p>
             
-            <div class="mc-f-row" style="margin-bottom:10px">
+            <div class="mc-f-row" style="margin-bottom:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
               <label class="btn o sm" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px">
                 📁 Choose CSV File
                 <input type="file" id="att-file-input" accept=".csv,.txt" style="display:none">
               </label>
+              <button type="button" class="btn o sm" id="att-btn-download-sample" style="font-size:12px">📥 Download Sample CSV</button>
               <label class="check" style="font-size:12px;display:flex;align-items:center;gap:6px">
                 <input type="checkbox" id="att-chk-replace"> Replace entire existing roster
               </label>
@@ -940,6 +941,21 @@
       const importBox = $('#att-import-box');
       $('#att-btn-open-import').onclick = () => { importBox.style.display = importBox.style.display === 'none' ? 'block' : 'none'; };
       $('#att-btn-cancel-import').onclick = () => { importBox.style.display = 'none'; };
+
+      // Sample CSV Download
+      $('#att-btn-download-sample')?.addEventListener('click', () => {
+        const csvContent = "attendee_name,roll_no,attendee_email,attendance_status\r\nAsha Rao,26BCE1001,asha@sru.edu.in,attended\r\nRahul Sharma,26BCE1002,rahul@sru.edu.in,attended\r\nPriya Patel,26BCE1003,priya@sru.edu.in,attended\r\n";
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'attendance-roster-sample.csv';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        adminMessage('Sample CSV template downloaded.', true);
+      });
 
       // File input
       $('#att-file-input').onchange = (e) => {
@@ -2619,7 +2635,9 @@
             </div>
             ${!allReady ? `<p style="margin:6px 0 0;font-size:12px;color:var(--r);font-weight:600">Claims cannot be enabled until all 5 checklist items above are passed.</p>` : ''}
             
-            <div style="margin-top:10px;padding-top:12px;border-top:1px solid var(--line);display:flex;gap:12px;align-items:center;font-size:12.5px">
+            <div style="margin-top:10px;padding-top:12px;border-top:1px solid var(--line);display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:12.5px">
+              <button type="button" class="btn sm" id="btn-copy-claim-url" style="font-size:12px">🔗 Copy Public Claim Link</button>
+              <button type="button" class="btn o sm" id="btn-copy-claim-msg" style="font-size:12px">📢 Copy Announcement Blurb</button>
               <a class="btn o sm" href="/certificates/?event=${selectedEventId}" target="_blank">View /certificates/ portal →</a>
               <a class="btn o sm" href="/verify/" target="_blank">View /verify/ portal →</a>
             </div>
@@ -2628,6 +2646,28 @@
       `;
 
       $('#btn-test-claim-pub')?.addEventListener('click', () => openTestClaimModal());
+
+      $('#btn-copy-claim-url')?.addEventListener('click', async () => {
+        const url = `${window.location.origin}/certificates/?event=${encodeURIComponent(selectedEventId)}`;
+        try {
+          await navigator.clipboard.writeText(url);
+          adminMessage('Public claim link copied to clipboard!', true);
+        } catch {
+          prompt('Public claim link:', url);
+        }
+      });
+
+      $('#btn-copy-claim-msg')?.addEventListener('click', async () => {
+        const evTitle = currentEv?.title || 'GDG SRU Event';
+        const url = `${window.location.origin}/certificates/?event=${encodeURIComponent(selectedEventId)}`;
+        const msg = `🎉 Certificates for "${evTitle}" are now live!\n\nAttendees can verify and claim their official credential here:\n${url}\n\nGDG on Campus · SR University`;
+        try {
+          await navigator.clipboard.writeText(msg);
+          adminMessage('Announcement message copied to clipboard!', true);
+        } catch {
+          prompt('Announcement blurb:', msg);
+        }
+      });
 
       $('#pub-claims-toggle')?.addEventListener('change', async (e) => {
         const enabled = e.target.checked;

@@ -294,7 +294,7 @@
     const filters = [['all', 'Everyone'], ['published', 'Published'], ['draft', 'Draft'], ['nophoto', 'No photo']];
     const match = (m) => (filter === 'all' || (filter === 'nophoto' ? !m.photo_url : m.status === filter)) && (!q || `${m.name} ${m.role} ${m.department} ${m.member_code}`.toLowerCase().includes(q));
     const depNames = [...(data.deps || []).map((d) => d.name)]; data.members.forEach((m) => { if (!depNames.includes(m.department)) depNames.push(m.department); });
-    const card = (m) => `<li class="mc-person${m.status === 'published' ? '' : ' off'}" draggable="true" data-id="${esc(m.id)}"><span class="grip" aria-hidden="true">${icon('grip')}</span><span class="ph ac-${esc(m.accent || 'b')}">${safeUrl(m.photo_url) ? `<img src="${esc(safeUrl(m.photo_url))}" alt="" loading="lazy" style="object-position:${esc(m.photo_position || '50% 100%')}">` : `<i>${esc((m.name || '?').split(/\s+/).map((p) => p[0]).slice(0, 2).join('').toUpperCase())}</i>`}</span><div class="who"><b>${esc(m.name)}</b><small>${esc(m.role)}${m.member_code ? ` · <code>${esc(m.member_code)}</code>` : ''}</small></div><span class="tags">${m.status !== 'published' ? `<span class="status s-${esc(m.status)}">${esc(m.status)}</span>` : ''}${!m.photo_url ? '<span class="tag">No photo</span>' : ''}<span class="tag">${esc(LEVEL[m.level] || 'Member')}</span></span><button type="button" class="button-outline" data-edit="${esc(m.id)}">${icon('edit')}Edit</button></li>`;
+    const card = (m) => `<li class="mc-person${m.status === 'published' ? '' : ' off'}" draggable="true" data-id="${esc(m.id)}"><span class="grip" aria-hidden="true">${icon('grip')}</span><span class="ph ac-${esc(m.accent || 'b')}">${safeUrl(m.photo_url) ? `<img src="${esc(safeUrl(m.photo_url))}" alt="" loading="lazy" style="object-position:${esc(m.photo_position || '50% 100%')}">` : `<i>${esc((m.name || '?').split(/\s+/).map((p) => p[0]).slice(0, 2).join('').toUpperCase())}</i>`}</span><div class="who"><b>${esc(m.name)}</b><small>${esc(m.role)}${m.member_code ? ` · <code>${esc(m.member_code)}</code>` : ''}</small></div><span class="tags">${m.status !== 'published' ? `<span class="status s-${esc(m.status)}">${esc(m.status)}</span>` : ''}${!m.photo_url ? '<span class="tag">No photo</span>' : ''}<span class="tag">${esc(LEVEL[m.level] || 'Member')}</span></span><div class="mc-item-actions"><button type="button" class="mc-icon-btn" data-team-up="${esc(m.id)}" title="Move up" aria-label="Move up">↑</button><button type="button" class="mc-icon-btn" data-team-down="${esc(m.id)}" title="Move down" aria-label="Move down">↓</button><button type="button" class="button-outline" data-edit="${esc(m.id)}">${icon('edit')}Edit</button></div></li>`;
     const draw = () => {
       const shown = data.members.filter(match);
       $('#team-groups').innerHTML = depNames.map((n) => { const items = shown.filter((m) => m.department === n); if (!items.length && (q || filter !== 'all')) return ''; return `<section class="mc-group" data-dep="${esc(n)}"><h3>${esc(n || 'No department')} <span class="mc-count">${items.length}</span></h3><ul class="mc-people">${items.map(card).join('') || '<li class="mc-drop">Nothing here yet. Drag a person in, or add one.</li>'}</ul></section>`; }).join('') || '<p class="mc-empty"><b>No people match.</b></p>';
@@ -310,8 +310,39 @@ ${empty ? '' : `<details class="mc-card mc-tools"><summary>Roster tools</summary
     const ws = $('#admin-workspace');
     $('.mc-tabs').onclick = (e) => { if (e.target.dataset.view === 'page') go('team', { view: 'page' }); };
     $('#mc-q').addEventListener('input', (e) => { q = e.target.value.trim().toLowerCase(); draw(); });
-    ws.onclick = (e) => {
+    ws.onclick = async (e) => {
       const f = e.target.closest('[data-filter]'); if (f) { filter = f.dataset.filter; $$('[data-filter]', ws).forEach((b) => b.setAttribute('aria-pressed', String(b === f))); draw(); return; }
+      const up = e.target.closest('[data-team-up]');
+      const down = e.target.closest('[data-team-down]');
+      if (up || down) {
+        const id = (up || down).dataset[up ? 'teamUp' : 'teamDown'];
+        const m = data.members.find((x) => x.id === id);
+        if (!m) return;
+        const depMembers = data.members.filter((x) => x.department === m.department);
+        const idx = depMembers.findIndex((x) => x.id === id);
+        const targetIdx = up ? idx - 1 : idx + 1;
+        if (targetIdx < 0 || targetIdx >= depMembers.length) return;
+        const other = depMembers[targetIdx];
+        const ord1 = m.sort_order || 0;
+        const ord2 = other.sort_order || 0;
+        const newOrd1 = ord1 === ord2 ? (up ? ord1 - 1 : ord1 + 1) : ord2;
+        const newOrd2 = ord1 === ord2 ? ord1 : ord1;
+        m.sort_order = newOrd1;
+        other.sort_order = newOrd2;
+        try {
+          await Promise.all([
+            sb().from('team_members').update({ sort_order: newOrd1 }).eq('id', m.id),
+            sb().from('team_members').update({ sort_order: newOrd2 }).eq('id', other.id)
+          ]);
+          await audit('reorder', 'team_members', m.name);
+          toast(`Updated order for ${m.name}.`, true);
+          MC.dropCache();
+          MC.render();
+        } catch (err) {
+          toast(authErrorText(err));
+        }
+        return;
+      }
       const ed = e.target.closest('[data-edit]'); if (ed) return go('team', {}, ed.dataset.edit);
     };
     $('#mc-page-actions').onclick = (e) => { if (e.target.closest('[data-new]')) go('team', {}, 'new'); };

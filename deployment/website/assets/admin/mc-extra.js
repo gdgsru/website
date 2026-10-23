@@ -585,5 +585,182 @@
     bar.innerHTML = SETTINGS_SECTIONS.map(([id, label]) => '<a href="#/settings/' + id + '"' + (id === cur[0] ? ' aria-current="page"' : '') + '>' + label + '</a>').join('');
     ws.prepend(bar);
   }
+  /* ---------- Activity & Audit Log Viewer ---------- */
+  async function adminAuditLog() {
+    MC.setWorkspace('Activity Log', '<div class="mc-loading" role="status"><span>Loading audit records…</span></div>');
+    let auditRecords = [], certRecords = [];
+    try {
+      const [logsRes, certLogsRes] = await Promise.all([
+        sb.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(200),
+        sb.from('cert_audit_log').select('*').order('created_at', { ascending: false }).limit(50)
+      ]);
+      if (logsRes.data) auditRecords = logsRes.data;
+      if (certLogsRes.data) certRecords = certLogsRes.data;
+    } catch (e) {
+      console.warn('Audit logs fetch warning:', e);
+    }
+
+    const auditList = auditRecords.map((x) => ({
+      id: x.id,
+      actor: x.actor_id || 'Organizer',
+      action: x.action || 'update',
+      target: x.table_name || 'system',
+      detail: x.record_id || '',
+      time: x.created_at
+    }));
+
+    const certList = certRecords.map((x) => ({
+      id: x.id,
+      actor: x.actor_id || 'System / Admin',
+      action: x.action || 'certificate_claim',
+      target: 'certificates',
+      detail: typeof x.details === 'object' ? JSON.stringify(x.details) : (x.details || ''),
+      time: x.created_at
+    }));
+
+    const allLogs = [...auditList, ...certList].sort((a, b) => new Date(b.time || 0) - new Date(a.time || 0));
+
+    let filter = 'all';
+    let q = '';
+
+    const actionBadge = (act) => {
+      const a = String(act || '').toLowerCase();
+      if (['create', 'insert', 'sync_team'].includes(a)) return '<span class="mc-badge-pill green">CREATE</span>';
+      if (['update', 'edit', 'reorder', 'enable_scoring'].includes(a)) return '<span class="mc-badge-pill blue">UPDATE</span>';
+      if (['delete', 'remove', 'pause_scoring'].includes(a)) return '<span class="mc-badge-pill red">DELETE</span>';
+      if (['claim', 'certificate_claim', 'issue_cert'].includes(a)) return '<span class="mc-badge-pill yellow">CERTIFICATE</span>';
+      return `<span class="mc-badge-pill">${esc(a.toUpperCase())}</span>`;
+    };
+
+    const timeAgo = (dateStr) => {
+      if (!dateStr) return '';
+      const diffMs = Date.now() - new Date(dateStr).getTime();
+      const mins = Math.floor(diffMs / 60000);
+      if (mins < 1) return 'Just now';
+      if (mins < 60) return `${mins}m ago`;
+      const hrs = Math.floor(mins / 60);
+      if (hrs < 24) return `${hrs}h ago`;
+      const days = Math.floor(hrs / 24);
+      if (days < 7) return `${days}d ago`;
+      return new Date(dateStr).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+    };
+
+    const drawAudit = () => {
+      const filtered = allLogs.filter((l) => {
+        if (filter !== 'all') {
+          if (filter === 'create' && !['create', 'insert', 'sync_team'].includes(l.action)) return false;
+          if (filter === 'update' && !['update', 'edit', 'reorder', 'enable_scoring'].includes(l.action)) return false;
+          if (filter === 'delete' && !['delete', 'remove', 'pause_scoring'].includes(l.action)) return false;
+        }
+        if (q && !`${l.action} ${l.target} ${l.detail} ${l.actor}`.toLowerCase().includes(q)) return false;
+        return true;
+      });
+
+      const createCount = allLogs.filter((l) => ['create', 'insert', 'sync_team'].includes(l.action)).length;
+      const updateCount = allLogs.filter((l) => ['update', 'edit', 'reorder', 'enable_scoring'].includes(l.action)).length;
+      const deleteCount = allLogs.filter((l) => ['delete', 'remove', 'pause_scoring'].includes(l.action)).length;
+
+      MC.setWorkspace('Activity Log', `
+        <p class="mc-lead">Comprehensive audit trail of chapter administrative events, content publications, and credential issuances.</p>
+        
+        <div class="mc-summary-bar">
+          <div class="mc-sum-item">
+            <span class="mc-sum-val">${allLogs.length}</span>
+            <span class="mc-sum-label">Total Logs</span>
+          </div>
+          <div class="mc-sum-item ok">
+            <span class="mc-sum-dot green"></span>
+            <span class="mc-sum-val">${createCount}</span>
+            <span class="mc-sum-label">Creations</span>
+          </div>
+          <div class="mc-sum-item">
+            <span class="mc-sum-dot blue"></span>
+            <span class="mc-sum-val">${updateCount}</span>
+            <span class="mc-sum-label">Updates</span>
+          </div>
+          <div class="mc-sum-item warn">
+            <span class="mc-sum-dot red"></span>
+            <span class="mc-sum-val">${deleteCount}</span>
+            <span class="mc-sum-label">Deletions</span>
+          </div>
+        </div>
+
+        <div class="mc-toolbar">
+          <div class="mc-find">
+            ${MC.icon ? MC.icon('search') : ''}
+            <input type="search" id="audit-q" placeholder="Filter by action, table, or record..." value="${esc(q)}">
+            <button type="button" class="mc-find-clear" id="audit-q-clear" ${q ? '' : 'hidden'}>×</button>
+          </div>
+          <div class="mc-chips" role="group">
+            ${[['all', 'All Activity'], ['create', 'Creations'], ['update', 'Updates'], ['delete', 'Deletions']].map(([k, l]) => `
+              <button type="button" class="mc-chip-btn ${k === filter ? 'active' : ''}" data-audit-filter="${k}" aria-pressed="${k === filter}">${l}</button>
+            `).join('')}
+          </div>
+          <button type="button" class="button-outline" id="audit-refresh" style="font-size:12px;margin-left:auto">${MC.icon ? MC.icon('refresh') : ''} Refresh</button>
+        </div>
+
+        <div class="mc-card" style="padding:0;overflow:hidden">
+          ${filtered.length ? `
+            <div class="mc-audit-table-wrap">
+              <table class="mc-audit-table">
+                <thead>
+                  <tr>
+                    <th style="width:130px">Action</th>
+                    <th style="width:160px">Table / Target</th>
+                    <th>Record / Identifier</th>
+                    <th style="width:130px;text-align:right">Timestamp</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${filtered.map((l) => `
+                    <tr>
+                      <td>${actionBadge(l.action)}</td>
+                      <td><code class="mc-table-code">${esc(l.target)}</code></td>
+                      <td class="mc-audit-detail"><span title="${esc(l.detail)}">${esc(l.detail || '—')}</span></td>
+                      <td style="text-align:right;white-space:nowrap;color:var(--ink-2);font-size:12px">
+                        <span title="${esc(l.time ? new Date(l.time).toLocaleString('en-IN') : '')}">${esc(timeAgo(l.time))}</span>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          ` : `
+            <div style="padding:36px;text-align:center;color:var(--ink-2)">
+              <b>No audit records match your search.</b>
+              <p style="font-size:12.5px;margin:4px 0 0">Administrative actions will automatically appear here as changes are made.</p>
+            </div>
+          `}
+        </div>
+      `);
+
+      const qInp = $('#audit-q');
+      const qClr = $('#audit-q-clear');
+      if (qInp) {
+        qInp.oninput = (e) => {
+          q = e.target.value.trim().toLowerCase();
+          if (qClr) qClr.hidden = !q;
+          drawAudit();
+        };
+      }
+      if (qClr) {
+        qClr.onclick = () => {
+          q = '';
+          drawAudit();
+        };
+      }
+      $$('[data-audit-filter]').forEach((b) => {
+        b.onclick = () => {
+          filter = b.dataset.auditFilter;
+          drawAudit();
+        };
+      });
+      $('#audit-refresh')?.addEventListener('click', () => adminAuditLog());
+    };
+
+    drawAudit();
+  }
+
   MC.pages.settings = async (route) => { await adminSettings(); settingsView(route && route.sub); };
+  MC.pages.audit = () => adminAuditLog();
 })();

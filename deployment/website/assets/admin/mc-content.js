@@ -177,10 +177,11 @@
     newLabel: 'New event', empty: 'No events yet. Create one and it will be tracked from draft to certificates.', fields: eventFields,
     load: async (rows) => ({ facts: await MC.eventFacts(rows) }),
     row: (r, x) => `<li class="mc-item"><div class="mc-item-main"><b>${esc(r.title)}</b><small>${esc(r.category || '')} · ${esc(when(r.start_at))}${r.start_at ? ` · ${esc(until(r.start_at))}` : ''}</small><span class="mc-tags">${r.pinned_next_session ? '<span class="tag blue">Next session</span>' : ''}${r.featured ? '<span class="tag">Featured</span>' : ''}<span class="status s-${esc(r.status)}">${esc(r.status)}</span></span></div>${MC.pipeline(r, x.facts[r.id])}<div class="mc-item-actions"><button type="button" class="button-outline" data-edit="${esc(r.id)}">${icon('edit')}Edit</button><button type="button" class="mc-icon-btn" data-dup="${esc(r.id)}" aria-label="Duplicate ${esc(r.title)}" title="Duplicate">${icon('copy')}</button>${r.status === 'published' ? `<a class="mc-icon-btn" href="/event.html?slug=${encodeURIComponent(r.slug)}" target="_blank" rel="noopener" aria-label="View ${esc(r.title)} on the site" title="View on site">${icon('ext')}</a>` : ''}</div></li>`,
-    wire: (form) => {
+    wire: (form, row, d) => {
       form.addEventListener('input', (e) => { if (e.target.name === 'title' && !form.elements.slug.dataset.manual && !form.elements.id.value) form.elements.slug.value = slugify(e.target.value); if (e.target.name === 'slug') form.elements.slug.dataset.manual = '1'; });
       form.elements.slug.addEventListener('change', () => { form.elements.slug.value = slugify(form.elements.slug.value); });
       if (form.elements.id.value) form.elements.slug.dataset.manual = '1';
+      attachImageUpload(form.elements.image_url, { folder: 'events', prefix: form.elements.title?.value || 'event', label: 'Upload banner image', d });
     },
     before: async (f, id) => {
       if (f.pinned_next_session && f.status === 'published') {
@@ -196,6 +197,63 @@
       if (res.error) return toast(authErrorText(res.error)); await audit('create', 'events', slug); toast('Duplicated as a draft.', true);
     }
   };
+
+  /* Helper for direct image uploads in entity drawers */
+  function attachImageUpload(inputEl, options = {}) {
+    if (!inputEl) return;
+    const { folder = 'site-assets', prefix = 'asset', label = 'Upload image', d } = options;
+    const parentLabel = inputEl.closest('label');
+    if (!parentLabel || parentLabel.nextElementSibling?.classList.contains('mc-img-upload-bar')) return;
+    
+    const wrapper = document.createElement('div');
+    wrapper.className = 'mc-img-upload-bar';
+    wrapper.innerHTML = `
+      <input type="file" accept="image/png,image/jpeg,image/webp" style="display:none">
+      <button type="button" class="button-outline mc-btn-upload">${icon('upload')}${esc(label)}</button>
+      <div class="mc-field-img-thumb" ${inputEl.value && safeUrl(inputEl.value) ? '' : 'hidden'}>
+        ${inputEl.value && safeUrl(inputEl.value) ? `<img src="${esc(safeUrl(inputEl.value))}" alt="preview">` : ''}
+      </div>
+    `;
+    parentLabel.insertAdjacentElement('afterend', wrapper);
+    
+    const fileInp = wrapper.querySelector('input[type="file"]');
+    const uploadBtn = wrapper.querySelector('.mc-btn-upload');
+    const thumbBox = wrapper.querySelector('.mc-field-img-thumb');
+    
+    uploadBtn.onclick = () => fileInp.click();
+    fileInp.onchange = async () => {
+      const file = fileInp.files?.[0];
+      if (!file) return;
+      if (file.size > 12 * 1024 * 1024) return toast('Image must be 12 MB or smaller.');
+      const ext = file.name.split('.').pop().toLowerCase() || 'webp';
+      const cleanPrefix = slugify(prefix || 'asset') || 'asset';
+      const path = `${folder}/${cleanPrefix}-${Date.now().toString(36)}.${ext}`;
+      const oldHtml = uploadBtn.innerHTML;
+      uploadBtn.disabled = true; uploadBtn.textContent = 'Uploading…';
+      try {
+        const up = await MC.uploadStorage('site-assets', path, file, { isPublic: true, contentType: file.type });
+        inputEl.value = up.publicUrl;
+        d?.markDirty?.();
+        thumbBox.innerHTML = `<img src="${esc(up.publicUrl)}" alt="preview">`;
+        thumbBox.hidden = false;
+        toast('Image uploaded and linked.', true);
+      } catch (err) {
+        toast(authErrorText(err));
+      } finally {
+        uploadBtn.disabled = false; uploadBtn.innerHTML = oldHtml; fileInp.value = '';
+      }
+    };
+    
+    inputEl.addEventListener('input', () => {
+      const u = inputEl.value.trim();
+      if (safeUrl(u)) {
+        thumbBox.innerHTML = `<img src="${esc(safeUrl(u))}" alt="preview">`;
+        thumbBox.hidden = false;
+      } else {
+        thumbBox.hidden = true;
+      }
+    });
+  }
 
   /* ---------------- Blog ---------------- */
   let blogSeries = [];
@@ -254,6 +312,7 @@
         }
         toast(n ? `Filled ${n} field${n === 1 ? '' : 's'}. Review them before saving.` : 'Nothing new to fill. Existing fields were kept.', true);
       });
+      attachImageUpload(form.elements.image_url, { folder: 'blog', prefix: form.elements.title?.value || 'article', label: 'Upload preview image', d });
     }
   };
 
@@ -276,24 +335,31 @@
     ],
     row: (r) => `<li class="mc-item">${safeUrl(r.image_url) ? `<div class="mc-item-thumb"><img src="${esc(safeUrl(r.image_url))}" alt="" loading="lazy"></div>` : ''}<div class="mc-item-main"><b>${esc(r.title)}</b><small>${r.kind === 'gdg' ? 'GDG SRU library' : 'Free resources'} · ${esc(r.category || r.resource_type || '')}</small><span class="mc-tags">${r.featured ? '<span class="tag">Featured</span>' : ''}<span class="tag blue">${esc(r.resource_type || 'material')}</span><span class="status s-${esc(r.status)}">${esc(r.status)}</span></span></div><div class="mc-item-actions"><button type="button" class="button-outline" data-edit="${esc(r.id)}">${icon('edit')}Edit</button>${safeUrl(r.destination_url) ? `<a class="mc-icon-btn" href="${esc(safeUrl(r.destination_url))}" target="_blank" rel="noopener" aria-label="Open resource" title="Open resource">${icon('ext')}</a>` : ''}</div></li>`,
     validate: (f) => f.destination_url && !safeUrl(f.destination_url) ? 'Enter a valid resource link.' : '',
-    drawerExtra: (row) => row ? `<div class="mc-upload full"><h3>Attach a file</h3><p class="muted small">PDF, PPT/PPTX, TXT, MP4, WebM or ZIP up to 50 MB. Uploaded files are public to anyone with the link, so never upload private lists or restricted material.</p><input type="file" id="res-file" accept="application/pdf,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain,video/mp4,video/webm,application/zip"><button type="button" class="button-outline" id="res-upload">${icon('upload')}Upload and use as the link</button></div>` : '',
+    drawerExtra: () => `<div class="mc-upload full"><h3>Attach a file</h3><p class="muted small">PDF, PPT/PPTX, TXT, MP4, WebM or ZIP up to 50 MB. Uploaded files are public to anyone with the link, so never upload private lists or restricted material.</p><input type="file" id="res-file" accept="application/pdf,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain,video/mp4,video/webm,application/zip"><button type="button" class="button-outline" id="res-upload">${icon('upload')}Upload and use as the link</button></div>`,
     wire: (form, row, d) => {
-      const btn = $('#res-upload'); if (!btn || !row) return;
+      attachImageUpload(form.elements.image_url, { folder: 'resources', prefix: form.elements.title?.value || 'resource', label: 'Upload logo or thumbnail', d });
+      const btn = $('#res-upload'); if (!btn) return;
       btn.addEventListener('click', async () => {
         const file = $('#res-file').files?.[0]; if (!file) return toast('Choose a file first.');
         const types = { 'application/pdf': 'pdf', 'application/vnd.ms-powerpoint': 'presentation', 'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'presentation', 'video/mp4': 'video', 'video/webm': 'video', 'text/plain': 'notes', 'application/zip': 'file' };
         if (file.size > 50 * 1024 * 1024) return toast('Choose a file smaller than 50 MB.');
         if (!types[file.type]) return toast('This file type is not allowed. Use PDF, PPT/PPTX, TXT, MP4, WebM or ZIP.');
         btn.disabled = true;
-        const name = String(file.name || 'resource').replace(/[^a-zA-Z0-9._-]+/g, '-').slice(-100), path = `${row.id}/${Date.now()}-${name}`;
+        const folder = row?.id || ('new-' + Date.now().toString(36));
+        const name = String(file.name || 'resource').replace(/[^a-zA-Z0-9._-]+/g, '-').slice(-100);
+        const path = `${folder}/${Date.now()}-${name}`;
         try {
           const up = await MC.uploadStorage('resource-files', path, file, { isPublic: true, contentType: file.type });
           const url = up.publicUrl;
-          const saved = await sb().from('resources').update({ destination_url: url, resource_type: types[file.type] }).eq('id', row.id);
-          if (saved.error) throw saved.error;
-          form.elements.destination_url.value = url; form.elements.resource_type.value = types[file.type];
+          form.elements.destination_url.value = url;
+          if (form.elements.resource_type) form.elements.resource_type.value = types[file.type];
+          if (row?.id) {
+            const saved = await sb().from('resources').update({ destination_url: url, resource_type: types[file.type] }).eq('id', row.id);
+            if (saved.error) throw saved.error;
+            await audit('upload_resource', 'resources', row.id);
+          }
           d?.markDirty?.();
-          await audit('upload_resource', 'resources', row.id); toast('File uploaded and attached.', true);
+          toast('File uploaded and linked.', true);
         } catch (e) {
           toast(authErrorText(e) || 'Failed to upload resource file.');
         } finally {
