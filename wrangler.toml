@@ -1,5 +1,7 @@
 name = "gdgsru"
+main = "worker.js"
 compatibility_date = "2024-09-23"
 
 [assets]
 directory = "./cloudflare-pages-site"
+binding = "ASSETS"
