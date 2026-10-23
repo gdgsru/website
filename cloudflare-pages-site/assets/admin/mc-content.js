@@ -100,12 +100,15 @@
           ta.focus();
         }
       });
+      const debouncedMd = (MC.debounce || ((fn) => fn))((el) => {
+        const prev = $(`#${el.id}-preview`, form);
+        if (prev && !prev.hidden) {
+          prev.innerHTML = MC.renderMarkdown(el.value);
+        }
+      }, 100);
       form.addEventListener('input', (e) => {
         if (e.target.matches('.mc-md-input')) {
-          const prev = $(`#${e.target.id}-preview`, form);
-          if (prev && !prev.hidden) {
-            prev.innerHTML = MC.renderMarkdown(e.target.value);
-          }
+          debouncedMd(e.target);
         }
       });
       cfg.wire?.(form, row, d, extra);
@@ -130,11 +133,12 @@
 
     const ws = $('#admin-workspace'), top = $('#mc-page-actions');
     const qIn = $('#mc-q'), qClear = $('#mc-q-clear');
-    qIn.addEventListener('input', (e) => {
-      q = e.target.value.trim().toLowerCase();
+    const debouncedSearch = (MC.debounce || ((fn) => fn))(() => {
+      q = qIn.value.trim().toLowerCase();
       if (qClear) qClear.hidden = !q;
       drawList();
-    });
+    }, 80);
+    qIn.addEventListener('input', debouncedSearch);
     qClear?.addEventListener('click', () => {
       qIn.value = '';
       q = '';
@@ -222,21 +226,24 @@
     
     uploadBtn.onclick = () => fileInp.click();
     fileInp.onchange = async () => {
-      const file = fileInp.files?.[0];
-      if (!file) return;
-      if (file.size > 12 * 1024 * 1024) return toast('Image must be 12 MB or smaller.');
-      const ext = file.name.split('.').pop().toLowerCase() || 'webp';
-      const cleanPrefix = slugify(prefix || 'asset') || 'asset';
-      const path = `${folder}/${cleanPrefix}-${Date.now().toString(36)}.${ext}`;
+      const rawFile = fileInp.files?.[0];
+      if (!rawFile) return;
+      if (rawFile.size > 20 * 1024 * 1024) return toast('Image must be 20 MB or smaller.');
       const oldHtml = uploadBtn.innerHTML;
-      uploadBtn.disabled = true; uploadBtn.textContent = 'Uploading…';
+      uploadBtn.disabled = true; uploadBtn.textContent = 'Optimizing…';
       try {
+        const file = (MC.optimizeImageForWeb ? await MC.optimizeImageForWeb(rawFile, { maxWidth: 1600, maxHeight: 1200, quality: 0.85 }) : rawFile);
+        uploadBtn.textContent = 'Uploading…';
+        const ext = file.name.split('.').pop().toLowerCase() || 'webp';
+        const cleanPrefix = slugify(prefix || 'asset') || 'asset';
+        const path = `${folder}/${cleanPrefix}-${Date.now().toString(36)}.${ext}`;
         const up = await MC.uploadStorage('site-assets', path, file, { isPublic: true, contentType: file.type });
         inputEl.value = up.publicUrl;
         d?.markDirty?.();
         thumbBox.innerHTML = `<img src="${esc(up.publicUrl)}" alt="preview">`;
         thumbBox.hidden = false;
-        toast('Image uploaded and linked.', true);
+        const savedKb = Math.round((rawFile.size - file.size) / 1024);
+        toast(savedKb > 40 ? `Optimized by ${savedKb} KB and uploaded!` : 'Image uploaded and linked.', true);
       } catch (err) {
         toast(authErrorText(err));
       } finally {

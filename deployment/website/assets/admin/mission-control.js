@@ -764,17 +764,75 @@
     }
   });
 
-  /* ---------- event pipeline (shared by Overview and Events) ---------- */
-  async function eventFacts(events) {
+  /* ---------- performance: debounce helper ---------- */
+  function debounce(fn, ms = 120) {
+    let timer = null;
+    return function (...args) {
+      clearTimeout(timer);
+      timer = setTimeout(() => fn.apply(this, args), ms);
+    };
+  }
+
+  /* ---------- client-side image optimization prior to cloud upload ---------- */
+  async function optimizeImageForWeb(file, options = {}) {
+    if (!file || !file.type || !file.type.startsWith('image/') || file.type === 'image/svg+xml') return file;
+    const { maxWidth = 1600, maxHeight = 1200, quality = 0.85 } = options;
+
+    if (file.size < 250 * 1024 && file.type === 'image/webp') return file;
+
+    return new Promise((resolve) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        let { width, height } = img;
+        if (width <= maxWidth && height <= maxHeight && file.size < 350 * 1024) {
+          return resolve(file);
+        }
+
+        const ratio = Math.min(maxWidth / width, maxHeight / height, 1);
+        const w = Math.round(width * ratio);
+        const h = Math.round(height * ratio);
+
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+
+        canvas.toBlob((blob) => {
+          if (!blob || blob.size >= file.size) {
+            resolve(file);
+          } else {
+            const cleanName = (file.name.replace(/\.[^.]+$/, '') || 'image') + '.webp';
+            const optimized = new File([blob], cleanName, { type: 'image/webp', lastModified: Date.now() });
+            resolve(optimized);
+          }
+        }, 'image/webp', quality);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(file);
+      };
+      img.src = url;
+    });
+  }
+
+  /* ---------- event pipeline (optimized single-query batch aggregation) ---------- */
+  async function eventFacts(events, preloadedCerts = null) {
     const ids = events.filter((e) => e.status === 'published' || e.status === 'archived').slice(0, 40).map((e) => e.id);
-    const [certs, counts] = await Promise.all([
-      sb.from('event_certificates').select('event_id,claims_enabled'),
-      Promise.all(ids.map((id) => sb.from('attendance_records').select('id', { count: 'exact', head: true }).eq('event_id', id).eq('attendance_status', 'attended')))
-    ]);
     const facts = {};
     events.forEach((e) => { facts[e.id] = { attended: 0, cert: false }; });
+    if (!ids.length) return facts;
+
+    const certPromise = preloadedCerts
+      ? Promise.resolve({ data: preloadedCerts })
+      : sb.from('event_certificates').select('event_id,claims_enabled').in('event_id', ids);
+    const attPromise = sb.from('attendance_records').select('event_id').in('event_id', ids).eq('attendance_status', 'attended');
+
+    const [certs, atts] = await Promise.all([certPromise, attPromise]);
     (certs.data || []).forEach((c) => { if (facts[c.event_id]) facts[c.event_id].cert = !!c.claims_enabled; });
-    ids.forEach((id, i) => { facts[id].attended = counts[i].count || 0; });
+    (atts.data || []).forEach((a) => { if (facts[a.event_id]) facts[a.event_id].attended = (facts[a.event_id].attended || 0) + 1; });
     return facts;
   }
   function pipeline(ev, f = { attended: 0, cert: false }, interactive = true) {
@@ -815,6 +873,7 @@
     toast, adminMessage: toast, clearToast, confirmDialog, drawer, authErrorText, audit, upsertSetting, withSaving, loadScriptOnce,
     cached, dropCache, setWorkspace, go, render, route: parseRoute, eventFacts, pipeline, bindDeleteButtons, defaultSocials,
     ensureStorageBucket, ensureAllBuckets, uploadStorage, renderMarkdown, openHealthModal, openShortcutsModal,
+    debounce, optimizeImageForWeb,
     get sb() { return sb; }, user: null, pages: {}, ICON
   };
   MC.renderAdminTab = () => render();

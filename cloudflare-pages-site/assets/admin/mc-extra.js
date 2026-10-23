@@ -327,10 +327,11 @@
       const r=await upsertSetting('social_links',values);if(r.error)return adminMessage(authErrorText(r.error));await audit('update','site_settings','social_links');adminMessage('Social links saved.',true);await adminSettings();
     };
     $('#logo-form').onsubmit=async e=>{
-      e.preventDefault();const file=e.target.elements.logo.files?.[0];if(!file)return;
-      if(!['image/png','image/jpeg','image/webp'].includes(file.type))return adminMessage('Choose a PNG, JPEG, or WebP image.');
-      if(file.size>5*1024*1024)return adminMessage('The logo must be 5 MB or smaller.');
-      const ext=({'image/png':'png','image/jpeg':'jpg','image/webp':'webp'})[file.type],path=`brand/logo.${ext}`;
+      e.preventDefault();const rawFile=e.target.elements.logo.files?.[0];if(!rawFile)return;
+      if(!['image/png','image/jpeg','image/webp'].includes(rawFile.type))return adminMessage('Choose a PNG, JPEG, or WebP image.');
+      if(rawFile.size>15*1024*1024)return adminMessage('The logo must be 15 MB or smaller.');
+      const file=(MC.optimizeImageForWeb ? await MC.optimizeImageForWeb(rawFile, { maxWidth: 800, maxHeight: 400, quality: 0.9 }) : rawFile);
+      const ext=file.name.split('.').pop().toLowerCase() || 'webp', path=`brand/logo.${ext}`;
       try {
         const upload=await MC.uploadStorage('site-assets',path,file,{isPublic:true,contentType:file.type});
         const saved=await upsertSetting('brand_logo_url',upload.publicUrl);if(saved.error)return adminMessage(authErrorText(saved.error));
@@ -737,11 +738,11 @@
       const qInp = $('#audit-q');
       const qClr = $('#audit-q-clear');
       if (qInp) {
-        qInp.oninput = (e) => {
-          q = e.target.value.trim().toLowerCase();
+        qInp.oninput = (MC.debounce || ((fn) => fn))(() => {
+          q = qInp.value.trim().toLowerCase();
           if (qClr) qClr.hidden = !q;
           drawAudit();
-        };
+        }, 80);
       }
       if (qClr) {
         qClr.onclick = () => {

@@ -35,7 +35,7 @@
       q(window.MC.sb.from('audit_logs').select('action,table_name,record_id,created_at').order('created_at', { ascending: false }).limit(8))
     ]);
     const events = ev.data || [];
-    const facts = await eventFacts(events);
+    const facts = await eventFacts(events, certs.data);
     const d = { events, facts, team: team.data || [], periods: per.data || [] };
     const now = Date.now();
     const live = events.filter((e) => e.status === 'published');
