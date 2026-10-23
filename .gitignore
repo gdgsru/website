@@ -20,6 +20,7 @@ sections_*.txt
 .DS_Store
 Thumbs.db
 desktop.ini
+scratch/
 
 # Environment variables
 .env

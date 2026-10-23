@@ -241,6 +241,16 @@
     if (!events.some((e) => e.id === selectedEventId)) selectedEventId = events[0].id;
 
     let globalDefaultLayout = globalRes.data?.default_layout || {};
+    let isDirty = false;
+    let currentViewMode = localStorage.getItem('gdg_cert_view_mode') || 'split';
+
+    // Fetch initial badge data
+    const [attCountRes, ecStatusRes] = await Promise.all([
+      sb.from('attendance_records').select('id', { count: 'exact', head: true }).eq('event_id', selectedEventId),
+      sb.from('event_certificates').select('claims_enabled').eq('event_id', selectedEventId).maybeSingle(),
+    ]);
+    let rosterCount = attCountRes.count || 0;
+    let claimsActive = !!ecStatusRes.data?.claims_enabled;
 
     if (!document.getElementById('gdg-cert-studio-fonts')) {
       const l = document.createElement('link');
@@ -334,16 +344,176 @@
         .mc-f-row { display: flex; gap: 12px; }
         .mc-f-row > * { flex: 1; }
 
-        /* Certificate Grid */
+        /* Stepper & Badges */
+        .mc-tab-num {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: rgba(0,0,0,0.07);
+          font-size: 11px;
+          font-weight: 800;
+          line-height: 1;
+        }
+        .mc-wb-tab-btn.active .mc-tab-num {
+          background: var(--primary, #1a73e8);
+          color: #fff;
+        }
+        .mc-tab-badge {
+          background: rgba(0,0,0,0.06);
+          color: var(--ink-2);
+          font-size: 11px;
+          padding: 1px 6px;
+          border-radius: 10px;
+          font-weight: 700;
+        }
+        .mc-tab-pill {
+          font-size: 10px;
+          font-weight: 800;
+          padding: 2px 6px;
+          border-radius: 4px;
+          text-transform: uppercase;
+          letter-spacing: 0.3px;
+        }
+        .mc-tab-pill.live {
+          background: #DCFCE7;
+          color: #15803D;
+        }
+        .mc-tab-pill.draft {
+          background: #F1F5F9;
+          color: #64748B;
+        }
+
+        /* Designer Sub-Toolbar */
+        .mc-designer-toolbar {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 12px;
+          background: var(--surface);
+          border: 1px solid var(--line);
+          border-radius: var(--r-m);
+          padding: 8px 14px;
+          margin-bottom: 16px;
+        }
+        .mc-quick-nav {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          flex-wrap: wrap;
+        }
+        .mc-qn-label, .mc-vm-label {
+          font-size: 11px;
+          font-weight: 700;
+          color: var(--ink-2);
+          text-transform: uppercase;
+          letter-spacing: 0.4px;
+        }
+        .mc-qn-btn {
+          font-size: 11.5px;
+          font-weight: 600;
+          padding: 4px 10px;
+          border-radius: var(--r-m);
+          background: var(--sunk, #f1f3f4);
+          color: var(--ink-2);
+          text-decoration: none;
+          transition: all 0.15s ease;
+          border: 1px solid transparent;
+          cursor: pointer;
+        }
+        .mc-qn-btn:hover {
+          background: var(--surface);
+          border-color: var(--line);
+          color: var(--primary, #1a73e8);
+        }
+        .mc-view-mode-group {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .mc-view-modes {
+          display: flex;
+          gap: 4px;
+          background: var(--sunk, #f1f3f4);
+          padding: 3px;
+          border-radius: var(--r-m);
+          border: 1px solid var(--line);
+        }
+        .mc-vm-btn {
+          border: none;
+          background: none;
+          padding: 4px 12px;
+          border-radius: calc(var(--r-m) - 2px);
+          font-size: 12px;
+          font-weight: 700;
+          color: var(--ink-2);
+          cursor: pointer;
+          transition: all 0.15s ease;
+        }
+        .mc-vm-btn:hover { color: var(--ink); }
+        .mc-vm-btn.active {
+          background: var(--surface);
+          color: var(--primary, #1a73e8);
+          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        /* Certificate Grid Layout Variants */
         .mc-cert-grid {
           display: grid;
-          grid-template-columns: minmax(360px, 440px) minmax(0, 1fr);
+          grid-template-columns: minmax(380px, 460px) minmax(0, 1fr);
           gap: 20px;
           align-items: start;
         }
-        @media (max-width: 1080px) {
-          .mc-cert-grid { grid-template-columns: 1fr; }
+        .mc-cert-grid.view-form {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
         }
+        .mc-cert-grid.view-form .mc-controls-col { width: 100%; }
+        .mc-cert-grid.view-form .mc-preview-card { position: static; width: 100%; }
+
+        .mc-cert-grid.view-canvas {
+          display: flex;
+          flex-direction: column-reverse;
+          gap: 20px;
+        }
+        .mc-cert-grid.view-canvas .mc-preview-card { position: static; width: 100%; }
+        .mc-cert-grid.view-canvas .mc-preview-stage { min-height: 700px; max-height: 85vh; }
+        .mc-cert-grid.view-canvas .mc-controls-col { width: 100%; }
+
+        @media (max-width: 1180px) {
+          .mc-cert-grid:not(.view-canvas) { grid-template-columns: 1fr; }
+          .mc-preview-card { position: static; }
+        }
+
+        /* Floating Sticky Save Bar */
+        .mc-save-bar {
+          position: sticky;
+          bottom: 16px;
+          z-index: 50;
+          background: var(--surface);
+          border: 1.5px solid var(--line);
+          border-radius: var(--r-l);
+          padding: 10px 18px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 12px;
+          box-shadow: 0 4px 18px rgba(0,0,0,0.12);
+          margin-top: 10px;
+        }
+        .mc-save-status {
+          font-size: 12.5px;
+          font-weight: 600;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .mc-save-status.dirty { color: #b45309; }
+        .mc-save-status.clean { color: #15803d; }
 
         /* Preview card */
         .mc-preview-card {
@@ -406,22 +576,38 @@
       </style>
 
       <div class="mc-wb-container">
-        <!-- Header: Event Selector + 3-Tab Switcher -->
+        <!-- Header: Event Selector + 1-2-3 Stepper Tabs -->
         <div class="mc-wb-header">
           <div class="mc-wb-header-left">
-            <label style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:8px">
-              <span>Event:</span>
-              <select id="wb-event-select" style="font-size:13px;padding:6px 12px;border-radius:var(--r-m);border:1px solid var(--line);min-width:240px">
-                ${events.map((e) => `<option value="${esc(e.id)}" ${e.id === selectedEventId ? 'selected' : ''}>${esc(e.title)}</option>`).join('')}
-              </select>
-            </label>
+            <div style="display:flex;align-items:center;gap:8px">
+              <label style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px">
+                <span>Event:</span>
+                <select id="wb-event-select" style="font-size:13px;padding:6px 12px;border-radius:var(--r-m);border:1px solid var(--line);min-width:240px">
+                  ${events.map((e) => `<option value="${esc(e.id)}" ${e.id === selectedEventId ? 'selected' : ''}>${esc(e.title)}</option>`).join('')}
+                </select>
+              </label>
+              <span id="wb-event-status-pill" class="tag ${claimsActive ? 't3' : 't2'}" style="font-size:11px;padding:3px 8px">${claimsActive ? '● Claims Active' : '○ Draft'}</span>
+            </div>
+            
             <div class="mc-wb-tabs">
-              <button type="button" class="mc-wb-tab-btn ${activeTabName === 'attendance' ? 'active' : ''}" data-tab="attendance">👥 Attendance</button>
-              <button type="button" class="mc-wb-tab-btn ${activeTabName === 'certificate' ? 'active' : ''}" data-tab="certificate">📜 Certificate</button>
-              <button type="button" class="mc-wb-tab-btn ${activeTabName === 'publish' ? 'active' : ''}" data-tab="publish">🚀 Publish</button>
+              <button type="button" class="mc-wb-tab-btn ${activeTabName === 'attendance' ? 'active' : ''}" data-tab="attendance">
+                <span class="mc-tab-num">1</span>
+                <span>Event Roster</span>
+                <span class="mc-tab-badge" id="wb-tab-roster-badge">(${rosterCount})</span>
+              </button>
+              <button type="button" class="mc-wb-tab-btn ${activeTabName === 'certificate' ? 'active' : ''}" data-tab="certificate">
+                <span class="mc-tab-num">2</span>
+                <span>Certificate Designer</span>
+              </button>
+              <button type="button" class="mc-wb-tab-btn ${activeTabName === 'publish' ? 'active' : ''}" data-tab="publish">
+                <span class="mc-tab-num">3</span>
+                <span>Publish & Claims</span>
+                <span class="mc-tab-pill ${claimsActive ? 'live' : 'draft'}" id="wb-tab-pub-pill">${claimsActive ? 'Live' : 'Draft'}</span>
+              </button>
             </div>
           </div>
           <div class="mc-wb-header-right">
+            <button type="button" class="btn sm" id="wb-test-claim-btn-top" style="font-size:12px;display:inline-flex;align-items:center;gap:6px">🎯 Test Claim Preview</button>
             <button type="button" class="btn o sm" id="wb-global-defaults-btn">⚙️ Default Layout</button>
           </div>
         </div>
@@ -435,6 +621,52 @@
         <!-- TAB 3: Publish Pane -->
         <div id="pane-publish" class="mc-wb-pane ${activeTabName === 'publish' ? 'active' : ''}"></div>
       </div>
+
+      <!-- Test Claim Preview Modal -->
+      <dialog id="wb-test-claim-modal" style="border:none;border-radius:var(--r-l);box-shadow:var(--sh-l);padding:24px;width:95%;max-width:980px;background:var(--surface);color:var(--ink)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:12px">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:20px">🎯</span>
+              <h3 style="margin:0;font-size:17px;font-weight:800">Live Test Claim Preview</h3>
+              <span class="tag t3" style="font-size:11px">SAMPLE AUDIT READY</span>
+            </div>
+            <p style="font-size:12.5px;color:var(--ink-2);margin:3px 0 0">Simulate attendee claim verification, test real export fidelity, and inspect download packages without leaving Mission Control.</p>
+          </div>
+          <button type="button" class="btn o sm" id="wb-test-claim-close">✕ Close</button>
+        </div>
+
+        <!-- Test Claim Controls Bar -->
+        <div style="background:var(--sunk,#f8f9fa);border:1px solid var(--line);border-radius:var(--r-m);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:14px">
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <label style="font-size:12px;font-weight:700">
+              Recipient:
+              <select id="tc-attendee-select" style="font-size:12px;padding:5px 8px;margin-left:4px;border:1px solid var(--line);border-radius:var(--r-m);background:var(--surface)">
+                <option value="">Loading attendees…</option>
+              </select>
+            </label>
+            <input type="text" id="tc-custom-name" placeholder="Or test custom name" style="font-size:12px;padding:5px 8px;border:1px solid var(--line);border-radius:var(--r-m);width:150px;background:var(--surface)">
+            <button type="button" class="btn o sm" id="tc-btn-apply-name">Update</button>
+          </div>
+
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <button type="button" class="btn sm" id="tc-btn-download-png">📥 Download PNG</button>
+            <button type="button" class="btn sm" id="tc-btn-download-pdf">📥 Download PDF</button>
+            <button type="button" class="btn o sm" id="tc-btn-copy-link">🔗 Copy Verify URL</button>
+          </div>
+        </div>
+
+        <!-- Test Preview Stage -->
+        <div id="tc-stage" style="background:#eef2f6;padding:16px;border-radius:var(--r-m);border:1px solid var(--line);overflow:auto;display:flex;justify-content:center;align-items:flex-start;min-height:380px;max-height:55vh">
+          <div id="tc-scaler" style="transform-origin:top center;transition:transform 0.1s ease-out">
+            <div id="tc-canvas-wrap"></div>
+          </div>
+        </div>
+        <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:var(--ink-2);flex-wrap:wrap;gap:8px">
+          <span>✓ Dynamic QR codes, SHA-256 fingerprint simulation, and responsive styling active.</span>
+          <span id="tc-cred-id-display" style="font-family:monospace;font-weight:700"></span>
+        </div>
+      </dialog>
 
       <!-- Global Default Layout Modal -->
       <dialog id="wb-global-modal" style="border:none;border-radius:var(--r-l);box-shadow:var(--sh-l);padding:24px;width:90%;max-width:540px;background:var(--surface);color:var(--ink)">
@@ -478,12 +710,21 @@
     }
     tabBtns.forEach((b) => b.addEventListener('click', () => switchTab(b.dataset.tab)));
 
-    // Event Switcher logic
+    // Event Switcher logic with dirty protection
     $('#wb-event-select').addEventListener('change', (e) => {
+      if (isDirty && !confirm('You have unsaved changes in the Certificate Designer. Discard them and switch event?')) {
+        e.target.value = selectedEventId;
+        return;
+      }
       ctx.keepEvent = e.target.value;
       const currentActive = document.querySelector('.mc-wb-tab-btn.active')?.dataset.tab || 'certificate';
       renderWorkbench(ctx, currentActive);
     });
+
+    // Test Claim Modal logic
+    const testClaimModal = $('#wb-test-claim-modal');
+    $('#wb-test-claim-close')?.addEventListener('click', () => testClaimModal.close());
+    $('#wb-test-claim-btn-top')?.addEventListener('click', () => openTestClaimModal());
 
     // Global Modal logic
     const globalModal = $('#wb-global-modal');
@@ -536,6 +777,8 @@
       }
 
       const rows = records || [];
+      rosterCount = rows.length;
+      if ($('#wb-tab-roster-badge')) $('#wb-tab-roster-badge').textContent = `(${rosterCount})`;
       const currentEv = events.find((e) => e.id === selectedEventId) || currentEventObj;
       const purgeDate = rows[0]?.purge_at ? new Date(rows[0].purge_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : '1 year after event';
       const eventDateStr = currentEv?.start_at ? new Date(currentEv.start_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Date not set';
@@ -664,7 +907,21 @@
                         <button type="button" class="btn o sm" data-del-att="${esc(r.id)}" style="padding:2px 8px;font-size:11px;color:var(--r)" title="Delete single attendee">✕</button>
                       </td>
                     </tr>
-                  `).join('') : `<tr><td colspan="6" style="padding:32px;text-align:center;color:var(--ink-3)">No attendees on record for this event yet. Click "Add / Import Attendees" above.</td></tr>`}
+                  `).join('') : `
+                    <tr>
+                      <td colspan="6" style="padding:0">
+                        <div style="padding:36px 20px;text-align:center;color:var(--ink-2);background:var(--sunk,#f8f9fa)">
+                          <div style="font-size:32px;margin-bottom:8px">👥</div>
+                          <b style="font-size:14px;color:var(--ink-0);display:block;margin-bottom:4px">No attendees on record for this event yet.</b>
+                          <p style="font-size:12.5px;max-width:440px;margin:0 auto 16px">You can upload a CSV file with your attendee list, add attendees one-by-one, or load 3 demo records to test the certificate workflow right away.</p>
+                          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+                            <button type="button" class="btn sm" id="att-btn-add-demo">✨ Load 3 Demo Attendees</button>
+                            <button type="button" class="btn o sm" id="att-btn-csv-template">📥 Download Sample CSV Template</button>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  `}
                 </tbody>
               </table>
             </div>
@@ -712,12 +969,51 @@
           nameInp.value = '';
           if (rollInp) rollInp.value = '';
           if (emailInp) emailInp.value = '';
+          nameInp.focus();
           await renderAttendanceTab();
           refreshPublishTab();
         } catch (err) {
           adminMessage(authErrorText(err));
         }
       };
+
+      // Demo roster button
+      const demoBtn = $('#att-btn-add-demo', root);
+      if (demoBtn) {
+        demoBtn.onclick = async () => {
+          demoBtn.disabled = true;
+          demoBtn.textContent = 'Adding demo roster…';
+          try {
+            const demoRows = [
+              { attendee_name: 'Asha Rao', roll_no: '26BCE1001', attendee_email: 'asha@example.com', attendance_status: 'attended' },
+              { attendee_name: 'Rahul Verma', roll_no: '26BCE1002', attendee_email: 'rahul@example.com', attendance_status: 'attended' },
+              { attendee_name: 'Priya Sharma', roll_no: '26BCE1003', attendee_email: 'priya@example.com', attendance_status: 'attended' },
+            ];
+            await importNames(selectedEventId, demoRows, false);
+            adminMessage('Added 3 demo attendees to the roster!', true);
+            await renderAttendanceTab();
+            refreshPublishTab();
+          } catch (err) {
+            adminMessage(authErrorText(err));
+          }
+        };
+      }
+
+      // Sample CSV Template download
+      const tplBtn = $('#att-btn-csv-template', root);
+      if (tplBtn) {
+        tplBtn.onclick = () => {
+          const csvContent = 'Name,Roll Number,Email\nAsha Rao,26BCE1001,asha@example.com\nRahul Verma,26BCE1002,rahul@example.com\nPriya Sharma,26BCE1003,priya@example.com\n';
+          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'sample_attendance_roster.csv';
+          a.click();
+          URL.revokeObjectURL(url);
+          adminMessage('Downloaded sample CSV template.', true);
+        };
+      }
 
       // Run bulk import
       $('#att-btn-run-import').onclick = async () => {
@@ -887,6 +1183,35 @@
     let currentEventObj = events.find((e) => e.id === selectedEventId) || events[0];
     let studioTemplateHtml = '';
 
+    function markDirty() {
+      isDirty = true;
+      const ind = $('#mc-save-indicator');
+      if (ind) {
+        ind.className = 'mc-save-status dirty';
+        ind.innerHTML = `<span class="mc-save-icon">⚠️</span> <span class="mc-save-text">Unsaved changes</span>`;
+      }
+    }
+
+    function markClean() {
+      isDirty = false;
+      const ind = $('#mc-save-indicator');
+      if (ind) {
+        ind.className = 'mc-save-status clean';
+        ind.innerHTML = `<span class="mc-save-icon">✓</span> <span class="mc-save-text">All changes saved</span>`;
+      }
+    }
+
+    function setViewMode(mode) {
+      currentViewMode = mode;
+      localStorage.setItem('gdg_cert_view_mode', mode);
+      const grid = $('#mc-cert-grid');
+      if (grid) {
+        grid.className = `mc-cert-grid view-${mode}`;
+      }
+      $$('.mc-vm-btn').forEach((b) => b.classList.toggle('active', b.dataset.view === mode));
+      setTimeout(fitStudioCanvas, 80);
+    }
+
     async function renderCertificateTab() {
       const root = panes.certificate;
       root.innerHTML = `<div class="mc-loading" role="status"><span>Loading certificate designer…</span></div>`;
@@ -933,13 +1258,39 @@
 
       // Render Designer Layout
       root.innerHTML = `
-        <div class="mc-cert-grid">
+        <!-- Designer Sub-Toolbar: Quick Nav + View Mode Switcher -->
+        <div class="mc-designer-toolbar">
+          <div class="mc-quick-nav">
+            <span class="mc-qn-label">Jump to:</span>
+            <button type="button" class="mc-qn-btn" data-jump="#card-identity">1. Identity</button>
+            <button type="button" class="mc-qn-btn" data-jump="#card-curriculum">2. Curriculum</button>
+            <button type="button" class="mc-qn-btn" data-jump="#card-dossier">3. Dossier</button>
+            <button type="button" class="mc-qn-btn" data-jump="#card-badges">4. Badges</button>
+            <button type="button" class="mc-qn-btn" data-jump="#card-logos">5. Logos & Sigs</button>
+            <button type="button" class="mc-qn-btn" data-jump="#card-positioning">6. Coordinates</button>
+          </div>
+          <div class="mc-view-mode-group">
+            <span class="mc-vm-label">View:</span>
+            <div class="mc-view-modes">
+              <button type="button" class="mc-vm-btn ${currentViewMode === 'split' ? 'active' : ''}" data-view="split" title="Side-by-side view">◫ Split View</button>
+              <button type="button" class="mc-vm-btn ${currentViewMode === 'form' ? 'active' : ''}" data-view="form" title="Full-width editing forms for laptops">▤ Form Focus</button>
+              <button type="button" class="mc-vm-btn ${currentViewMode === 'canvas' ? 'active' : ''}" data-view="canvas" title="Full-width enlarged preview">🖼️ Canvas Focus</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="mc-cert-grid view-${currentViewMode}" id="mc-cert-grid">
           <!-- Left: Control Panels -->
-          <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="mc-controls-col" style="display:flex;flex-direction:column;gap:16px">
             <!-- 1. Event & Certificate Identity -->
-            <div class="mc-card">
-              <h3 style="margin:0 0 2px;font-size:15px">1. Event & Certificate Identity</h3>
-              <p style="margin:0 0 10px;font-size:12px;color:var(--ink-2)">Core titles, dates, and chapter identification.</p>
+            <div class="mc-card" id="card-identity">
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+                <div>
+                  <h3 style="margin:0 0 2px;font-size:15px">1. Event & Certificate Identity</h3>
+                  <p style="margin:0;font-size:12px;color:var(--ink-2)">Core titles, dates, and chapter identification.</p>
+                </div>
+                <button type="button" class="btn o sm" id="btn-fill-defaults" style="font-size:11.5px">✨ Fill GDG Defaults</button>
+              </div>
               
               <div class="mc-f-group">
                 <label>Event Title</label>
@@ -969,7 +1320,7 @@
             </div>
 
             <!-- 2. Curriculum Overview Card -->
-            <div class="mc-card">
+            <div class="mc-card" id="card-curriculum">
               <div style="display:flex;justify-content:space-between;align-items:center">
                 <h3 style="margin:0;font-size:15px">// Curriculum Overview Card</h3>
                 <label class="check" style="font-size:12px;font-weight:700">
@@ -989,7 +1340,7 @@
             </div>
 
             <!-- 3. Blue Dossier Card & Competencies -->
-            <div class="mc-card">
+            <div class="mc-card" id="card-dossier">
               <h3 style="margin:0 0 2px;font-size:15px">// Blue Dossier Card & Competencies</h3>
               <p style="margin:0 0 8px;font-size:12px;color:var(--ink-2)">Verified skills, track, and credential reference.</p>
               
@@ -1016,7 +1367,7 @@
             </div>
 
             <!-- 4. Tech Badges & Stickers -->
-            <div class="mc-card">
+            <div class="mc-card" id="card-badges">
               <h3 style="margin:0 0 2px;font-size:15px">// Tech Badges & Stickers</h3>
               <p style="margin:0 0 8px;font-size:12px;color:var(--ink-2)">Header and sidebar tech accent badges.</p>
 
@@ -1038,7 +1389,7 @@
             </div>
 
             <!-- 5. GDG Logo, Partner Logos & Details -->
-            <div class="mc-card">
+            <div class="mc-card" id="card-logos">
               <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
                 <div>
                   <h3 style="margin:0;font-size:15px">GDG Logo, Partner Logos & Details</h3>
@@ -1075,11 +1426,11 @@
             </div>
 
             <!-- 6. Manual X/Y Positioning & Scale -->
-            <div class="mc-card" id="layout-editor-panel">
-              <div style="display:flex;justify-content:space-between;align-items:center">
+            <div class="mc-card" id="card-positioning">
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
                 <div>
                   <h3 style="margin:0;font-size:15px">6. Manual X/Y Positioning & Scale</h3>
-                  <p style="margin:2px 0 0;font-size:12px;color:var(--ink-2)">Select an element below to fine-tune its pixel coordinates or drag directly on the preview canvas.</p>
+                  <p style="margin:2px 0 0;font-size:12px;color:var(--ink-2)">Select an element below to fine-tune coordinates, use directional nudge buttons, or drag on the preview canvas.</p>
                 </div>
                 <div style="display:flex;gap:6px">
                   <button type="button" class="btn o sm" id="btn-reset-element" title="Reset selected element to default">Reset Element</button>
@@ -1103,7 +1454,36 @@
                 </select>
               </div>
 
-              <div class="mc-f-row">
+              <!-- Micro-Adjustment Nudge Pad -->
+              <div style="background:var(--sunk,#f8f9fa);border:1px solid var(--line);border-radius:var(--r-m);padding:12px 14px;margin-top:4px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                  <span style="font-size:11.5px;font-weight:700;color:var(--ink-2);text-transform:uppercase;letter-spacing:0.3px">Direct Nudge Controls</span>
+                  <span style="font-size:11px;color:var(--ink-3)">Shortcut: Arrow keys / Shift+Arrows</span>
+                </div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+                  <span style="font-size:11px;font-weight:700;color:var(--ink-2);min-width:32px">Move:</span>
+                  <button type="button" class="btn o sm btn-nudge" data-axis="x" data-delta="-10" title="Move Left 10px" style="padding:3px 8px;font-size:11.5px">◀◀ 10</button>
+                  <button type="button" class="btn o sm btn-nudge" data-axis="x" data-delta="-1" title="Move Left 1px" style="padding:3px 8px;font-size:11.5px">◀ 1</button>
+                  <button type="button" class="btn o sm btn-nudge" data-axis="x" data-delta="1" title="Move Right 1px" style="padding:3px 8px;font-size:11.5px">1 ▶</button>
+                  <button type="button" class="btn o sm btn-nudge" data-axis="x" data-delta="10" title="Move Right 10px" style="padding:3px 8px;font-size:11.5px">10 ▶▶</button>
+                  <div style="width:1px;height:18px;background:var(--line);margin:0 2px"></div>
+                  <button type="button" class="btn o sm btn-nudge" data-axis="y" data-delta="-10" title="Move Up 10px" style="padding:3px 8px;font-size:11.5px">▲▲ 10</button>
+                  <button type="button" class="btn o sm btn-nudge" data-axis="y" data-delta="-1" title="Move Up 1px" style="padding:3px 8px;font-size:11.5px">▲ 1</button>
+                  <button type="button" class="btn o sm btn-nudge" data-axis="y" data-delta="1" title="Move Down 1px" style="padding:3px 8px;font-size:11.5px">▼ 1</button>
+                  <button type="button" class="btn o sm btn-nudge" data-axis="y" data-delta="10" title="Move Down 10px" style="padding:3px 8px;font-size:11.5px">▼▼ 10</button>
+                </div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px">
+                  <span style="font-size:11px;font-weight:700;color:var(--ink-2);min-width:32px">Scale:</span>
+                  <button type="button" class="btn o sm btn-scale-step" data-delta="-0.05" style="padding:3px 8px;font-size:11.5px">- 5%</button>
+                  <button type="button" class="btn o sm btn-scale-step" data-delta="0.05" style="padding:3px 8px;font-size:11.5px">+ 5%</button>
+                  <button type="button" class="btn o sm btn-scale-step" data-delta="-0.10" style="padding:3px 8px;font-size:11.5px">- 10%</button>
+                  <button type="button" class="btn o sm btn-scale-step" data-delta="0.10" style="padding:3px 8px;font-size:11.5px">+ 10%</button>
+                  <button type="button" class="btn o sm btn-scale-step" data-val="1.0" style="padding:3px 8px;font-size:11.5px">100%</button>
+                </div>
+              </div>
+
+              <!-- Numeric Coordinate Inputs -->
+              <div class="mc-f-row" style="margin-top:10px">
                 <div class="mc-f-group">
                   <label>X Position (px)</label>
                   <input type="number" id="inp-pos-x" min="0" max="1123" placeholder="e.g. 48">
@@ -1113,8 +1493,8 @@
                   <input type="number" id="inp-pos-y" min="0" max="794" placeholder="e.g. 180">
                 </div>
                 <div class="mc-f-group">
-                  <label>Scale (0.3 - 2)</label>
-                  <input type="number" step="0.05" id="inp-pos-s" min="0.3" max="2" placeholder="1.0">
+                  <label>Scale (0.2 - 2.5)</label>
+                  <input type="number" step="0.05" id="inp-pos-s" min="0.2" max="2.5" placeholder="1.0">
                 </div>
                 <div class="mc-f-group">
                   <label>Width (px, opt)</label>
@@ -1123,8 +1503,17 @@
               </div>
             </div>
 
-            <!-- Save Action Button -->
-            <button type="button" class="btn" id="btn-save-ec" style="padding:12px;font-size:14px;font-weight:700">💾 Save Certificate Settings</button>
+            <!-- Sticky Floating Save Bar -->
+            <div class="mc-save-bar">
+              <div class="mc-save-status clean" id="mc-save-indicator">
+                <span class="mc-save-icon">✓</span>
+                <span class="mc-save-text">All changes saved</span>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <button type="button" class="btn o sm" id="btn-test-claim-designer">🎯 Test Claim Preview</button>
+                <button type="button" class="btn sm" id="btn-save-ec" style="font-weight:700;padding:8px 16px">💾 Save Certificate Settings</button>
+              </div>
+            </div>
           </div>
 
           <!-- Right: Live Interactive Canvas Preview -->
@@ -1135,6 +1524,8 @@
                 <input type="text" id="inp-preview-name" value="Asha Rao" placeholder="Preview Name" style="font-size:11px;padding:3px 8px;border:1px solid var(--line);border-radius:4px;width:120px">
               </div>
               <div style="display:flex;gap:4px;align-items:center">
+                <button type="button" class="btn o sm" id="btn-test-claim-designer-top" style="padding:2px 8px;font-size:11px;font-weight:700;color:var(--primary,#1a73e8);border-color:var(--primary,#1a73e8)">🎯 Test Claim</button>
+                <div style="width:1px;height:16px;background:var(--line);margin:0 4px"></div>
                 <span style="font-size:11px;font-family:var(--font-mono);color:var(--ink-2);margin-right:2px">Zoom:</span>
                 <button type="button" class="btn o sm" id="btn-zoom-fit" style="padding:2px 6px;font-size:11px" title="Fit to screen">Fit</button>
                 <button type="button" class="btn o sm" id="btn-zoom-50" style="padding:2px 6px;font-size:11px">50%</button>
@@ -1151,6 +1542,44 @@
           </div>
         </div>
       `;
+
+      // Wire Quick Nav jump buttons
+      $$('.mc-qn-btn', root).forEach((btn) => {
+        btn.onclick = () => {
+          const target = $(btn.dataset.jump, root);
+          if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+      });
+
+      // Wire View Mode buttons
+      $$('.mc-vm-btn', root).forEach((btn) => {
+        btn.onclick = () => setViewMode(btn.dataset.view);
+      });
+
+      // Wire Preset Defaults Button
+      $('#btn-fill-defaults', root)?.addEventListener('click', () => {
+        if (!confirm('Populate empty fields with recommended GDG on Campus SR University defaults?')) return;
+        if (!$('#inp-host-chapter').value) $('#inp-host-chapter').value = 'GDG on Campus SR University';
+        if (!$('#inp-cert-tag').value) $('#inp-cert-tag').value = 'OFFICIAL CREDENTIAL';
+        if (!$('#inp-cert-title').value) $('#inp-cert-title').value = 'Certificate of Participation';
+        if (!$('#inp-curriculum-status').value) $('#inp-curriculum-status').value = 'STATUS: Topic / Curriculum Overview';
+        if (!$('#inp-curriculum-text').value) {
+          $('#inp-curriculum-text').value = 'Active participation in hands-on developer workshops, exploring Google developer technologies, system architecture design, collaborative git workflows, and cloud-native solutions.';
+        }
+        if (!$('#inp-dossier-tag').value) $('#inp-dossier-tag').value = 'SRU_TECH_ACADEMY';
+        if (!$('#inp-track').value) $('#inp-track').value = 'Web & Cloud Technologies';
+        if (!$('#inp-skills').value) $('#inp-skills').value = 'Modern Web, JavaScript, Cloud Architecture, Git, Open Source';
+        if (!$('#inp-dev-tag').value) $('#inp-dev-tag').value = 'DEV_COMMUNITY';
+        if (!$('#inp-node-pill').value) $('#inp-node-pill').value = 'ACTIVE_NODE // 01';
+        if (!$('#inp-credential-base').value) {
+          const slug = (currentEventObj?.title || 'WORKSHOP').replace(/[^a-zA-Z0-9]/g, '').slice(0, 8).toUpperCase();
+          $('#inp-credential-base').value = `GDGSRU-2026-${slug}`;
+        }
+        syncFormToEc();
+        markDirty();
+        updateStudioPreview();
+        adminMessage('Standard GDG defaults applied.', true);
+      });
 
       // Wire GDG Logo uploader
       initGdgLogoUploader();
@@ -1174,6 +1603,7 @@
       inputs.forEach((sel) => {
         $(sel, root)?.addEventListener('input', () => {
           syncFormToEc();
+          markDirty();
           updateStudioPreview();
         });
       });
@@ -1188,9 +1618,96 @@
       ['#inp-pos-x', '#inp-pos-y', '#inp-pos-s', '#inp-pos-w'].forEach((sel) => {
         $(sel, root)?.addEventListener('input', () => {
           applyLayoutInputsToEc();
+          markDirty();
           updateStudioPreview();
         });
       });
+
+      // Wire Nudge Buttons
+      function nudgeTargetElement(axis, delta) {
+        const target = $('#sel-layout-target')?.value || 'gdg';
+        if (!currentEc.layout) currentEc.layout = {};
+        const globalBox = (globalDefaultLayout && globalDefaultLayout[target]) || {};
+        const curBox = currentEc.layout[target] || {};
+        const effective = { ...globalBox, ...curBox };
+
+        let currentVal = effective[axis];
+        if (currentVal == null) currentVal = axis === 'x' ? 40 : 40;
+        const maxLimit = axis === 'x' ? 1123 : 794;
+        const newVal = Math.max(0, Math.min(maxLimit, Math.round(Number(currentVal) + delta)));
+
+        currentEc.layout[target] = {
+          ...effective,
+          [axis]: newVal,
+        };
+
+        if (axis === 'x' && $('#inp-pos-x')) $('#inp-pos-x').value = newVal;
+        if (axis === 'y' && $('#inp-pos-y')) $('#inp-pos-y').value = newVal;
+
+        markDirty();
+        updateStudioPreview();
+      }
+
+      function scaleTargetElement(delta, absoluteVal) {
+        const target = $('#sel-layout-target')?.value || 'gdg';
+        if (!currentEc.layout) currentEc.layout = {};
+        const globalBox = (globalDefaultLayout && globalDefaultLayout[target]) || {};
+        const curBox = currentEc.layout[target] || {};
+        const effective = { ...globalBox, ...curBox };
+
+        let newScale;
+        if (absoluteVal != null) {
+          newScale = Number(absoluteVal);
+        } else {
+          const curScale = effective.scale != null ? Number(effective.scale) : 1;
+          newScale = Math.max(0.2, Math.min(2.5, Math.round((curScale + delta) * 100) / 100));
+        }
+
+        currentEc.layout[target] = {
+          ...effective,
+          scale: newScale,
+        };
+
+        if ($('#inp-pos-s')) $('#inp-pos-s').value = newScale;
+
+        markDirty();
+        updateStudioPreview();
+      }
+
+      $$('.btn-nudge', root).forEach((btn) => {
+        btn.onclick = () => {
+          const axis = btn.dataset.axis;
+          const delta = Number(btn.dataset.delta);
+          nudgeTargetElement(axis, delta);
+        };
+      });
+
+      $$('.btn-scale-step', root).forEach((btn) => {
+        btn.onclick = () => {
+          if (btn.dataset.val) {
+            scaleTargetElement(0, Number(btn.dataset.val));
+          } else {
+            scaleTargetElement(Number(btn.dataset.delta), null);
+          }
+        };
+      });
+
+      // Keyboard nudge shortcuts
+      const onDocKeyDown = (e) => {
+        if (!panes.certificate.classList.contains('active')) return;
+        if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') && !['inp-pos-x', 'inp-pos-y', 'inp-pos-s'].includes(document.activeElement.id)) {
+          return;
+        }
+        if (testClaimModal && testClaimModal.open) return;
+
+        const step = e.shiftKey ? 10 : 1;
+        if (e.key === 'ArrowUp') { e.preventDefault(); nudgeTargetElement('y', -step); }
+        else if (e.key === 'ArrowDown') { e.preventDefault(); nudgeTargetElement('y', step); }
+        else if (e.key === 'ArrowLeft') { e.preventDefault(); nudgeTargetElement('x', -step); }
+        else if (e.key === 'ArrowRight') { e.preventDefault(); nudgeTargetElement('x', step); }
+      };
+      document.removeEventListener('keydown', onDocKeyDown);
+      document.addEventListener('keydown', onDocKeyDown);
 
       // Reset Element button (if present)
       $('#btn-reset-element', root)?.addEventListener('click', () => {
@@ -1243,11 +1760,10 @@
       });
 
       // Save Certificate Settings
-      $('#btn-save-ec', root).addEventListener('click', async () => {
+      async function handleSaveEc() {
         syncFormToEc();
-        const saveBtn = $('#btn-save-ec', root);
-        saveBtn.disabled = true;
-        saveBtn.textContent = 'Saving…';
+        const saveBtns = $$('#btn-save-ec', root);
+        saveBtns.forEach((b) => { b.disabled = true; b.textContent = 'Saving…'; });
         try {
           // 1. Save partners
           for (let i = 0; i < currentPartners.length; i++) {
@@ -1292,15 +1808,21 @@
           const { error: ecErr } = await sb.from('event_certificates').upsert(ecPayload);
           if (ecErr) throw ecErr;
 
+          markClean();
           adminMessage('Certificate details and layout saved successfully.', true);
           refreshPublishTab();
         } catch (err) {
           adminMessage(authErrorText(err));
         } finally {
-          saveBtn.disabled = false;
-          saveBtn.textContent = '💾 Save Certificate Settings';
+          saveBtns.forEach((b) => { b.disabled = false; b.textContent = '💾 Save Certificate Settings'; });
         }
-      });
+      }
+
+      $$('#btn-save-ec', root).forEach((b) => { b.onclick = handleSaveEc; });
+
+      // Test Claim buttons in Designer
+      $('#btn-test-claim-designer', root)?.addEventListener('click', () => openTestClaimModal());
+      $('#btn-test-claim-designer-top', root)?.addEventListener('click', () => openTestClaimModal());
 
       // Zoom buttons
       $('#btn-zoom-fit', root).onclick = fitStudioCanvas;
@@ -1446,17 +1968,22 @@
       const wrap = $('#partners-list-wrap');
       if (!wrap) return;
       $('#btn-add-partner').disabled = currentPartners.length >= 8;
-      wrap.innerHTML = currentPartners.length ? currentPartners.map((p, idx) => `
+      wrap.innerHTML = currentPartners.length ? currentPartners.map((p, idx) => {
+        const thumb = p.dataUrl || '';
+        return `
         <div class="checklist-item" style="gap:8px" data-partner-idx="${idx}">
           <div style="display:flex;align-items:center;gap:8px;flex:1">
+            <div class="partner-thumb-box" style="width:34px;height:34px;border-radius:4px;border:1px solid var(--line);background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0">
+              ${thumb ? `<img src="${esc(thumb)}" alt="Logo" style="max-width:100%;max-height:100%;object-fit:contain">` : `<span style="font-size:13px;color:var(--ink-3)">🏢</span>`}
+            </div>
             <select class="p-role" style="font-size:11.5px;padding:4px">
               <option value="cohost" ${p.role === 'cohost' ? 'selected' : ''}>Co-host</option>
               <option value="sponsor" ${p.role === 'sponsor' ? 'selected' : ''}>Sponsor</option>
             </select>
             <input type="text" class="p-name" value="${esc(p.name)}" placeholder="Partner Name" style="font-size:12px;padding:4px 8px;flex:1">
             <label class="btn o sm" style="cursor:pointer;padding:3px 8px;font-size:11px">
-              ${p.logo_path ? 'Change Logo' : 'Upload Logo'}
-              <input type="file" class="p-file" accept=".png,.jpg,.jpeg,.svg" style="display:none">
+              ${(p.logo_path || p.dataUrl) ? 'Change Logo (✓)' : 'Upload Logo'}
+              <input type="file" class="p-file" accept=".png,.jpg,.jpeg,.svg,.webp" style="display:none">
             </label>
           </div>
           <div style="display:flex;align-items:center;gap:4px">
@@ -1465,7 +1992,20 @@
             <button type="button" class="btn o sm p-del" style="padding:2px 6px;color:var(--r)">✕</button>
           </div>
         </div>
-      `).join('') : `<p style="font-size:12px;color:var(--ink-3);margin:4px 0">No co-hosts or sponsors added yet.</p>`;
+      `;
+      }).join('') : `<p style="font-size:12px;color:var(--ink-3);margin:4px 0">No co-hosts or sponsors added yet.</p>`;
+
+      // Load remote thumbnail URLs if not already in memory
+      currentPartners.forEach(async (p, idx) => {
+        if (!p.dataUrl && p.logo_path) {
+          const url = await getStorageDataUrl(sb, p.logo_path);
+          if (url) {
+            p.dataUrl = url;
+            const el = wrap.querySelector(`[data-partner-idx="${idx}"] .partner-thumb-box`);
+            if (el) el.innerHTML = `<img src="${esc(url)}" alt="Logo" style="max-width:100%;max-height:100%;object-fit:contain">`;
+          }
+        }
+      });
 
       // Wire partner controls
       $$('#partners-list-wrap [data-partner-idx]').forEach((el) => {
@@ -1519,19 +2059,37 @@
       if (!wrap) return;
       const sigs = currentEc.signatories || [];
       $('#btn-add-sig').disabled = sigs.length >= 2;
-      wrap.innerHTML = sigs.length ? sigs.map((s, idx) => `
+      wrap.innerHTML = sigs.length ? sigs.map((s, idx) => {
+        const thumb = s.dataUrl || '';
+        return `
         <div class="checklist-item" style="gap:8px" data-sig-idx="${idx}">
           <div style="display:flex;align-items:center;gap:8px;flex:1">
+            <div class="sig-thumb-box" style="width:48px;height:32px;border-radius:4px;border:1px solid var(--line);background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0">
+              ${thumb ? `<img src="${esc(thumb)}" alt="Sig" style="max-width:100%;max-height:100%;object-fit:contain">` : `<span style="font-size:12px;color:var(--ink-3)">✍️</span>`}
+            </div>
             <input type="text" class="s-name" value="${esc(s.name)}" placeholder="Signatory Name" style="font-size:12px;padding:4px 8px;flex:1">
             <input type="text" class="s-role" value="${esc(s.role)}" placeholder="Role / Title" style="font-size:12px;padding:4px 8px;flex:1">
             <label class="btn o sm" style="cursor:pointer;padding:3px 8px;font-size:11px">
               ${(s.image_path || s.dataUrl) ? 'Change Signature (✓)' : 'Upload Image'}
-              <input type="file" class="s-file" accept=".png,.jpg,.jpeg,.svg" style="display:none">
+              <input type="file" class="s-file" accept=".png,.jpg,.jpeg,.svg,.webp" style="display:none">
             </label>
           </div>
           <button type="button" class="btn o sm s-del" style="padding:2px 6px;color:var(--r)">✕</button>
         </div>
-      `).join('') : `<p style="font-size:12px;color:var(--ink-3);margin:4px 0">No signatories configured yet.</p>`;
+      `;
+      }).join('') : `<p style="font-size:12px;color:var(--ink-3);margin:4px 0">No signatories configured yet.</p>`;
+
+      // Load remote thumbnail URLs if not already in memory
+      sigs.forEach(async (s, idx) => {
+        if (!s.dataUrl && s.image_path) {
+          const url = await getStorageDataUrl(sb, s.image_path);
+          if (url) {
+            s.dataUrl = url;
+            const el = wrap.querySelector(`[data-sig-idx="${idx}"] .sig-thumb-box`);
+            if (el) el.innerHTML = `<img src="${esc(url)}" alt="Sig" style="max-width:100%;max-height:100%;object-fit:contain">`;
+          }
+        }
+      });
 
       $$('#sigs-list-wrap [data-sig-idx]').forEach((el) => {
         const idx = Number(el.dataset.sigIdx);
@@ -1752,6 +2310,203 @@
     }
 
     /* ==================================================================
+       TEST CLAIM SIMULATION MODAL
+       ================================================================== */
+    async function openTestClaimModal() {
+      if (!testClaimModal) return;
+      testClaimModal.showModal();
+
+      const { data: attendees } = await sb.from('attendance_records')
+        .select('attendee_name, roll_no')
+        .eq('event_id', selectedEventId)
+        .order('attendee_name');
+
+      const select = $('#tc-attendee-select');
+      const customInp = $('#tc-custom-name');
+      const list = attendees || [];
+      if (select) {
+        select.innerHTML = `
+          <option value="">-- Choose from Roster (${list.length}) --</option>
+          ${list.map((a) => `<option value="${esc(a.attendee_name)}">${esc(a.attendee_name)}${a.roll_no ? ` (${esc(a.roll_no)})` : ''}</option>`).join('')}
+        `;
+        if (list.length > 0) {
+          select.value = list[0].attendee_name;
+        }
+      }
+
+      let activeRecipient = (select && select.value) || $('#inp-preview-name')?.value.trim() || 'Asha Rao';
+      if (customInp) customInp.value = activeRecipient;
+
+      async function renderTestPreview(name) {
+        activeRecipient = name || 'Asha Rao';
+        const wrap = $('#tc-canvas-wrap');
+        if (!wrap || !studioTemplateHtml) return;
+
+        const layout = { ...globalDefaultLayout, ...(currentEc?.layout || {}) };
+        const pos = (key) => {
+          const b = layout[key];
+          if (!b || (b.x == null && b.y == null && b.scale == null && b.w == null)) return '';
+          const x = b.x ?? 0, y = b.y ?? 0, s = b.scale ?? 1, w = b.w;
+          return `position:absolute;left:${x}px;top:${y}px;${w ? `width:${w}px;` : ''}transform:scale(${s});transform-origin:0 0`;
+        };
+
+        const cohosts = [], sponsors = [];
+        for (const p of currentPartners) {
+          let logo = p.dataUrl || '';
+          if (!logo && p.logo_path) logo = await getStorageDataUrl(sb, p.logo_path);
+          const item = { name: p.name, logo, style: pos(`partner_${p.id}`) };
+          (p.role === 'cohost' ? cohosts : sponsors).push(item);
+        }
+
+        const signatories = [];
+        for (const [idx, s] of (currentEc?.signatories || []).entries()) {
+          let img = s.dataUrl || '';
+          if (!img && s.image_path) img = await getStorageDataUrl(sb, s.image_path);
+          signatories.push({
+            name: s.name,
+            role: s.role,
+            img,
+            style: pos(`sig_${idx + 1}`),
+          });
+        }
+
+        let gdgCustomLogo = currentEc?.gdg_logo_dataUrl || '';
+        if (!gdgCustomLogo && currentEc?.layout?.gdg_logo_path) {
+          gdgCustomLogo = await getStorageDataUrl(sb, currentEc.layout.gdg_logo_path);
+          currentEc.gdg_logo_dataUrl = gdgCustomLogo;
+        }
+
+        const lines = String(currentEc?.curriculum_text || '').split(/\n+/).map((s) => s.trim()).filter(Boolean);
+        const eventTitle = currentEc?.event_title_override || currentEc?.layout?.event_title_override || currentEventObj.title;
+        const credId = currentEc?.layout?.credential_base ? `${currentEc.layout.credential_base}-SAMPLE` : 'GDGSRU-SAMPLE01';
+        const devTag = currentEc?.layout?.dev_tag || 'DEV_COMMUNITY';
+        const nodePill = currentEc?.layout?.node_pill || 'ACTIVE_NODE // 01';
+        const partnerSticker = currentEc?.layout?.partner_sticker || '';
+
+        const fields = {
+          event_name: eventTitle,
+          chapter: currentEc?.host_chapter || 'GDG on Campus SR University',
+          host_chapter: currentEc?.host_chapter || 'GDG on Campus SR University',
+          cert_tag: currentEc?.cert_tag || 'OFFICIAL CREDENTIAL',
+          cert_title: currentEc?.cert_title || 'Certificate of Participation',
+          track: currentEc?.track || '',
+          skills: (currentEc?.skills || []).join(', '),
+          dossier_tag: currentEc?.dossier_tag || '',
+          curriculum_status: currentEc?.curriculum_status || 'STATUS: Topic / Curriculum Overview',
+          curriculum_text: currentEc?.curriculum_text || '',
+          curriculum_bullets: currentEc?.curriculum_bullets ? lines.map((text) => ({ text })) : [],
+          date: currentEc?.event_date ? new Intl.DateTimeFormat('en-US', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(currentEc.event_date + 'T00:00:00')) : '',
+          date_short: currentEc?.event_date ? new Intl.DateTimeFormat('en-US', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(currentEc.event_date + 'T00:00:00')) : '',
+          dev_tag: devTag,
+          node_pill: nodePill,
+          partner_sticker: partnerSticker,
+          gdg_custom_logo: gdgCustomLogo,
+          cohosts,
+          sponsors,
+          signatories,
+          pos_gdg: pos('gdg'),
+          pos_cert_tag: pos('cert_tag'),
+          pos_title: pos('title'),
+          pos_name: pos('name'),
+          pos_event: pos('event'),
+          pos_host: pos('host'),
+          pos_curriculum: pos('curriculum'),
+          pos_dossier: pos('dossier'),
+          pos_credential: pos('credential'),
+        };
+
+        const payload = {
+          template_html: studioTemplateHtml,
+          recipient_name: activeRecipient,
+          credential_id: credId,
+          event_title: eventTitle,
+          event_start: currentEc?.event_date ? `${currentEc.event_date}T00:00:00+05:30` : new Date().toISOString(),
+          fields,
+        };
+
+        const built = window.GDGCert.buildDocument(payload);
+        wrap.innerHTML = '';
+        const frame = await window.GDGCert.mount(wrap, built.html);
+
+        const stage = $('#tc-stage');
+        const scaler = $('#tc-scaler');
+        if (stage && scaler) {
+          const availW = stage.clientWidth - 40;
+          const s = Math.min(1, Math.max(0.3, availW / 1123));
+          scaler.style.transform = `scale(${s})`;
+          scaler.style.width = '1123px';
+          scaler.style.height = `${Math.round(794 * s)}px`;
+        }
+
+        if ($('#tc-cred-id-display')) {
+          $('#tc-cred-id-display').textContent = `Credential Base: ${credId}`;
+        }
+      }
+
+      await renderTestPreview(activeRecipient);
+
+      if (select) {
+        select.onchange = (e) => {
+          if (e.target.value) {
+            if (customInp) customInp.value = e.target.value;
+            renderTestPreview(e.target.value);
+          }
+        };
+      }
+      if ($('#tc-btn-apply-name')) {
+        $('#tc-btn-apply-name').onclick = () => {
+          const val = customInp?.value.trim();
+          if (val) renderTestPreview(val);
+        };
+      }
+
+      $('#tc-btn-download-png').onclick = async () => {
+        const frame = $('#tc-canvas-wrap iframe');
+        if (!frame) return;
+        const btn = $('#tc-btn-download-png');
+        btn.disabled = true;
+        btn.textContent = 'Rendering…';
+        try {
+          await window.GDGCert.downloadPng(frame, `Certificate_${activeRecipient}`);
+          adminMessage('Test Certificate PNG downloaded!', true);
+        } catch (err) {
+          adminMessage('PNG generation error: ' + err.message);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = '📥 Download PNG';
+        }
+      };
+
+      $('#tc-btn-download-pdf').onclick = async () => {
+        const frame = $('#tc-canvas-wrap iframe');
+        if (!frame) return;
+        const btn = $('#tc-btn-download-pdf');
+        btn.disabled = true;
+        btn.textContent = 'Rendering…';
+        try {
+          await window.GDGCert.downloadPdf(frame, `Certificate_${activeRecipient}`);
+          adminMessage('Test Certificate PDF downloaded!', true);
+        } catch (err) {
+          adminMessage('PDF generation error: ' + err.message);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = '📥 Download PDF';
+        }
+      };
+
+      $('#tc-btn-copy-link').onclick = async () => {
+        const credId = currentEc?.layout?.credential_base ? `${currentEc.layout.credential_base}-SAMPLE` : 'GDGSRU-SAMPLE01';
+        const verifyUrl = `${window.location.origin}/verify/?id=${encodeURIComponent(credId)}`;
+        try {
+          await navigator.clipboard.writeText(verifyUrl);
+          adminMessage('Verification URL copied to clipboard!', true);
+        } catch {
+          prompt('Copy verification URL:', verifyUrl);
+        }
+      };
+    }
+
+    /* ==================================================================
        TAB 3: PUBLISH IMPLEMENTATION
        ================================================================== */
     async function refreshPublishTab() {
@@ -1763,6 +2518,8 @@
         .select('id', { count: 'exact', head: true })
         .eq('event_id', selectedEventId);
       const attCount = count || 0;
+      rosterCount = attCount;
+      if ($('#wb-tab-roster-badge')) $('#wb-tab-roster-badge').textContent = `(${rosterCount})`;
 
       // 2. Fetch event certificate details
       const { data: ec } = await sb.from('event_certificates')
@@ -1777,12 +2534,27 @@
       const previewRenders = !!studioTemplateHtml;
 
       const allReady = hasRoster && hasDate && hasCurriculum && hasHost && previewRenders;
+      claimsActive = !!ec?.claims_enabled;
+
+      if ($('#wb-tab-pub-pill')) {
+        $('#wb-tab-pub-pill').className = `mc-tab-pill ${claimsActive ? 'live' : 'draft'}`;
+        $('#wb-tab-pub-pill').textContent = claimsActive ? 'Live' : (allReady ? 'Ready' : 'Draft');
+      }
+      if ($('#wb-event-status-pill')) {
+        $('#wb-event-status-pill').className = `tag ${claimsActive ? 't3' : 't2'}`;
+        $('#wb-event-status-pill').textContent = claimsActive ? '● Claims Active' : '○ Draft';
+      }
 
       root.innerHTML = `
         <div style="max-width:760px;display:flex;flex-direction:column;gap:18px">
           <div class="mc-card">
-            <h3 style="margin:0 0 4px;font-size:16px">Publish Readiness Checklist</h3>
-            <p style="margin:0 0 14px;font-size:13px;color:var(--ink-2)">All 5 requirements must be satisfied before public certificate claiming can be enabled on the website.</p>
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+              <div>
+                <h3 style="margin:0 0 4px;font-size:16px">Publish Readiness Checklist</h3>
+                <p style="margin:0;font-size:13px;color:var(--ink-2)">All 5 requirements must be satisfied before public certificate claiming can be enabled on the website.</p>
+              </div>
+              <button type="button" class="btn sm" id="btn-test-claim-pub" style="font-size:12px">🎯 Test Claim Preview</button>
+            </div>
 
             <div style="display:flex;flex-direction:column;gap:10px">
               <div class="checklist-item ${hasRoster ? 'pass' : 'fail'}">
@@ -1841,12 +2613,14 @@
             ${!allReady ? `<p style="margin:6px 0 0;font-size:12px;color:var(--r);font-weight:600">Claims cannot be enabled until all 5 checklist items above are passed.</p>` : ''}
             
             <div style="margin-top:10px;padding-top:12px;border-top:1px solid var(--line);display:flex;gap:12px;align-items:center;font-size:12.5px">
-              <a class="btn o sm" href="/certificates/" target="_blank">View /certificates/ →</a>
-              <a class="btn o sm" href="/verify/" target="_blank">View /verify/ →</a>
+              <a class="btn o sm" href="/certificates/?event=${selectedEventId}" target="_blank">View /certificates/ portal →</a>
+              <a class="btn o sm" href="/verify/" target="_blank">View /verify/ portal →</a>
             </div>
           </div>
         </div>
       `;
+
+      $('#btn-test-claim-pub')?.addEventListener('click', () => openTestClaimModal());
 
       $('#pub-claims-toggle')?.addEventListener('change', async (e) => {
         const enabled = e.target.checked;
