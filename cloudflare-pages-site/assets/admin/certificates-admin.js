@@ -1442,6 +1442,13 @@
                 <div id="gdg-logo-preview-thumb" style="margin-top:8px;${currentEc.layout?.gdg_logo_path ? '' : 'display:none;'}">
                   <img id="gdg-logo-img" src="" alt="GDG Logo" style="max-height:48px;max-width:240px;object-fit:contain;background:#fff;padding:4px 8px;border-radius:6px;border:1px solid var(--line)">
                 </div>
+                <div style="margin-top:10px;padding-top:8px;border-top:1px dashed var(--line);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+                  <label class="check" style="font-size:12px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none">
+                    <input type="checkbox" id="chk-hide-chapter-text" ${currentEc.layout?.hide_chapter_text ? 'checked' : ''}>
+                    <span>Hide text ("Google Developer Groups / Chapter Name") next to logo</span>
+                  </label>
+                  <small style="font-size:11px;color:var(--ink-3)">Only check if your uploaded logo already has the chapter name written inside it.</small>
+                </div>
               </div>
 
               <div id="partners-list-wrap" style="display:flex;flex-direction:column;gap:8px;margin-top:10px"></div>
@@ -1881,6 +1888,9 @@
       currentEc.layout.dev_tag = $('#inp-dev-tag')?.value.trim() || '';
       currentEc.layout.node_pill = $('#inp-node-pill')?.value.trim() || '';
       currentEc.layout.partner_sticker = $('#inp-partner-pill')?.value.trim() || '';
+      if ($('#chk-hide-chapter-text')) {
+        currentEc.layout.hide_chapter_text = $('#chk-hide-chapter-text').checked;
+      }
       if (currentEc.event_title_override) {
         currentEc.layout.event_title_override = currentEc.event_title_override;
       } else {
@@ -1927,6 +1937,16 @@
       const gdgLogoStatus = $('#gdg-logo-status');
       const gdgLogoThumb = $('#gdg-logo-preview-thumb');
       const gdgLogoImg = $('#gdg-logo-img');
+      const hideTextChk = $('#chk-hide-chapter-text');
+
+      if (hideTextChk) {
+        hideTextChk.onchange = (e) => {
+          if (!currentEc.layout) currentEc.layout = {};
+          currentEc.layout.hide_chapter_text = e.target.checked;
+          markDirty();
+          updateStudioPreview();
+        };
+      }
 
       const currentLogoPath = currentEc.layout?.gdg_logo_path;
       if (currentLogoPath) {
@@ -1977,9 +1997,12 @@
           if (!currentEc.layout) currentEc.layout = {};
           currentEc.layout.gdg_logo_path = null;
           currentEc.gdg_logo_dataUrl = null;
+          currentEc.layout.hide_chapter_text = false;
+          if (hideTextChk) hideTextChk.checked = false;
           if (gdgLogoStatus) gdgLogoStatus.textContent = 'Using Default Vector Logo (< >)';
           if (gdgLogoThumb) gdgLogoThumb.style.display = 'none';
           if (gdgLogoReset) gdgLogoReset.style.display = 'none';
+          markDirty();
           adminMessage('GDG Logo reset to default vector.', true);
           await updateStudioPreview();
         };
@@ -2212,6 +2235,7 @@
         node_pill: nodePill,
         partner_sticker: partnerSticker,
         gdg_custom_logo: gdgCustomLogo,
+        hide_chapter_text: !!currentEc.layout?.hide_chapter_text,
         cohosts,
         sponsors,
         signatories,
@@ -2424,6 +2448,7 @@
           node_pill: nodePill,
           partner_sticker: partnerSticker,
           gdg_custom_logo: gdgCustomLogo,
+          hide_chapter_text: !!currentEc?.layout?.hide_chapter_text,
           cohosts,
           sponsors,
           signatories,

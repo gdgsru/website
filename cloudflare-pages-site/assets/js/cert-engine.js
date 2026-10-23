@@ -182,6 +182,7 @@
       host_chapter: f.host_chapter || f.chapter || '',
       chapter: f.host_chapter || f.chapter || '',
       gdg_custom_logo: f.gdg_custom_logo || '',
+      hide_chapter_text: !!f.hide_chapter_text,
       date: long,
       date_short: short,
       watermark_year: f.watermark_year || (valid ? String(d.getFullYear()) : currentYear),

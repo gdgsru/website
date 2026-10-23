@@ -237,6 +237,7 @@ Deno.serve(async (req) => {
     node_pill: (layout as any)?.node_pill || '',
     partner_sticker: (layout as any)?.partner_sticker || '',
     gdg_custom_logo: gdgCustomLogo,
+    hide_chapter_text: !!(layout as any)?.hide_chapter_text,
     cohosts,
     sponsors,
     signatories,

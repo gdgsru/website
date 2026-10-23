@@ -533,18 +533,20 @@
     <div class="header-row">
       <div class="main-logo-area" style="{{pos_gdg}}">
         {{#gdg_custom_logo}}
-          <img src="{{gdg_custom_logo}}" alt="Google Developer Groups" style="max-height:64px;max-width:340px;object-fit:contain;display:block;">
+          <img src="{{gdg_custom_logo}}" alt="Google Developer Groups" style="max-height:60px;max-width:320px;object-fit:contain;display:block;">
         {{/gdg_custom_logo}}
         {{^gdg_custom_logo}}
           <svg id="defLogo" viewBox="0 0 100 60">
             <path d="M40,10 L10,30 L40,50" fill="none" stroke="#4285F4" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
             <path d="M60,10 L90,30 L60,50" fill="none" stroke="#34A853" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-          <div class="logo-text">
-            <h1>Google Developer Groups</h1>
-            <h2>{{host_chapter}}</h2>
-          </div>
         {{/gdg_custom_logo}}
+        {{^hide_chapter_text}}
+        <div class="logo-text">
+          <h1>Google Developer Groups</h1>
+          <h2>{{host_chapter}}</h2>
+        </div>
+        {{/hide_chapter_text}}
       </div>
 
       <div class="partners-cluster">
