@@ -1,12 +1,13 @@
 {
-  "name": "gdgsru-website",
+  "name": "gdgsru",
   "version": "1.0.0",
   "private": true,
   "description": "GDG SRU Official Website",
   "scripts": {
-    "build": "echo Static assets ready"
+    "build": "echo Static assets ready",
+    "deploy": "wrangler deploy"
   },
   "devDependencies": {
-    "wrangler": "^3.114.0"
+    "wrangler": "^4.152.0"
   }
 }

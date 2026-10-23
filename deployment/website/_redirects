@@ -15,12 +15,9 @@
 /about /#about-the-chapter 302
 /gallery /events/ 302
 /admin /admin/ 301
-/admin/* /admin/index.html 200
 /mission-control /admin/ 301
 /mission-control.html /admin/ 301
-/mission-control/* /admin/index.html 200
 /portal /admin/ 301
-/portal/* /admin/index.html 200
 
 # A single segment after these paths is a detail identifier; the bare directory
 # path continues to serve its HTML entry point above.
