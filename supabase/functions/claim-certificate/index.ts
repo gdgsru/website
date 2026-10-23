@@ -218,7 +218,7 @@ Deno.serve(async (req) => {
 
   // 6. Fields for the template. The template is a static file the browser already loads.
   const fields = {
-    event_name: ev?.title ?? '',
+    event_name: (layout as any)?.event_title_override || ev?.title || '',
     chapter: ec.host_chapter,
     host_chapter: ec.host_chapter,
     cert_tag: ec.cert_tag,
@@ -231,6 +231,9 @@ Deno.serve(async (req) => {
     curriculum_bullets: ec.curriculum_bullets ? lines.map((text) => ({ text })) : [],
     date: longD,
     date_short: shortDate(ec.event_date),
+    dev_tag: (layout as any)?.dev_tag || '',
+    node_pill: (layout as any)?.node_pill || '',
+    partner_sticker: (layout as any)?.partner_sticker || '',
     cohosts,
     sponsors,
     signatories,

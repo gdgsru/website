@@ -689,16 +689,29 @@
         host_chapter: 'GDG on Campus SR University',
         cert_tag: 'OFFICIAL CREDENTIAL',
         cert_title: 'Certificate of Participation',
-        track: 'AI & Cloud',
-        skills: ['Vertex AI', 'Gemini 2.5', 'Cloud Run', 'Python'],
-        dossier_tag: 'BUILD_WITH_AI',
-        curriculum_status: 'STATUS: COMPLETED',
-        curriculum_text: 'Completed intensive hands-on development labs exploring Google Cloud infrastructure, Vertex AI foundational model deployments, and Gemini API multi-agent workflows.',
+        track: 'Community Learning',
+        skills: ['Web Development', 'Git', 'Open Source', 'Cloud'],
+        dossier_tag: 'LEARN_WITH_COMMUNITY',
+        curriculum_status: 'STATUS: Topic / Curriculum Overview',
+        curriculum_text: 'Active participation and hands-on contributions in community learning sessions, exploring developer tools, open-source practices, and foundational computing skills.',
         curriculum_bullets: false,
         signatories: [],
-        layout: {},
+        layout: {
+          credential_base: 'GDGSRU-2026-LWC',
+          dev_tag: 'DEV_COMMUNITY',
+          node_pill: 'ACTIVE_NODE // 01',
+          partner_sticker: '',
+        },
         claims_enabled: false,
       };
+
+      if (!currentEc.curriculum_status) {
+        currentEc.curriculum_status = 'STATUS: Topic / Curriculum Overview';
+      }
+      if (!currentEc.layout) currentEc.layout = {};
+      if (currentEc.layout.event_title_override) {
+        currentEc.event_title_override = currentEc.layout.event_title_override;
+      }
 
       currentPartners = partRes.data || [];
 
@@ -707,14 +720,19 @@
         <div class="mc-cert-grid">
           <!-- Left: Control Panels -->
           <div style="display:flex;flex-direction:column;gap:16px">
-            <!-- 1. Basics -->
+            <!-- 1. Event & Certificate Identity -->
             <div class="mc-card">
-              <h3 style="margin:0 0 2px;font-size:15px">1. Certificate Basics</h3>
-              <p style="margin:0 0 8px;font-size:12px;color:var(--ink-2)">Core metadata and identity headers.</p>
+              <h3 style="margin:0 0 2px;font-size:15px">1. Event & Certificate Identity</h3>
+              <p style="margin:0 0 10px;font-size:12px;color:var(--ink-2)">Core titles, dates, and chapter identification.</p>
               
               <div class="mc-f-group">
-                <label>Certificate Title (max 80 chars)</label>
-                <input type="text" id="inp-cert-title" value="${esc(currentEc.cert_title)}" maxlength="80">
+                <label>Event Title</label>
+                <input type="text" id="inp-event-title" value="${esc(currentEc.event_title_override || currentEventObj.title || '')}" placeholder="e.g. Learn with Community">
+              </div>
+
+              <div class="mc-f-group">
+                <label>GDG Chapter Name</label>
+                <input type="text" id="inp-host-chapter" value="${esc(currentEc.host_chapter || 'GDG on Campus SR University')}" maxlength="120" placeholder="GDG on Campus SR University">
               </div>
 
               <div class="mc-f-row">
@@ -724,124 +742,99 @@
                 </div>
                 <div class="mc-f-group">
                   <label>Top Credential Tag</label>
-                  <input type="text" id="inp-cert-tag" value="${esc(currentEc.cert_tag || 'OFFICIAL CREDENTIAL')}">
+                  <input type="text" id="inp-cert-tag" value="${esc(currentEc.cert_tag || 'OFFICIAL CREDENTIAL')}" placeholder="OFFICIAL CREDENTIAL">
                 </div>
               </div>
 
               <div class="mc-f-group">
-                <label>Host Chapter Name (max 120 chars)</label>
-                <input type="text" id="inp-host-chapter" value="${esc(currentEc.host_chapter)}" maxlength="120">
+                <label>Certificate Title</label>
+                <input type="text" id="inp-cert-title" value="${esc(currentEc.cert_title || 'Certificate of Participation')}" maxlength="80" placeholder="Certificate of Participation">
               </div>
             </div>
 
-            <!-- 2. Partners (Cohosts & Sponsors) -->
+            <!-- 2. Curriculum Overview Card -->
             <div class="mc-card">
               <div style="display:flex;justify-content:space-between;align-items:center">
-                <div>
-                  <h3 style="margin:0;font-size:15px">2. Partners & Sponsors</h3>
-                  <p style="margin:2px 0 0;font-size:12px;color:var(--ink-2)">Max 8 partners per event. PNG, JPG, or SVG (&le; 1 MB).</p>
-                </div>
-                <button type="button" class="btn o sm" id="btn-add-partner" ${currentPartners.length >= 8 ? 'disabled' : ''}>+ Add Partner</button>
-              </div>
-              <div id="partners-list-wrap" style="display:flex;flex-direction:column;gap:8px;margin-top:6px"></div>
-            </div>
-
-            <!-- 3. Curriculum Overview -->
-            <div class="mc-card">
-              <div style="display:flex;justify-content:space-between;align-items:center">
-                <h3 style="margin:0;font-size:15px">3. Curriculum & Syllabus</h3>
+                <h3 style="margin:0;font-size:15px">// Curriculum Overview Card</h3>
                 <label class="check" style="font-size:12px;font-weight:700">
                   <input type="checkbox" id="chk-curriculum-bullets" ${currentEc.curriculum_bullets ? 'checked' : ''}> Show as bullets (one per line)
                 </label>
               </div>
+              <p style="margin:2px 0 8px;font-size:12px;color:var(--ink-2)">Syllabus, topics, and completion status displayed on the certificate.</p>
+              
               <div class="mc-f-group">
-                <label>Header Tag</label>
-                <input type="text" id="inp-curriculum-status" value="${esc(currentEc.curriculum_status || 'STATUS: COMPLETED')}">
+                <label>Header Status Tag</label>
+                <input type="text" id="inp-curriculum-status" value="${esc(currentEc.curriculum_status || 'STATUS: Topic / Curriculum Overview')}" placeholder="STATUS: Topic / Curriculum Overview">
               </div>
               <div class="mc-f-group">
-                <label>Curriculum Text (max 2000 chars)</label>
-                <textarea id="inp-curriculum-text" rows="3" maxlength="2000">${esc(currentEc.curriculum_text || '')}</textarea>
+                <label>Curriculum / Topic Details</label>
+                <textarea id="inp-curriculum-text" rows="3" maxlength="2000" placeholder="Enter workshop curriculum topics or bullet points...">${esc(currentEc.curriculum_text || '')}</textarea>
               </div>
             </div>
 
-            <!-- 4. Track & Competencies -->
+            <!-- 3. Blue Dossier Card & Competencies -->
             <div class="mc-card">
-              <h3 style="margin:0 0 2px;font-size:15px">4. Track & Skills (Dossier Card)</h3>
+              <h3 style="margin:0 0 2px;font-size:15px">// Blue Dossier Card & Competencies</h3>
+              <p style="margin:0 0 8px;font-size:12px;color:var(--ink-2)">Verified skills, track, and credential reference.</p>
+              
               <div class="mc-f-row">
+                <div class="mc-f-group">
+                  <label>Dossier Tag (Yellow)</label>
+                  <input type="text" id="inp-dossier-tag" value="${esc(currentEc.dossier_tag || 'LEARN_WITH_COMMUNITY')}" placeholder="e.g. LEARN_WITH_COMMUNITY">
+                </div>
                 <div class="mc-f-group">
                   <label>Track Name</label>
-                  <input type="text" id="inp-track" value="${esc(currentEc.track || '')}">
-                </div>
-                <div class="mc-f-group">
-                  <label>Dossier Tag Sticker</label>
-                  <input type="text" id="inp-dossier-tag" value="${esc(currentEc.dossier_tag || '')}">
+                  <input type="text" id="inp-track" value="${esc(currentEc.track || 'Web & Community')}" placeholder="e.g. Web Development / AI & Cloud">
                 </div>
               </div>
+
               <div class="mc-f-group">
-                <label>Skills & Competencies (comma separated, max 12)</label>
-                <input type="text" id="inp-skills" value="${esc((currentEc.skills || []).join(', '))}">
+                <label>Skills & Competencies (comma separated)</label>
+                <input type="text" id="inp-skills" value="${esc((currentEc.skills || []).join(', '))}" placeholder="e.g. HTML, CSS, JavaScript, Git, Cloud">
+              </div>
+
+              <div class="mc-f-group">
+                <label>Credential ID Base</label>
+                <input type="text" id="inp-credential-base" value="${esc(currentEc.layout?.credential_base || 'GDGSRU-2026-LWC')}" placeholder="e.g. GDGSRU-2026-LWC">
               </div>
             </div>
 
-            <!-- 5. Signatories -->
+            <!-- 4. Tech Badges & Stickers -->
             <div class="mc-card">
-              <div style="display:flex;justify-content:space-between;align-items:center">
-                <div>
-                  <h3 style="margin:0;font-size:15px">5. Signatories</h3>
-                  <p style="margin:2px 0 0;font-size:12px;color:var(--ink-2)">Max 2 official signatories. PNG, JPG, or SVG.</p>
-                </div>
-                <button type="button" class="btn o sm" id="btn-add-sig" ${(currentEc.signatories || []).length >= 2 ? 'disabled' : ''}>+ Add Signatory</button>
-              </div>
-              <div id="sigs-list-wrap" style="display:flex;flex-direction:column;gap:8px;margin-top:6px"></div>
-            </div>
-
-            <!-- 6. Layout Editor Controls -->
-            <div class="mc-card" id="layout-editor-panel">
-              <div style="display:flex;justify-content:space-between;align-items:center">
-                <div>
-                  <h3 style="margin:0;font-size:15px">6. Layout & Positioning</h3>
-                  <p style="margin:2px 0 0;font-size:12px;color:var(--ink-2)">Select an element below or drag it on the live preview.</p>
-                </div>
-                <div style="display:flex;gap:6px">
-                  <button type="button" class="btn o sm" id="btn-reset-element" title="Reset selected element to default">Reset Element</button>
-                  <button type="button" class="btn o sm" id="btn-reset-all-layout" title="Reset all event elements to global default">Reset All</button>
-                </div>
-              </div>
-
-              <div class="mc-f-group">
-                <label>Target Element</label>
-                <select id="sel-layout-target">
-                  <option value="gdg">GDG Chapter Logo</option>
-                  <option value="cert_tag">Top Credential Tag</option>
-                  <option value="title">Certificate Title</option>
-                  <option value="name">Attendee Name Badge</option>
-                  <option value="event">Event Statement Text</option>
-                  <option value="curriculum">Curriculum Card</option>
-                  <option value="dossier">Verified Competencies Dossier</option>
-                  <option value="credential">Terminal Log Card</option>
-                  <option value="sig_1">Signatory 1</option>
-                  <option value="sig_2">Signatory 2</option>
-                </select>
-              </div>
+              <h3 style="margin:0 0 2px;font-size:15px">// Tech Badges & Stickers</h3>
+              <p style="margin:0 0 8px;font-size:12px;color:var(--ink-2)">Header and sidebar tech accent badges.</p>
 
               <div class="mc-f-row">
                 <div class="mc-f-group">
-                  <label>X Position (px)</label>
-                  <input type="number" id="inp-pos-x" min="0" max="1123">
+                  <label>Dev Tag</label>
+                  <input type="text" id="inp-dev-tag" value="${esc(currentEc.layout?.dev_tag || 'DEV_COMMUNITY')}" placeholder="e.g. DEV_COMMUNITY or CLOUD_NATIVE">
                 </div>
                 <div class="mc-f-group">
-                  <label>Y Position (px)</label>
-                  <input type="number" id="inp-pos-y" min="0" max="794">
-                </div>
-                <div class="mc-f-group">
-                  <label>Scale (0.3 - 2)</label>
-                  <input type="number" step="0.05" id="inp-pos-s" min="0.3" max="2">
-                </div>
-                <div class="mc-f-group">
-                  <label>Width (px, opt)</label>
-                  <input type="number" id="inp-pos-w" min="120" max="1000" placeholder="Auto">
+                  <label>Active Node Pill</label>
+                  <input type="text" id="inp-node-pill" value="${esc(currentEc.layout?.node_pill || 'ACTIVE_NODE // 01')}" placeholder="e.g. ACTIVE_NODE // 01">
                 </div>
               </div>
+
+              <div class="mc-f-group">
+                <label>Partner Pill (Optional)</label>
+                <input type="text" id="inp-partner-pill" value="${esc(currentEc.layout?.partner_sticker || '')}" placeholder="Optional, e.g. PARTNER // SRU">
+              </div>
+            </div>
+
+            <!-- 5. GDG Logo, Partner Logos & Details -->
+            <div class="mc-card">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <div>
+                  <h3 style="margin:0;font-size:15px">GDG Logo, Partner Logos & Details</h3>
+                  <p style="margin:2px 0 0;font-size:12px;color:var(--ink-2)">Sponsors, co-hosts, and authorized signatures.</p>
+                </div>
+                <div style="display:flex;gap:6px">
+                  <button type="button" class="btn o sm" id="btn-add-partner" ${currentPartners.length >= 8 ? 'disabled' : ''}>+ Add Partner</button>
+                  <button type="button" class="btn o sm" id="btn-add-sig" ${(currentEc.signatories || []).length >= 2 ? 'disabled' : ''}>+ Add Signatory</button>
+                </div>
+              </div>
+              <div id="partners-list-wrap" style="display:flex;flex-direction:column;gap:8px;margin-top:10px"></div>
+              <div id="sigs-list-wrap" style="display:flex;flex-direction:column;gap:8px;margin-top:10px"></div>
             </div>
 
             <!-- Save Action Button -->
@@ -880,7 +873,13 @@
       updateStudioPreview();
 
       // Form change listeners
-      const inputs = ['#inp-cert-title', '#inp-event-date', '#inp-cert-tag', '#inp-host-chapter', '#chk-curriculum-bullets', '#inp-curriculum-status', '#inp-curriculum-text', '#inp-track', '#inp-dossier-tag', '#inp-skills', '#inp-preview-name'];
+      const inputs = [
+        '#inp-event-title', '#inp-host-chapter', '#inp-event-date', '#inp-cert-tag', '#inp-cert-title',
+        '#inp-curriculum-status', '#inp-curriculum-text', '#chk-curriculum-bullets',
+        '#inp-dossier-tag', '#inp-track', '#inp-skills', '#inp-credential-base',
+        '#inp-dev-tag', '#inp-node-pill', '#inp-partner-pill',
+        '#inp-preview-name'
+      ];
       inputs.forEach((sel) => {
         $(sel, root)?.addEventListener('input', () => {
           syncFormToEc();
@@ -888,13 +887,13 @@
         });
       });
 
-      // Layout selector change
-      $('#sel-layout-target', root).addEventListener('change', () => {
+      // Layout selector change (if present)
+      $('#sel-layout-target', root)?.addEventListener('change', () => {
         updateLayoutInputs();
         highlightActiveDragTarget();
       });
 
-      // Layout numeric inputs change
+      // Layout numeric inputs change (if present)
       ['#inp-pos-x', '#inp-pos-y', '#inp-pos-s', '#inp-pos-w'].forEach((sel) => {
         $(sel, root)?.addEventListener('input', () => {
           applyLayoutInputsToEc();
@@ -902,10 +901,10 @@
         });
       });
 
-      // Reset Element button
-      $('#btn-reset-element', root).addEventListener('click', () => {
-        const target = $('#sel-layout-target', root).value;
-        if (currentEc.layout && currentEc.layout[target]) {
+      // Reset Element button (if present)
+      $('#btn-reset-element', root)?.addEventListener('click', () => {
+        const target = $('#sel-layout-target', root)?.value;
+        if (target && currentEc.layout && currentEc.layout[target]) {
           delete currentEc.layout[target];
           updateLayoutInputs();
           updateStudioPreview();
@@ -913,8 +912,8 @@
         }
       });
 
-      // Reset All Layout button
-      $('#btn-reset-all-layout', root).addEventListener('click', () => {
+      // Reset All Layout button (if present)
+      $('#btn-reset-all-layout', root)?.addEventListener('click', () => {
         if (!confirm('Reset all element positions for this event to default layout?')) return;
         currentEc.layout = {};
         updateLayoutInputs();
@@ -1023,17 +1022,32 @@
     /* Helper: Sync Form to Memory Model */
     function syncFormToEc() {
       if (!currentEc) return;
-      currentEc.cert_title = $('#inp-cert-title')?.value.trim() || 'Certificate of Participation';
+      if (!currentEc.layout) currentEc.layout = {};
+
+      currentEc.event_title_override = $('#inp-event-title')?.value.trim() || '';
+      currentEc.host_chapter = $('#inp-host-chapter')?.value.trim() || 'GDG on Campus SR University';
       currentEc.event_date = $('#inp-event-date')?.value || null;
       currentEc.cert_tag = $('#inp-cert-tag')?.value.trim() || 'OFFICIAL CREDENTIAL';
-      currentEc.host_chapter = $('#inp-host-chapter')?.value.trim() || '';
-      currentEc.curriculum_bullets = $('#chk-curriculum-bullets')?.checked || false;
-      currentEc.curriculum_status = $('#inp-curriculum-status')?.value.trim() || 'STATUS: COMPLETED';
+      currentEc.cert_title = $('#inp-cert-title')?.value.trim() || 'Certificate of Participation';
+
+      currentEc.curriculum_status = $('#inp-curriculum-status')?.value.trim() || 'STATUS: Topic / Curriculum Overview';
       currentEc.curriculum_text = $('#inp-curriculum-text')?.value.trim() || '';
-      currentEc.track = $('#inp-track')?.value.trim() || '';
+      currentEc.curriculum_bullets = $('#chk-curriculum-bullets')?.checked || false;
+
       currentEc.dossier_tag = $('#inp-dossier-tag')?.value.trim() || '';
+      currentEc.track = $('#inp-track')?.value.trim() || '';
       const rawSkills = $('#inp-skills')?.value || '';
       currentEc.skills = rawSkills.split(',').map((s) => s.trim()).filter(Boolean);
+
+      currentEc.layout.credential_base = $('#inp-credential-base')?.value.trim() || '';
+      currentEc.layout.dev_tag = $('#inp-dev-tag')?.value.trim() || '';
+      currentEc.layout.node_pill = $('#inp-node-pill')?.value.trim() || '';
+      currentEc.layout.partner_sticker = $('#inp-partner-pill')?.value.trim() || '';
+      if (currentEc.event_title_override) {
+        currentEc.layout.event_title_override = currentEc.event_title_override;
+      } else {
+        delete currentEc.layout.event_title_override;
+      }
     }
 
     /* Helper: Update Layout Editor Inputs */
@@ -1225,8 +1239,14 @@
       const previewName = $('#inp-preview-name')?.value.trim() || 'Asha Rao';
       const lines = String(currentEc.curriculum_text || '').split(/\n+/).map((s) => s.trim()).filter(Boolean);
 
+      const eventTitle = currentEc.event_title_override || currentEc.layout?.event_title_override || currentEventObj.title;
+      const credId = currentEc.layout?.credential_base || 'GDGSRU-SAMPLE01';
+      const devTag = currentEc.layout?.dev_tag || 'DEV_COMMUNITY';
+      const nodePill = currentEc.layout?.node_pill || 'ACTIVE_NODE // 01';
+      const partnerSticker = currentEc.layout?.partner_sticker || '';
+
       const fields = {
-        event_name: currentEventObj.title,
+        event_name: eventTitle,
         chapter: currentEc.host_chapter,
         host_chapter: currentEc.host_chapter,
         cert_tag: currentEc.cert_tag,
@@ -1239,6 +1259,9 @@
         curriculum_bullets: currentEc.curriculum_bullets ? lines.map((text) => ({ text })) : [],
         date: currentEc.event_date ? new Intl.DateTimeFormat('en-US', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(currentEc.event_date + 'T00:00:00')) : '',
         date_short: currentEc.event_date ? new Intl.DateTimeFormat('en-US', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(currentEc.event_date + 'T00:00:00')) : '',
+        dev_tag: devTag,
+        node_pill: nodePill,
+        partner_sticker: partnerSticker,
         cohosts,
         sponsors,
         signatories,
@@ -1256,8 +1279,8 @@
       const payload = {
         template_html: studioTemplateHtml,
         recipient_name: previewName,
-        credential_id: 'GDGSRU-SAMPLE01',
-        event_title: currentEventObj.title,
+        credential_id: credId,
+        event_title: eventTitle,
         event_start: currentEc.event_date ? `${currentEc.event_date}T00:00:00+05:30` : new Date().toISOString(),
         fields,
       };
