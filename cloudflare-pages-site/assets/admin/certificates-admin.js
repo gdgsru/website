@@ -837,6 +837,55 @@
               <div id="sigs-list-wrap" style="display:flex;flex-direction:column;gap:8px;margin-top:10px"></div>
             </div>
 
+            <!-- 6. Manual X/Y Positioning & Scale -->
+            <div class="mc-card" id="layout-editor-panel">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <div>
+                  <h3 style="margin:0;font-size:15px">6. Manual X/Y Positioning & Scale</h3>
+                  <p style="margin:2px 0 0;font-size:12px;color:var(--ink-2)">Select an element below to fine-tune its pixel coordinates or drag directly on the preview canvas.</p>
+                </div>
+                <div style="display:flex;gap:6px">
+                  <button type="button" class="btn o sm" id="btn-reset-element" title="Reset selected element to default">Reset Element</button>
+                  <button type="button" class="btn o sm" id="btn-reset-all-layout" title="Reset all elements to default">Reset All</button>
+                </div>
+              </div>
+
+              <div class="mc-f-group" style="margin-top:10px">
+                <label>Target Element</label>
+                <select id="sel-layout-target">
+                  <option value="gdg">GDG Chapter Logo</option>
+                  <option value="cert_tag">Top Credential Tag</option>
+                  <option value="title">Certificate Title</option>
+                  <option value="name">Attendee Name Badge</option>
+                  <option value="event">Event Statement Text</option>
+                  <option value="curriculum">Curriculum Overview Card</option>
+                  <option value="dossier">Blue Dossier Card (Competencies)</option>
+                  <option value="credential">Terminal Log Card</option>
+                  <option value="sig_1">Signatory 1</option>
+                  <option value="sig_2">Signatory 2</option>
+                </select>
+              </div>
+
+              <div class="mc-f-row">
+                <div class="mc-f-group">
+                  <label>X Position (px)</label>
+                  <input type="number" id="inp-pos-x" min="0" max="1123" placeholder="e.g. 48">
+                </div>
+                <div class="mc-f-group">
+                  <label>Y Position (px)</label>
+                  <input type="number" id="inp-pos-y" min="0" max="794" placeholder="e.g. 180">
+                </div>
+                <div class="mc-f-group">
+                  <label>Scale (0.3 - 2)</label>
+                  <input type="number" step="0.05" id="inp-pos-s" min="0.3" max="2" placeholder="1.0">
+                </div>
+                <div class="mc-f-group">
+                  <label>Width (px, opt)</label>
+                  <input type="number" id="inp-pos-w" min="120" max="1000" placeholder="Auto">
+                </div>
+              </div>
+            </div>
+
             <!-- Save Action Button -->
             <button type="button" class="btn" id="btn-save-ec" style="padding:12px;font-size:14px;font-weight:700">💾 Save Certificate Settings</button>
           </div>
@@ -848,10 +897,13 @@
                 <span style="font-weight:700">Live Preview</span>
                 <input type="text" id="inp-preview-name" value="Asha Rao" placeholder="Preview Name" style="font-size:11px;padding:3px 8px;border:1px solid var(--line);border-radius:4px;width:120px">
               </div>
-              <div style="display:flex;gap:4px">
-                <button type="button" class="btn o sm" id="btn-zoom-fit" style="padding:2px 6px;font-size:11px">Fit</button>
+              <div style="display:flex;gap:4px;align-items:center">
+                <span style="font-size:11px;font-family:var(--font-mono);color:var(--ink-2);margin-right:2px">Zoom:</span>
+                <button type="button" class="btn o sm" id="btn-zoom-fit" style="padding:2px 6px;font-size:11px" title="Fit to screen">Fit</button>
+                <button type="button" class="btn o sm" id="btn-zoom-50" style="padding:2px 6px;font-size:11px">50%</button>
                 <button type="button" class="btn o sm" id="btn-zoom-75" style="padding:2px 6px;font-size:11px">75%</button>
                 <button type="button" class="btn o sm" id="btn-zoom-100" style="padding:2px 6px;font-size:11px">100%</button>
+                <button type="button" class="btn o sm" id="btn-zoom-125" style="padding:2px 6px;font-size:11px">125%</button>
               </div>
             </div>
             <div class="mc-preview-stage" id="studio-stage">
@@ -1013,8 +1065,10 @@
 
       // Zoom buttons
       $('#btn-zoom-fit', root).onclick = fitStudioCanvas;
+      $('#btn-zoom-50', root).onclick = () => setStudioZoom(0.5);
       $('#btn-zoom-75', root).onclick = () => setStudioZoom(0.75);
       $('#btn-zoom-100', root).onclick = () => setStudioZoom(1);
+      $('#btn-zoom-125', root).onclick = () => setStudioZoom(1.25);
 
       setTimeout(fitStudioCanvas, 80);
     }
