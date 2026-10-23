@@ -440,10 +440,14 @@
       certificate: $('#pane-certificate'),
       publish: $('#pane-publish'),
     };
-    function switchTab(name) {
+    async function switchTab(name) {
       tabBtns.forEach((b) => b.classList.toggle('active', b.dataset.tab === name));
       Object.keys(panes).forEach((k) => panes[k].classList.toggle('active', k === name));
-      if (name === 'certificate') setTimeout(fitStudioCanvas, 60);
+      if (name === 'attendance') await renderAttendanceTab();
+      if (name === 'certificate') {
+        if (!panes.certificate.hasChildNodes()) await renderCertificateTab();
+        setTimeout(fitStudioCanvas, 60);
+      }
       if (name === 'publish') refreshPublishTab();
     }
     tabBtns.forEach((b) => b.addEventListener('click', () => switchTab(b.dataset.tab)));
@@ -846,15 +850,6 @@
         });
         $('#att-filter-count').textContent = `Showing ${visible} of ${rows.length}`;
         updateBulkBar();
-      };
-    }
-        trs.forEach((tr) => {
-          const text = tr.textContent.toLowerCase();
-          const show = text.includes(q);
-          tr.style.display = show ? '' : 'none';
-          if (show) visible++;
-        });
-        $('#att-filter-count').textContent = `Showing ${visible} of ${rows.length}`;
       };
     }
 
