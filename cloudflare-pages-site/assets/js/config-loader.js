@@ -473,30 +473,30 @@
     const rows = view.data || [];
     if (window.__GDG_INVALID_EVENT_ROUTE) { renderEventDetail(null); return; }
     if (routeSlug) { renderEventDetail(rows.find(e => e.slug === routeSlug) || null); return; }
+
+    // ── Featured event → drives the big banner card (title, description, CTA buttons) ──
+    // Admin: tick "Feature this event on the home page" on the flagship event.
+    // Any event with featured=true (most recent by start_at) controls the banner.
+    const featured = rows.find(e => e.featured) || null;
+    if (featured) {
+      const setT = (id, val) => { const el = document.getElementById(id); if (el && val != null) el.textContent = val; };
+      setT('ef-title', featured.title);
+      setT('ef-summary', featured.summary || featured.description || '');
+      setT('ef-meta-label', String(featured.category || 'FEATURED EVENT').toUpperCase());
+      setT('ef-meta-sub', featured.start_at ? whenText(featured.start_at, featured.timezone || 'Asia/Kolkata') : 'UPCOMING');
+      setT('ef-side-title', featured.title);
+      setT('ef-side-body', featured.summary || 'Open the event page for full details.');
+      const efActions = document.getElementById('ef-actions');
+      if (efActions) efActions.innerHTML =
+        `${featured.registration_url ? `<a class="btn" href="${esc(safeUrl(featured.registration_url))}" target="_blank" rel="noopener noreferrer">RSVP ↗</a>` : ''}` +
+        `<a class="btn o" href="/event.html?slug=${encodeURIComponent(featured.slug)}">Event details ↗</a>`;
+    }
+
+    // ── Pinned next session → drives home countdown + ef-fields "Announced soon" cells ──
+    // Admin: tick "Pin as the Next Session countdown" on the ongoing/upcoming session.
     const pinned = rows.find(e => e.pinned_next_session && e.start_at && new Date(e.start_at) > new Date());
     window.__GDG_PINNED_EVENT = pinned || null;
-    if (pinned) {
-      const main = $('.event-feature-main', root);
-      if (main) {
-        const h = $('#ef-title', root) || $('h2', main);
-        const p = $('#ef-summary', root) || $('p', main);
-        const metaLabel = $('#ef-meta-label', root);
-        const metaSub = $('#ef-meta-sub', root);
-        const metaLegacy = $('.event-feature-meta', main);
-        const sideTitle = $('#ef-side-title', root);
-        const sideBody = $('#ef-side-body', root);
-        if (h) h.innerHTML = esc(pinned.title);
-        if (p) p.textContent = `${whenText(pinned.start_at,pinned.timezone||'Asia/Kolkata')}${pinned.venue?` · ${pinned.venue}`:pinned.online_url?' · Online':''}. ${pinned.summary||'Join the community for this session.'}`;
-        if (metaLabel) metaLabel.textContent = 'NEXT SESSION';
-        if (metaSub) metaSub.textContent = String(pinned.category||'EVENT').toUpperCase();
-        if (!metaLabel && metaLegacy) metaLegacy.textContent = `PINNED NEXT SESSION / ${String(pinned.category||'EVENT').toUpperCase()}`;
-        if (sideTitle) sideTitle.textContent = pinned.title;
-        if (sideBody) sideBody.textContent = pinned.summary || 'Open the event page for full details.';
-        const actions = $('#ef-actions', root) || $('.event-feature-actions', main);
-        if (window.__gdgFillFeature) window.__gdgFillFeature();
-        if (actions) actions.innerHTML = `${pinned.registration_url?`<a class="btn" href="${esc(safeUrl(pinned.registration_url))}" target="_blank" rel="noopener noreferrer">Register externally ↗</a>`:''}<a class="btn o" href="/event.html?slug=${encodeURIComponent(pinned.slug)}">Event details ↗</a>`;
-      }
-    }
+    if (pinned && window.__gdgFillFeature) window.__gdgFillFeature();
     const formats = $('.event-formats', root);
     if (!formats) return;
     const section = document.createElement('section'); section.className = 'editorial-collections runtime-events';

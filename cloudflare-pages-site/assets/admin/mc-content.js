@@ -173,8 +173,8 @@
     { key: 'registration_url', label: 'Registration link', type: 'url', nullable: true, placeholder: 'https://' },
     { key: 'image_url', label: 'Banner image link', type: 'url', nullable: true, placeholder: 'https://' },
     { key: 'status', label: 'Status', type: 'select', default: 'draft', options: [{ value: 'draft', label: 'Draft (hidden)' }, { value: 'published', label: 'Published' }, { value: 'cancelled', label: 'Cancelled' }, { value: 'archived', label: 'Archived' }] },
-    { key: 'featured', label: 'Feature this event on the home page', type: 'checkbox' },
-    { key: 'pinned_next_session', label: 'Pin as the Next Session countdown', type: 'checkbox' }
+    { key: 'featured', label: 'Feature as flagship banner on the Events page (the big card)', type: 'checkbox' },
+    { key: 'pinned_next_session', label: 'Pin as the Next Session countdown (home widget + date/venue/speaker fields)', type: 'checkbox' }
   ];
   const eventCfg = {
     key: 'events', title: 'Events', table: 'events', titleKey: 'title', order: { col: 'start_at', asc: false }, statuses: ['published', 'draft', 'archived', 'cancelled'],
