@@ -6,8 +6,8 @@ window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXB
 // Shared defaults. Read by the public site (config-loader.js) and Mission Control.
 // Anything saved in the admin (site_settings) overrides these.
 window.GDG_SITE_DEFAULTS = {
-  // Leaderboard toggle: set to false to hide Leaderboard from the header & menu until events launch.
-  leaderboardEnabled: false,
+  // Leaderboard toggle: set to false to hide Leaderboard from the header & menu; true shows it.
+  leaderboardEnabled: true,
   contactEmail: "gdg@sru.edu.in",
   secondaryContactEmail: "gdgoncamps.sru@gmail.com",
   // Each category has a name and an active flag. Only active categories are offered when
