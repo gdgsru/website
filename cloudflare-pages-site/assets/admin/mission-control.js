@@ -76,7 +76,10 @@
     download: 'M12 5v11M7.5 11.5 12 16l4.5-4.5M5 19h14',
     clock: 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zm0-15v5l3.5 2',
     help: 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zm0-4.5h.01M9.5 9.5a2.5 2.5 0 0 1 5 0c0 1.5-1.5 2-2.5 3v1',
-    refresh: 'M20 4v5h-5M4 20v-5h5M20 9A9 9 0 0 0 5.7 5.7L4 9M4 15a9 9 0 0 0 14.3 3.3L20 15'
+    refresh: 'M20 4v5h-5M4 20v-5h5M20 9A9 9 0 0 0 5.7 5.7L4 9M4 15a9 9 0 0 0 14.3 3.3L20 15',
+    sun: 'M12 3v2m0 14v2M5.6 5.6l1.4 1.4m10 10l1.4 1.4M3 12h2m14 0h2M5.6 18.4l1.4-1.4m10-10l1.4-1.4M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z',
+    moon: 'M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z',
+    megaphone: 'M11 5L6 9H2v6h4l5 4V5zm4 4c.8 1.1.8 2.9 0 4m2-7c1.9 2.5 1.9 6.5 0 9'
   };
   const icon = (n, cls = '') => `<svg class="mc-i ${cls}" viewBox="0 0 24 24" aria-hidden="true"><path d="${ICON[n] || ICON.spark}"/></svg>`;
 
@@ -338,7 +341,7 @@
     try { await fn(); } catch (e) { console.error(e); toast(authErrorText(e) || 'Could not save. Please try again.'); }
     finally { if (btn?.isConnected) { btn.disabled = false; btn.textContent = label; } }
   }
-  const MC_BUILD = '20261024e';
+  const MC_BUILD = '20261024f';
   const loadScriptOnce = (src) => new Promise((resolve, reject) => { const versioned = src + '?v=' + MC_BUILD; if ([...document.scripts].some((x) => x.src.includes(src.split('/').pop().split('?')[0]) && x.src.includes(MC_BUILD))) return resolve(); const el = document.createElement('script'); el.src = versioned; el.onload = resolve; el.onerror = () => reject(new Error('Could not load ' + versioned)); document.head.appendChild(el); });
 
   function watchSession(main) {
@@ -390,14 +393,47 @@
   }
 
   /* ---------- shell ---------- */
+  /* ---------- 5 Command Decks ---------- */
   const NAV = [
-    [null, [['overview', 'Overview', 'home']]],
-    ['Run events', [['events', 'Events', 'calendar'], ['attendance', 'Attendance', 'check'], ['certificates', 'Certificates', 'award'], ['badges', 'Member Badges', 'idcard'], ['leaderboard', 'Leaderboard', 'trophy']]],
-    ['Publish', [['team', 'Team', 'users'], ['blog', 'Blog', 'doc'], ['blog-series', 'Blog series', 'doc'], ['resources', 'Resource Hub', 'library']]],
-    ['Site', [['settings', 'Settings', 'settings'], ['audit', 'Activity Log', 'clock']]]
+    ['Mission Briefing', [
+      ['overview', 'Command Overview', 'home'],
+      ['audit', 'Activity & Audit Log', 'clock']
+    ]],
+    ['Events & RSVPs', [
+      ['events', 'Events & Flagships', 'calendar'],
+      ['attendance', 'Attendance Roster', 'check']
+    ]],
+    ['Credentials Deck', [
+      ['certificates', 'Certificates Studio', 'award'],
+      ['badges', 'Member Passcodes', 'idcard']
+    ]],
+    ['Publishing & Broadcast', [
+      ['announcement', 'Announcement Bar', 'spark'],
+      ['blog', 'Chapter Blog', 'doc'],
+      ['blog-series', 'Blog Series', 'doc'],
+      ['resources', 'Resource Hub', 'library'],
+      ['team', 'Organizing Team', 'users']
+    ]],
+    ['System & Settings', [
+      ['leaderboard', 'Leaderboard & Scoring', 'trophy'],
+      ['settings', 'Platform Settings', 'settings']
+    ]]
   ];
   const TITLES = Object.fromEntries(NAV.flatMap(([, items]) => items.map(([id, label]) => [id, label])));
-  const MODULE_FOR = { overview: 'mc-overview.js', events: 'mc-content.js', blog: 'mc-content.js', 'blog-series': 'mc-content.js', resources: 'mc-content.js', team: 'mc-team.js', badges: 'mc-extra.js', leaderboard: 'mc-extra.js', settings: 'mc-extra.js', audit: 'mc-extra.js' };
+  TITLES.announcement = 'Announcement Bar Studio';
+  const MODULE_FOR = {
+    overview: 'mc-overview.js',
+    events: 'mc-content.js',
+    blog: 'mc-content.js',
+    'blog-series': 'mc-content.js',
+    resources: 'mc-content.js',
+    team: 'mc-team.js',
+    badges: 'mc-extra.js',
+    leaderboard: 'mc-extra.js',
+    announcement: 'mc-extra.js',
+    settings: 'mc-extra.js',
+    audit: 'mc-extra.js'
+  };
 
   function renderShell(main) {
     document.body.classList.add('mc-app');
@@ -452,6 +488,7 @@
       <button type="button" class="mc-status-pill mc-status-btn" id="mc-status-pill" title="Click to view System Health & Diagnostics"><span class="mc-live-dot"></span><span>Online</span></button>
     </div>
     <div class="mc-top-actions" id="mc-page-actions"></div>
+    <button type="button" class="mc-icon-btn mc-theme-btn" id="mc-theme-btn" title="Toggle Dark / Light Command Cockpit" aria-label="Toggle Theme">${icon(document.documentElement.dataset.theme === 'light' ? 'moon' : 'sun')}</button>
     <a href="/" target="_blank" rel="noopener" class="mc-top-link" title="Open public website">${icon('ext')}<span>Site ↗</span></a>
     <button type="button" class="mc-search" id="mc-search" aria-label="Search and jump to anything">${icon('search')}<span>Quick search</span><kbd>Ctrl K</kbd></button>
     <button type="button" class="mc-icon-btn mc-help-btn" id="mc-help-btn" title="Keyboard Shortcuts (?)" aria-label="Keyboard Shortcuts">${icon('help')}</button>
@@ -469,6 +506,18 @@
     $('#mc-search', main).addEventListener('click', openPalette);
     $('#mc-status-pill', main)?.addEventListener('click', openHealthModal);
     $('#mc-help-btn', main)?.addEventListener('click', openShortcutsModal);
+    const themeBtn = $('#mc-theme-btn', main);
+    if (themeBtn) {
+      themeBtn.addEventListener('click', () => {
+        const cur = document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+        const next = cur === 'light' ? 'dark' : 'light';
+        document.documentElement.dataset.theme = next;
+        try { localStorage.setItem('mc_admin_theme', next); } catch(e){}
+        themeBtn.innerHTML = `<svg class="mc-i" viewBox="0 0 24 24" aria-hidden="true"><path d="${next === 'light' ? ICON.moon : ICON.sun}"/></svg>`;
+        themeBtn.title = `Switch to ${next === 'light' ? 'Dark Command' : 'Light'} Mode`;
+        toast(`Switched to ${next === 'light' ? 'Light Enterprise' : 'Dark Command'} Mode.`, true);
+      });
+    }
     armIdleLogout(main);
     const ws = $('#admin-workspace', main);
     ws.addEventListener('invalid', (e) => { const el = e.target; const lab = (el.closest('label')?.firstChild?.textContent || el.name || 'A field').trim(); toast(lab + ': ' + (el.validationMessage || 'please check this field.')); }, true);
@@ -517,6 +566,10 @@
   async function render() {
     if (!adminUser || !sb) return;
     const route = parseRoute(), token = ++renderToken;
+    if (route.tab === 'announcement') {
+      location.replace('#/settings/announcements');
+      return;
+    }
     $$('.mc-rail a[data-nav]').forEach((a) => a.setAttribute('aria-current', a.dataset.nav === route.tab ? 'page' : 'false'));
     if (route.tab !== 'attendance' && route.tab !== 'certificates') { const b = $('#mc-eventbar'); if (b) b.remove(); }
     MC.rendering = true; drawer.close(true); MC.rendering = false;
