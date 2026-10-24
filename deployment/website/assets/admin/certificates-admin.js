@@ -250,6 +250,7 @@
     let globalDefaultLayout = globalRes.data?.default_layout || {};
     let isDirty = false;
     let currentViewMode = localStorage.getItem('gdg_cert_view_mode') || 'split';
+    let currentStudioZoom = 1;
 
     // Fetch initial badge data
     const [attCountRes, ecStatusRes] = await Promise.all([
@@ -544,28 +545,26 @@
         }
         .mc-preview-stage {
           background: #eef2f6;
-          padding: 20px;
+          padding: 24px;
           overflow: auto;
-          display: flex;
-          justify-content: center;
-          align-items: flex-start;
+          display: block;
+          text-align: center;
           min-height: 480px;
           max-height: calc(100vh - 180px);
         }
-        .mc-canvas-scaler { transform-origin: top center; transition: transform 0.1s ease-out; }
-
-        /* Draggable elements on canvas */
-        .live-drag-target {
-          cursor: move !important;
-          outline: 1.5px dashed rgba(66, 133, 244, 0.4) !important;
-          transition: outline-color 0.15s;
+        .mc-canvas-scaler {
+          display: inline-block;
+          margin: 0 auto;
+          transform-origin: 0 0;
+          transition: transform 0.15s ease-out, width 0.15s ease-out, height 0.15s ease-out;
+          box-shadow: 0 10px 30px rgba(15, 23, 42, 0.15);
+          border-radius: 8px;
         }
-        .live-drag-target:hover {
-          outline: 2px dashed #4285f4 !important;
-        }
-        .live-drag-target.selected {
-          outline: 2.5px solid #1a73e8 !important;
-          box-shadow: 0 0 8px rgba(26, 115, 232, 0.3) !important;
+        .mc-zoom-btn.active {
+          background: #1a73e8 !important;
+          color: #fff !important;
+          border-color: #1a73e8 !important;
+          font-weight: 700 !important;
         }
 
         /* Checklist */
@@ -1442,6 +1441,54 @@
                 <div id="gdg-logo-preview-thumb" style="margin-top:8px;${currentEc.layout?.gdg_logo_path ? '' : 'display:none;'}">
                   <img id="gdg-logo-img" src="" alt="GDG Logo" style="max-height:48px;max-width:240px;object-fit:contain;background:#fff;padding:4px 8px;border-radius:6px;border:1px solid var(--line)">
                 </div>
+
+                <!-- Dedicated Logo Size & Offset Studio (active when custom logo is uploaded) -->
+                <div id="gdg-logo-size-controls" style="margin-top:12px;padding:12px 14px;background:var(--surface,#fff);border:1px solid var(--line);border-radius:var(--r-m);${currentEc.layout?.gdg_logo_path ? '' : 'display:none;'}">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                    <span style="font-size:12px;font-weight:700;color:var(--ink-1);display:flex;align-items:center;gap:6px">
+                      <span>📐 Uploaded Logo Size & Position</span>
+                    </span>
+                    <span id="badge-gdg-logo-size" style="font-size:11.5px;font-weight:700;color:#1a73e8;background:rgba(26,115,232,0.08);padding:2px 8px;border-radius:4px">Height: ${currentEc.layout?.gdg_logo_size || 60}px</span>
+                  </div>
+
+                  <!-- Size presets & Slider -->
+                  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                    <label style="font-size:11.5px;font-weight:600;min-width:60px">Size (Height):</label>
+                    <input type="range" id="rng-gdg-logo-size" min="32" max="130" step="2" value="${currentEc.layout?.gdg_logo_size || 60}" style="flex:1;min-width:140px;cursor:pointer">
+                    <div style="display:flex;gap:4px">
+                      <button type="button" class="btn o sm btn-gdg-size-preset" data-size="48" style="padding:2px 6px;font-size:11px">48px</button>
+                      <button type="button" class="btn o sm btn-gdg-size-preset" data-size="60" style="padding:2px 6px;font-size:11px">60px</button>
+                      <button type="button" class="btn o sm btn-gdg-size-preset" data-size="76" style="padding:2px 6px;font-size:11px">76px</button>
+                      <button type="button" class="btn o sm btn-gdg-size-preset" data-size="96" style="padding:2px 6px;font-size:11px">96px</button>
+                      <button type="button" class="btn o sm btn-gdg-size-preset" data-size="115" style="padding:2px 6px;font-size:11px">115px</button>
+                    </div>
+                  </div>
+
+                  <!-- Offset Nudge Controls -->
+                  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)">
+                    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                      <span style="font-size:11.5px;font-weight:600;min-width:60px">Nudge X:</span>
+                      <button type="button" class="btn o sm btn-gdg-nudge" data-axis="x" data-delta="-5" style="padding:2px 6px;font-size:11px">◀◀ 5</button>
+                      <button type="button" class="btn o sm btn-gdg-nudge" data-axis="x" data-delta="-1" style="padding:2px 6px;font-size:11px">◀ 1</button>
+                      <button type="button" class="btn o sm btn-gdg-nudge" data-axis="x" data-delta="1" style="padding:2px 6px;font-size:11px">1 ▶</button>
+                      <button type="button" class="btn o sm btn-gdg-nudge" data-axis="x" data-delta="5" style="padding:2px 6px;font-size:11px">5 ▶▶</button>
+                      
+                      <div style="width:1px;height:16px;background:var(--line);margin:0 4px"></div>
+                      
+                      <span style="font-size:11.5px;font-weight:600">Nudge Y:</span>
+                      <button type="button" class="btn o sm btn-gdg-nudge" data-axis="y" data-delta="-5" style="padding:2px 6px;font-size:11px">▲▲ 5</button>
+                      <button type="button" class="btn o sm btn-gdg-nudge" data-axis="y" data-delta="-1" style="padding:2px 6px;font-size:11px">▲ 1</button>
+                      <button type="button" class="btn o sm btn-gdg-nudge" data-axis="y" data-delta="1" style="padding:2px 6px;font-size:11px">1 ▼</button>
+                      <button type="button" class="btn o sm btn-gdg-nudge" data-axis="y" data-delta="5" style="padding:2px 6px;font-size:11px">5 ▼▼</button>
+                    </div>
+
+                    <div style="display:flex;align-items:center;gap:6px">
+                      <span id="badge-gdg-logo-offset" style="font-size:11px;color:var(--ink-2);font-family:var(--font-mono)">Offset: X:${currentEc.layout?.gdg_logo_x || 0}px, Y:${currentEc.layout?.gdg_logo_y || 0}px</span>
+                      <button type="button" class="btn o sm" id="btn-reset-gdg-offset" style="padding:2px 6px;font-size:11px" title="Reset logo offset to (0,0)">Reset</button>
+                    </div>
+                  </div>
+                </div>
+
                 <div style="margin-top:10px;padding-top:8px;border-top:1px dashed var(--line);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
                   <label class="check" style="font-size:12px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none">
                     <input type="checkbox" id="chk-hide-chapter-text" ${currentEc.layout?.hide_chapter_text ? 'checked' : ''}>
@@ -1557,11 +1604,15 @@
                 <button type="button" class="btn o sm" id="btn-test-claim-designer-top" style="padding:2px 8px;font-size:11px;font-weight:700;color:var(--primary,#1a73e8);border-color:var(--primary,#1a73e8)">🎯 Test Claim</button>
                 <div style="width:1px;height:16px;background:var(--line);margin:0 4px"></div>
                 <span style="font-size:11px;font-family:var(--font-mono);color:var(--ink-2);margin-right:2px">Zoom:</span>
-                <button type="button" class="btn o sm" id="btn-zoom-fit" style="padding:2px 6px;font-size:11px" title="Fit to screen">Fit</button>
-                <button type="button" class="btn o sm" id="btn-zoom-50" style="padding:2px 6px;font-size:11px">50%</button>
-                <button type="button" class="btn o sm" id="btn-zoom-75" style="padding:2px 6px;font-size:11px">75%</button>
-                <button type="button" class="btn o sm" id="btn-zoom-100" style="padding:2px 6px;font-size:11px">100%</button>
-                <button type="button" class="btn o sm" id="btn-zoom-125" style="padding:2px 6px;font-size:11px">125%</button>
+                <button type="button" class="btn o sm mc-zoom-btn" id="btn-zoom-out" title="Zoom Out" style="padding:2px 7px;font-size:12px;font-weight:700">−</button>
+                <span id="studio-zoom-display" style="font-size:11px;font-weight:700;min-width:36px;text-align:center;color:var(--ink-1)">Fit</span>
+                <button type="button" class="btn o sm mc-zoom-btn" id="btn-zoom-in" title="Zoom In" style="padding:2px 7px;font-size:12px;font-weight:700">+</button>
+                <div style="width:1px;height:16px;background:var(--line);margin:0 2px"></div>
+                <button type="button" class="btn o sm mc-zoom-btn active" id="btn-zoom-fit" style="padding:2px 6px;font-size:11px" title="Fit to screen">Fit</button>
+                <button type="button" class="btn o sm mc-zoom-btn" id="btn-zoom-50" data-zoom="0.5" style="padding:2px 6px;font-size:11px">50%</button>
+                <button type="button" class="btn o sm mc-zoom-btn" id="btn-zoom-75" data-zoom="0.75" style="padding:2px 6px;font-size:11px">75%</button>
+                <button type="button" class="btn o sm mc-zoom-btn" id="btn-zoom-100" data-zoom="1.0" style="padding:2px 6px;font-size:11px">100%</button>
+                <button type="button" class="btn o sm mc-zoom-btn" id="btn-zoom-125" data-zoom="1.25" style="padding:2px 6px;font-size:11px">125%</button>
               </div>
             </div>
             <div class="mc-preview-stage" id="studio-stage">
@@ -1662,9 +1713,10 @@
         const effective = { ...globalBox, ...curBox };
 
         let currentVal = effective[axis];
-        if (currentVal == null) currentVal = axis === 'x' ? 40 : 40;
-        const maxLimit = axis === 'x' ? 1123 : 794;
-        const newVal = Math.max(0, Math.min(maxLimit, Math.round(Number(currentVal) + delta)));
+        if (currentVal == null) currentVal = 0;
+        const minLimit = -500;
+        const maxLimit = 500;
+        const newVal = Math.max(minLimit, Math.min(maxLimit, Math.round(Number(currentVal) + delta)));
 
         currentEc.layout[target] = {
           ...effective,
@@ -1745,6 +1797,7 @@
         if (target && currentEc.layout && currentEc.layout[target]) {
           delete currentEc.layout[target];
           updateLayoutInputs();
+          markDirty();
           updateStudioPreview();
           adminMessage(`Position for "${target}" reset to default.`, true);
         }
@@ -1753,8 +1806,11 @@
       // Reset All Layout button (if present)
       $('#btn-reset-all-layout', root)?.addEventListener('click', () => {
         if (!confirm('Reset all element positions for this event to default layout?')) return;
-        currentEc.layout = {};
+        ['gdg', 'cert_tag', 'title', 'name', 'event', 'curriculum', 'dossier', 'credential', 'sig_1', 'sig_2'].forEach((k) => {
+          if (currentEc.layout) delete currentEc.layout[k];
+        });
         updateLayoutInputs();
+        markDirty();
         updateStudioPreview();
         adminMessage('All element positions reset to default.', true);
       });
@@ -1855,11 +1911,18 @@
       $('#btn-test-claim-designer-top', root)?.addEventListener('click', () => openTestClaimModal());
 
       // Zoom buttons
-      $('#btn-zoom-fit', root).onclick = fitStudioCanvas;
-      $('#btn-zoom-50', root).onclick = () => setStudioZoom(0.5);
-      $('#btn-zoom-75', root).onclick = () => setStudioZoom(0.75);
-      $('#btn-zoom-100', root).onclick = () => setStudioZoom(1);
-      $('#btn-zoom-125', root).onclick = () => setStudioZoom(1.25);
+      $('#btn-zoom-out', root)?.addEventListener('click', () => {
+        const next = Math.max(0.25, Math.round((currentStudioZoom - 0.1) * 10) / 10);
+        setStudioZoom(next, false);
+      });
+      $('#btn-zoom-in', root)?.addEventListener('click', () => {
+        const next = Math.min(1.5, Math.round((currentStudioZoom + 0.1) * 10) / 10);
+        setStudioZoom(next, false);
+      });
+      $('#btn-zoom-fit', root)?.addEventListener('click', () => fitStudioCanvas());
+      $$('.mc-zoom-btn[data-zoom]', root).forEach((b) => {
+        b.onclick = () => setStudioZoom(Number(b.dataset.zoom), false);
+      });
 
       setTimeout(fitStudioCanvas, 80);
     }
@@ -1891,6 +1954,9 @@
       if ($('#chk-hide-chapter-text')) {
         currentEc.layout.hide_chapter_text = $('#chk-hide-chapter-text').checked;
       }
+      if ($('#rng-gdg-logo-size')) {
+        currentEc.layout.gdg_logo_size = Number($('#rng-gdg-logo-size').value) || 60;
+      }
       if (currentEc.event_title_override) {
         currentEc.layout.event_title_override = currentEc.event_title_override;
       } else {
@@ -1904,9 +1970,9 @@
       const eventBox = (currentEc.layout && currentEc.layout[target]) || {};
       const globalBox = (globalDefaultLayout && globalDefaultLayout[target]) || {};
       const box = { ...globalBox, ...eventBox };
-      if ($('#inp-pos-x')) $('#inp-pos-x').value = box.x ?? '';
-      if ($('#inp-pos-y')) $('#inp-pos-y').value = box.y ?? '';
-      if ($('#inp-pos-s')) $('#inp-pos-s').value = box.scale ?? '';
+      if ($('#inp-pos-x')) $('#inp-pos-x').value = box.x ?? 0;
+      if ($('#inp-pos-y')) $('#inp-pos-y').value = box.y ?? 0;
+      if ($('#inp-pos-s')) $('#inp-pos-s').value = box.scale ?? 1;
       if ($('#inp-pos-w')) $('#inp-pos-w').value = box.w ?? '';
     }
 
@@ -1938,6 +2004,66 @@
       const gdgLogoThumb = $('#gdg-logo-preview-thumb');
       const gdgLogoImg = $('#gdg-logo-img');
       const hideTextChk = $('#chk-hide-chapter-text');
+      const logoSizeControls = $('#gdg-logo-size-controls');
+      const rngLogoSize = $('#rng-gdg-logo-size');
+      const badgeLogoSize = $('#badge-gdg-logo-size');
+      const badgeLogoOffset = $('#badge-gdg-logo-offset');
+      const btnResetOffset = $('#btn-reset-gdg-offset');
+
+      const updateLogoOffsetBadge = () => {
+        if (!badgeLogoOffset) return;
+        const x = currentEc.layout?.gdg_logo_x || 0;
+        const y = currentEc.layout?.gdg_logo_y || 0;
+        badgeLogoOffset.textContent = `Offset: X:${x > 0 ? '+' : ''}${x}px, Y:${y > 0 ? '+' : ''}${y}px`;
+      };
+
+      if (rngLogoSize) {
+        rngLogoSize.oninput = (e) => {
+          const val = Number(e.target.value);
+          if (!currentEc.layout) currentEc.layout = {};
+          currentEc.layout.gdg_logo_size = val;
+          if (badgeLogoSize) badgeLogoSize.textContent = `Height: ${val}px`;
+          markDirty();
+          updateStudioPreview();
+        };
+      }
+
+      $$('.btn-gdg-size-preset', root).forEach((btn) => {
+        btn.onclick = () => {
+          const sz = Number(btn.dataset.size);
+          if (!currentEc.layout) currentEc.layout = {};
+          currentEc.layout.gdg_logo_size = sz;
+          if (rngLogoSize) rngLogoSize.value = sz;
+          if (badgeLogoSize) badgeLogoSize.textContent = `Height: ${sz}px`;
+          markDirty();
+          updateStudioPreview();
+        };
+      });
+
+      $$('.btn-gdg-nudge', root).forEach((btn) => {
+        btn.onclick = () => {
+          const axis = btn.dataset.axis;
+          const delta = Number(btn.dataset.delta);
+          if (!currentEc.layout) currentEc.layout = {};
+          const key = axis === 'x' ? 'gdg_logo_x' : 'gdg_logo_y';
+          const cur = Number(currentEc.layout[key]) || 0;
+          currentEc.layout[key] = Math.max(-200, Math.min(200, cur + delta));
+          updateLogoOffsetBadge();
+          markDirty();
+          updateStudioPreview();
+        };
+      });
+
+      if (btnResetOffset) {
+        btnResetOffset.onclick = () => {
+          if (!currentEc.layout) currentEc.layout = {};
+          currentEc.layout.gdg_logo_x = 0;
+          currentEc.layout.gdg_logo_y = 0;
+          updateLogoOffsetBadge();
+          markDirty();
+          updateStudioPreview();
+        };
+      }
 
       if (hideTextChk) {
         hideTextChk.onchange = (e) => {
@@ -1950,6 +2076,7 @@
 
       const currentLogoPath = currentEc.layout?.gdg_logo_path;
       if (currentLogoPath) {
+        if (logoSizeControls) logoSizeControls.style.display = 'block';
         if (currentEc.gdg_logo_dataUrl) {
           if (gdgLogoImg) gdgLogoImg.src = currentEc.gdg_logo_dataUrl;
           if (gdgLogoThumb) gdgLogoThumb.style.display = 'block';
@@ -1976,11 +2103,13 @@
             if (!currentEc.layout) currentEc.layout = {};
             currentEc.layout.gdg_logo_path = path;
             currentEc.gdg_logo_dataUrl = dataUrl;
+            if (!currentEc.layout.gdg_logo_size) currentEc.layout.gdg_logo_size = 60;
 
             if (gdgLogoStatus) gdgLogoStatus.textContent = 'Custom Logo Uploaded';
             if (gdgLogoThumb) gdgLogoThumb.style.display = 'block';
             if (gdgLogoImg) gdgLogoImg.src = dataUrl;
             if (gdgLogoReset) gdgLogoReset.style.display = 'inline-flex';
+            if (logoSizeControls) logoSizeControls.style.display = 'block';
 
             await uploadToStorage(sb, path, blob);
             adminMessage('GDG Chapter Logo uploaded successfully.', true);
@@ -1998,10 +2127,14 @@
           currentEc.layout.gdg_logo_path = null;
           currentEc.gdg_logo_dataUrl = null;
           currentEc.layout.hide_chapter_text = false;
+          delete currentEc.layout.gdg_logo_size;
+          delete currentEc.layout.gdg_logo_x;
+          delete currentEc.layout.gdg_logo_y;
           if (hideTextChk) hideTextChk.checked = false;
           if (gdgLogoStatus) gdgLogoStatus.textContent = 'Using Default Vector Logo (< >)';
           if (gdgLogoThumb) gdgLogoThumb.style.display = 'none';
           if (gdgLogoReset) gdgLogoReset.style.display = 'none';
+          if (logoSizeControls) logoSizeControls.style.display = 'none';
           markDirty();
           adminMessage('GDG Logo reset to default vector.', true);
           await updateStudioPreview();
@@ -2176,8 +2309,14 @@
         const b = layout[key];
         if (!b || (b.x == null && b.y == null && b.scale == null && b.w == null)) return '';
         const x = b.x ?? 0, y = b.y ?? 0, s = b.scale ?? 1, w = b.w;
-        return `position:absolute;left:${x}px;top:${y}px;${w ? `width:${w}px;` : ''}transform:scale(${s});transform-origin:0 0`;
+        return `position:relative;left:${x}px;top:${y}px;${w ? `width:${w}px;` : ''}transform:scale(${s});transform-origin:0 0;`;
       };
+
+      const logoH = Number(currentEc.layout?.gdg_logo_size) || 60;
+      const logoX = Number(currentEc.layout?.gdg_logo_x) || 0;
+      const logoY = Number(currentEc.layout?.gdg_logo_y) || 0;
+      const maxW = Math.max(320, Math.round(logoH * 5));
+      const gdgLogoStyle = `height:${logoH}px;max-height:${logoH}px;max-width:${maxW}px;object-fit:contain;display:block;transform:translate(${logoX}px,${logoY}px);`;
 
       // Inline partner images
       const cohosts = [], sponsors = [];
@@ -2235,6 +2374,7 @@
         node_pill: nodePill,
         partner_sticker: partnerSticker,
         gdg_custom_logo: gdgCustomLogo,
+        gdg_logo_style: gdgLogoStyle,
         hide_chapter_text: !!currentEc.layout?.hide_chapter_text,
         cohosts,
         sponsors,
@@ -2270,6 +2410,31 @@
       const doc = frame.contentDocument;
       if (!doc) return;
 
+      if (!doc.getElementById('mc-canvas-drag-styles')) {
+        const style = doc.createElement('style');
+        style.id = 'mc-canvas-drag-styles';
+        style.textContent = `
+          .live-drag-target {
+            cursor: move !important;
+            transition: outline 0.12s ease !important;
+            outline: 1.5px dashed rgba(66, 133, 244, 0.45) !important;
+            outline-offset: 3px !important;
+            border-radius: 4px !important;
+          }
+          .live-drag-target:hover {
+            outline: 2px dashed #1a73e8 !important;
+            background: rgba(66, 133, 244, 0.04) !important;
+          }
+          .live-drag-target.selected {
+            outline: 2.5px solid #1a73e8 !important;
+            outline-offset: 3px !important;
+            background: rgba(26, 115, 232, 0.08) !important;
+            box-shadow: 0 0 10px rgba(26, 115, 232, 0.35) !important;
+          }
+        `;
+        doc.head.appendChild(style);
+      }
+
       const elementMap = [
         { key: 'gdg', sel: '.main-logo-area' },
         { key: 'cert_tag', sel: '.title-deck' },
@@ -2287,43 +2452,52 @@
         el.classList.add('live-drag-target');
         el.dataset.dragKey = key;
 
-        let startX, startY, origX, origY, isDragging = false;
         el.addEventListener('mousedown', (e) => {
           e.preventDefault();
           $('#sel-layout-target').value = key;
           updateLayoutInputs();
           highlightActiveDragTarget();
 
-          isDragging = true;
-          startX = e.clientX;
-          startY = e.clientY;
-          const rect = el.getBoundingClientRect();
-          const frameRect = doc.body.getBoundingClientRect();
-          origX = rect.left - frameRect.left;
-          origY = rect.top - frameRect.top;
+          const target = key;
+          const curBox = (currentEc.layout && currentEc.layout[target]) || {};
+          const startX = e.clientX;
+          const startY = e.clientY;
+          const baseOffsetX = Number(curBox.x) || 0;
+          const baseOffsetY = Number(curBox.y) || 0;
+          let isDragging = true;
 
           const onMove = (mv) => {
             if (!isDragging) return;
-            const dx = mv.clientX - startX;
-            const dy = mv.clientY - startY;
-            const nx = Math.max(0, Math.min(1123, Math.round(origX + dx)));
-            const ny = Math.max(0, Math.min(794, Math.round(origY + dy)));
+            const zoom = currentStudioZoom || 1;
+            const dx = Math.round((mv.clientX - startX) / zoom);
+            const dy = Math.round((mv.clientY - startY) / zoom);
+            const newX = Math.max(-500, Math.min(500, baseOffsetX + dx));
+            const newY = Math.max(-500, Math.min(500, baseOffsetY + dy));
+
             if (!currentEc.layout) currentEc.layout = {};
-            currentEc.layout[key] = { ...(currentEc.layout[key] || {}), x: nx, y: ny };
-            el.style.position = 'absolute';
-            el.style.left = nx + 'px';
-            el.style.top = ny + 'px';
-            if ($('#inp-pos-x')) $('#inp-pos-x').value = nx;
-            if ($('#inp-pos-y')) $('#inp-pos-y').value = ny;
+            currentEc.layout[target] = { ...(currentEc.layout[target] || {}), x: newX, y: newY };
+            el.style.position = 'relative';
+            el.style.left = newX + 'px';
+            el.style.top = newY + 'px';
+            if ($('#inp-pos-x')) $('#inp-pos-x').value = newX;
+            if ($('#inp-pos-y')) $('#inp-pos-y').value = newY;
           };
 
           const onUp = () => {
+            if (!isDragging) return;
             isDragging = false;
             doc.removeEventListener('mousemove', onMove);
             doc.removeEventListener('mouseup', onUp);
+            window.removeEventListener('mousemove', onMove);
+            window.removeEventListener('mouseup', onUp);
+            markDirty();
+            updateStudioPreview();
           };
+
           doc.addEventListener('mousemove', onMove);
           doc.addEventListener('mouseup', onUp);
+          window.addEventListener('mousemove', onMove);
+          window.addEventListener('mouseup', onUp);
         });
       });
       highlightActiveDragTarget();
@@ -2339,21 +2513,39 @@
 
     function fitStudioCanvas() {
       const stage = $('#studio-stage');
-      const scaler = $('#studio-scaler');
-      if (!stage || !scaler) return;
-      const availableW = stage.clientWidth - 40;
-      const scale = Math.min(1, Math.max(0.3, availableW / 1123));
-      scaler.style.transform = `scale(${scale})`;
-      scaler.style.width = '1123px';
-      scaler.style.height = `${Math.round(794 * scale)}px`;
+      if (!stage) return;
+      const availW = stage.clientWidth - 48;
+      const availH = stage.clientHeight - 48;
+      const scaleW = availW / 1123;
+      const scaleH = availH > 200 ? availH / 794 : scaleW;
+      const scale = Math.min(1.0, Math.max(0.25, Math.min(scaleW, scaleH)));
+      setStudioZoom(Math.round(scale * 100) / 100, true);
     }
 
-    function setStudioZoom(scale) {
+    function setStudioZoom(scale, isFit = false) {
+      currentStudioZoom = scale;
       const scaler = $('#studio-scaler');
-      if (!scaler) return;
+      const wrap = $('#studio-canvas-wrap');
+      if (!scaler || !wrap) return;
+
+      const scaledW = Math.round(1123 * scale);
+      const scaledH = Math.round(794 * scale);
+      scaler.style.width = scaledW + 'px';
+      scaler.style.height = scaledH + 'px';
       scaler.style.transform = `scale(${scale})`;
-      scaler.style.width = '1123px';
-      scaler.style.height = `${Math.round(794 * scale)}px`;
+      scaler.style.transformOrigin = '0 0';
+
+      wrap.style.width = '1123px';
+      wrap.style.height = '794px';
+
+      $$('.mc-zoom-btn', root).forEach((b) => {
+        if (isFit && b.id === 'btn-zoom-fit') b.classList.add('active');
+        else if (!isFit && b.dataset.zoom && Math.abs(Number(b.dataset.zoom) - scale) < 0.02) b.classList.add('active');
+        else b.classList.remove('active');
+      });
+
+      const display = $('#studio-zoom-display', root);
+      if (display) display.textContent = Math.round(scale * 100) + '%';
     }
 
     /* ==================================================================
@@ -2394,8 +2586,14 @@
           const b = layout[key];
           if (!b || (b.x == null && b.y == null && b.scale == null && b.w == null)) return '';
           const x = b.x ?? 0, y = b.y ?? 0, s = b.scale ?? 1, w = b.w;
-          return `position:absolute;left:${x}px;top:${y}px;${w ? `width:${w}px;` : ''}transform:scale(${s});transform-origin:0 0`;
+          return `position:relative;left:${x}px;top:${y}px;${w ? `width:${w}px;` : ''}transform:scale(${s});transform-origin:0 0;`;
         };
+
+        const logoH = Number(currentEc?.layout?.gdg_logo_size) || 60;
+        const logoX = Number(currentEc?.layout?.gdg_logo_x) || 0;
+        const logoY = Number(currentEc?.layout?.gdg_logo_y) || 0;
+        const maxW = Math.max(320, Math.round(logoH * 5));
+        const gdgLogoStyle = `height:${logoH}px;max-height:${logoH}px;max-width:${maxW}px;object-fit:contain;display:block;transform:translate(${logoX}px,${logoY}px);`;
 
         const cohosts = [], sponsors = [];
         for (const p of currentPartners) {
@@ -2448,6 +2646,7 @@
           node_pill: nodePill,
           partner_sticker: partnerSticker,
           gdg_custom_logo: gdgCustomLogo,
+          gdg_logo_style: gdgLogoStyle,
           hide_chapter_text: !!currentEc?.layout?.hide_chapter_text,
           cohosts,
           sponsors,

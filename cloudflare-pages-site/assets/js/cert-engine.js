@@ -175,6 +175,12 @@
     const sponsors = Array.isArray(f.sponsors) ? f.sponsors : [];
     const partners = (Array.isArray(f.partners) && f.partners.length) ? f.partners : [...cohosts, ...sponsors];
 
+    const logoH = Number(f.gdg_logo_size) || 60;
+    const logoX = Number(f.gdg_logo_x) || 0;
+    const logoY = Number(f.gdg_logo_y) || 0;
+    const maxW = Math.max(320, Math.round(logoH * 5));
+    const gdgLogoStyle = f.gdg_logo_style || `height:${logoH}px;max-height:${logoH}px;max-width:${maxW}px;object-fit:contain;display:block;transform:translate(${logoX}px,${logoY}px);`;
+
     return {
       ...f,
       recipient_name: p.recipient_name || '', name: p.recipient_name || '', credential_id: p.credential_id || '',
@@ -182,6 +188,7 @@
       host_chapter: f.host_chapter || f.chapter || '',
       chapter: f.host_chapter || f.chapter || '',
       gdg_custom_logo: f.gdg_custom_logo || '',
+      gdg_logo_style: gdgLogoStyle,
       hide_chapter_text: !!f.hide_chapter_text,
       date: long,
       date_short: short,

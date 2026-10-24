@@ -92,11 +92,11 @@ const num = (v: unknown, d: number, lo: number, hi: number) => {
 function pos(layout: Record<string, Box>, key: string) {
   const b = layout[key];
   if (!b || (b.x == null && b.y == null && b.scale == null && b.w == null)) return '';
-  const x = num(b.x, 0, 0, CANVAS.w);
-  const y = num(b.y, 0, 0, CANVAS.h);
-  const s = num(b.scale, 1, 0.3, 2);
-  const w = b.w == null ? null : num(b.w, 300, 120, 1000);
-  return `position:absolute;left:${x}px;top:${y}px;${w ? `width:${w}px;` : ''}transform:scale(${s});transform-origin:0 0`;
+  const x = num(b.x, 0, -600, 600);
+  const y = num(b.y, 0, -600, 600);
+  const s = num(b.scale, 1, 0.3, 2.5);
+  const w = b.w == null ? null : num(b.w, 300, 60, 1000);
+  return `position:relative;left:${x}px;top:${y}px;${w ? `width:${w}px;` : ''}transform:scale(${s});transform-origin:0 0;`;
 }
 
 const longDate = (iso: string) =>
@@ -218,6 +218,12 @@ Deno.serve(async (req) => {
   const lines = String(ec.curriculum_text).split(/\n+/).map((s) => s.trim()).filter(Boolean).slice(0, 12);
   const longD = longDate(ec.event_date);
 
+  const logoH = num((layout as any)?.gdg_logo_size, 60, 24, 160);
+  const logoX = num((layout as any)?.gdg_logo_x, 0, -200, 200);
+  const logoY = num((layout as any)?.gdg_logo_y, 0, -200, 200);
+  const maxW = Math.max(320, Math.round(logoH * 5));
+  const gdgLogoStyle = `height:${logoH}px;max-height:${logoH}px;max-width:${maxW}px;object-fit:contain;display:block;transform:translate(${logoX}px,${logoY}px);`;
+
   // 6. Fields for the template. The template is a static file the browser already loads.
   const fields = {
     event_name: (layout as any)?.event_title_override || ev?.title || '',
@@ -237,6 +243,7 @@ Deno.serve(async (req) => {
     node_pill: (layout as any)?.node_pill || '',
     partner_sticker: (layout as any)?.partner_sticker || '',
     gdg_custom_logo: gdgCustomLogo,
+    gdg_logo_style: gdgLogoStyle,
     hide_chapter_text: !!(layout as any)?.hide_chapter_text,
     cohosts,
     sponsors,

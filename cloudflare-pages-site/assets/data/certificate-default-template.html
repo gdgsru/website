@@ -533,7 +533,7 @@
     <div class="header-row">
       <div class="main-logo-area" style="{{pos_gdg}}">
         {{#gdg_custom_logo}}
-          <img src="{{gdg_custom_logo}}" alt="Google Developer Groups" style="max-height:60px;max-width:320px;object-fit:contain;display:block;">
+          <img src="{{gdg_custom_logo}}" alt="Google Developer Groups" class="gdg-custom-logo-img" style="{{#gdg_logo_style}}{{gdg_logo_style}}{{/gdg_logo_style}}{{^gdg_logo_style}}max-height:60px;max-width:320px;object-fit:contain;display:block;{{/gdg_logo_style}}">
         {{/gdg_custom_logo}}
         {{^gdg_custom_logo}}
           <svg id="defLogo" viewBox="0 0 100 60">
