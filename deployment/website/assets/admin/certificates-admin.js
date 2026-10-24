@@ -1,14 +1,15 @@
-/* Mission Control: Certificates & Attendance Redesign
- * 3-Tab Per-Event Workbench: Attendance, Certificate, and Publish.
- * Loaded on demand by mission-control.js.
+/* Mission Control: Certificates + Attendance (names) screens.
+ * Loaded on demand by mission-control.js. Needs window.GDGCert (cert-engine.js).
+ * Certificates are generated on the public page from: active template + per-event settings + the
+ * attendance list. Nothing is issued or stored per person.
  */
 (() => {
   'use strict';
   const G = window.GDGCert || {};
-  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  let c; // context from mission-control.js: { sb, $, $$, setWorkspace, adminMessage, authErrorText, audit, msg, adminUser, keepEvent }
+  const esc = G.esc || ((s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])));
+  let c; // context from mission-control.js: { sb, $, $$, setWorkspace, adminMessage, authErrorText, audit, msg, adminUser }
 
-  /* ------------------------------------------------------------------ Attendance CSV Parser */
+  /* ------------------------------------------------------------------ names CSV */
   function parseRows(text) {
     const rows = []; let row = [], cell = '', q = false;
     for (let i = 0; i < text.length; i++) {
@@ -22,9 +23,10 @@
     row.push(cell); rows.push(row);
     return rows.filter((r) => r.some((x) => String(x).trim()));
   }
-
   const norm = (s) => String(s || '').trim().replace(/\s+/g, ' ').toLowerCase();
-
+  /** Accepts a CSV with a name header plus a roll number and/or email (and optional attendance_status), or one name per line.
+   * Roll numbers or emails are preferred for formal events, but names-only are fully supported for informal Q&A sessions.
+   */
   function parseNames(text) {
     const issues = []; let rows = parseRows(String(text || '').replace(/^\uFEFF/, ''));
     if (!rows.length) return { rows: [], issues: ['The file is empty.'], dupes: 0, ambiguousNames: [] };
@@ -33,15 +35,15 @@
     let ni = 0, ri = -1, ei = -1, si = -1, hadHeader = false;
     if (nameIdx >= 0) {
       hadHeader = true; ni = nameIdx;
-      ri = head.findIndex((h) => ['roll', 'roll no', 'roll no.', 'roll_no', 'roll number', 'roll_number', 'rollno', 'enrollment', 'enrollment no', 'enrollment_no'].includes(h));
+      ri = head.findIndex((h) => ['roll', 'roll no', 'roll no.', 'roll_no', 'roll number', 'roll_number', 'rollno', 'enrollment', 'enrollment no', 'enrollment_no', 'enrollment number'].includes(h));
       ei = head.findIndex((h) => ['email', 'attendee_email', 'email address'].includes(h));
       si = head.findIndex((h) => ['attendance_status', 'attendance status', 'attendee status', 'status'].includes(h));
       rows = rows.slice(1);
     }
-    if (rows.length > 10000) return { rows: [], issues: ['A single upload can contain at most 10,000 attendee rows.'], dupes: 0, ambiguousNames: [] };
+    if (rows.length > 10000) return { rows: [], issues: ['A single upload can contain at most 10,000 attendee rows. Split the file into smaller uploads.'], dupes: 0, ambiguousNames: [] };
     const statusMap = new Map([
       ['attended', 'attended'], ['present', 'attended'], ['yes', 'attended'], ['y', 'attended'], ['true', 'attended'], ['1', 'attended'],
-      ['absent', 'absent'], ['not attended', 'absent'], ['no', 'absent'], ['n', 'absent'], ['false', 'absent'], ['0', 'absent'],
+      ['absent', 'absent'], ['not attended', 'absent'], ['not-attended', 'absent'], ['not_attended', 'absent'], ['no', 'absent'], ['n', 'absent'], ['false', 'absent'], ['0', 'absent'],
       ['pending', 'pending'],
     ]);
     const byIdentity = new Map(), emailOwner = new Map(), out = []; let dupes = 0;
@@ -49,23 +51,28 @@
       const name = String(r[ni] || '').trim().replace(/\s+/g, ' ');
       const rowNo = i + 1 + (hadHeader ? 1 : 0);
       if (!name) { issues.push(`Row ${rowNo}: attendee name is required.`); return; }
-      if (name.length < 3 || name.length > 120) { issues.push(`Row ${rowNo}: name must be 3-120 characters.`); return; }
+      if (name.length < 3 || name.length > 120) { issues.push(`Row ${rowNo}: the name is too short or too long (3–120 characters).`); return; }
+      // Without a header row the columns are: name, then roll number or email, then optional status.
       const second = !hadHeader ? String(r[1] || '').trim() : '';
       const rollRaw = ri >= 0 ? String(r[ri] || '').trim() : (second && !second.includes('@') ? second : '');
+      if (rollRaw.length > 40) { issues.push(`Row ${rowNo}: the roll number for "${name.slice(0, 30)}" is too long.`); return; }
       const roll = rollRaw.replace(/\s+/g, '').toUpperCase();
       const emailRaw = ei >= 0 ? String(r[ei] || '').trim().toLowerCase() : (second.includes('@') ? second.toLowerCase() : '');
-      if (emailRaw && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailRaw)) { issues.push(`Row ${rowNo}: invalid email address for "${name}".`); return; }
+      if (emailRaw && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailRaw)) { issues.push(`Row ${rowNo}: "${name.slice(0, 30)}" has an invalid email address.`); return; }
       const statusRaw = si >= 0 ? String(r[si] || '').trim().toLowerCase() : (!hadHeader ? String(r[2] || '').trim().toLowerCase() : '');
-      const status = !statusRaw ? 'attended' : (statusMap.get(statusRaw) || 'attended');
+      if (si >= 0 && !statusRaw) { issues.push(`Row ${rowNo}: attendance status is blank for "${name.slice(0, 30)}". Fill it with attended, absent, or pending.`); return; }
+      const status = !statusRaw ? 'attended' : statusMap.get(statusRaw);
+      if (!status) { issues.push(`Row ${rowNo}: unsupported status "${statusRaw.slice(0, 30)}" for "${name.slice(0, 30)}". Use attended, absent, or pending (common yes/no variants are supported).`); return; }
       const identity = roll ? `R:${roll}` : (emailRaw ? `E:${emailRaw}` : `N:${norm(name)}`);
       if (emailRaw && emailOwner.has(emailRaw) && emailOwner.get(emailRaw) !== identity) {
-        issues.push(`Row ${rowNo}: email "${emailRaw}" belongs to another attendee.`); return;
+        issues.push(`Row ${rowNo}: the email "${emailRaw}" belongs to another attendee.`); return;
       }
       if (byIdentity.has(identity)) {
         const prev = byIdentity.get(identity);
+        // The same person repeated with the same name and status is harmless; anything else conflicts.
         if (prev.attendee_name.toLowerCase() === name.toLowerCase() && prev.attendance_status === status) { dupes++; return; }
-        if (identity.startsWith('N:')) { issues.push(`Row ${rowNo}: duplicate attendee name "${name}". Unique roll number or email is required.`); return; }
-        issues.push(`Row ${rowNo}: ${roll ? `roll ${roll}` : emailRaw} already exists.`); return;
+        if (identity.startsWith('N:')) { issues.push(`Row ${rowNo}: repeated name "${name}". When uploading without roll numbers or emails, each attendee name must be unique.`); return; }
+        issues.push(`Row ${rowNo}: ${roll ? `roll number ${roll}` : emailRaw} is already used by another attendee or has a conflicting status.`); return;
       }
       if (emailRaw) emailOwner.set(emailRaw, identity);
       const attendee = { attendee_name: name, roll_no: roll || null, attendee_email: emailRaw || null, attendance_status: status };
@@ -74,6 +81,7 @@
     return { rows: out, issues, dupes, ambiguousNames: [] };
   }
 
+  /** Server-side import keeps replacement and updates atomic. */
   async function importNames(eventId, rows, replace) {
     const { sb } = c;
     const payload = rows.map((r) => ({
@@ -89,176 +97,328 @@
     return data || { added: 0, updated: 0, removed: 0 };
   }
 
-  /* ------------------------------------------------------------------ Image Upload Processing */
-  async function processImageUpload(file, maxWidth = 600) {
-    const name = file.name.toLowerCase();
-    const isSvg = name.endsWith('.svg') || file.type === 'image/svg+xml';
-    const isPng = name.endsWith('.png') || file.type === 'image/png';
-    const isJpg = name.endsWith('.jpg') || name.endsWith('.jpeg') || file.type === 'image/jpeg';
-    if (!isSvg && !isPng && !isJpg) {
-      throw new Error('Please upload a PNG, JPG, or SVG image.');
-    }
-
-    let blob;
-    if (isSvg) {
-      const text = await file.text();
-      const svgBlob = new Blob([text], { type: 'image/svg+xml;charset=utf-8' });
-      const url = URL.createObjectURL(svgBlob);
-      const img = new Image();
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = () => reject(new Error('Could not parse SVG.'));
-        img.src = url;
-      });
-      URL.revokeObjectURL(url);
-      const w = img.width || 600, h = img.height || 400;
-      const scale = Math.min(1, maxWidth / w);
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.max(1, Math.round(w * scale));
-      canvas.height = Math.max(1, Math.round(h * scale));
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      blob = await new Promise((res) => canvas.toBlob(res, 'image/png'));
-    } else {
-      const url = URL.createObjectURL(file);
-      const img = new Image();
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = () => reject(new Error('Could not parse image.'));
-        img.src = url;
-      });
-      URL.revokeObjectURL(url);
-      if (img.width > maxWidth) {
-        const scale = maxWidth / img.width;
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.round(img.width * scale);
-        canvas.height = Math.round(img.height * scale);
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        blob = await new Promise((res) => canvas.toBlob(res, isPng ? 'image/png' : 'image/jpeg', 0.92));
+  /** Reusable "upload names" block. `getEventId()` returns the chosen event. */
+  const importerHtml = () => `
+    <div class="cert-importer">
+      <a class="text-link" href="data:text/csv;charset=utf-8,Name%2CRoll%20No%2CEmail%2CStatus%0AAsha%20Rao%2C26BCE1001%2C%2Cattended%0ARahul%20Verma%2C%2Crahul%40example.com%2Cattended%0APriya%20Sharma%2C%2C%2Cattended" download="gdg-sru-names-sample.csv">Download sample CSV</a><p class="muted small">Columns: <code>Name</code> (required), plus optional <code>Roll No</code>, <code>Email</code>, and <code>Status</code>. If you only have names (e.g. from an informal Q&A session), a simple list of names works too! A pasted list works too: one person per line. Attendees without roll numbers or emails can claim their certificates on the Certificates page using their name.</p>
+      <label>CSV or text file<input type="file" data-names-file accept=".csv,.txt,text/csv,text/plain"></label>
+      <label>…or paste a list (one per line: name, then roll number or email)<textarea data-names-text rows="4" placeholder="Asha Rao, 26BCE1001&#10;Rahul Verma, rahul@example.com&#10;Priya Sharma"></textarea></label>
+      <label class="check"><input type="checkbox" data-names-replace> Replace the current list (remove names that are not in this upload)</label>
+      <div data-names-preview></div>
+      <button type="button" data-names-import disabled>Import names</button>
+    </div>`;
+  function wireImporter(root, getEventId, onDone) {
+    const $ = (s) => root.querySelector(s); let parsed = { rows: [], issues: [], dupes: 0, ambiguousNames: [] };
+    const importButton = $('[data-names-import]');
+    const show = (text) => {
+      parsed = parseNames(text);
+      const ambiguous = parsed.ambiguousNames || [];
+      importButton.disabled = !parsed.rows.length || ambiguous.length > 0 || parsed.issues.length > 0;
+      if (parsed.rows.length) {
+        const warnings = [];
+        if (parsed.dupes) warnings.push(`<p class="muted small">${parsed.dupes} repeated row(s) were skipped.</p>`);
+        if (ambiguous.length) warnings.push(c.msg(`Cannot import yet: repeated names may belong to different people. Make these names unique (for example, include a middle name) before importing: ${ambiguous.slice(0, 8).map(esc).join(', ')}${ambiguous.length > 8 ? ', …' : ''}.`));
+        if (parsed.issues.length) warnings.push(c.msg(parsed.issues.slice(0, 4).join(' ')));
+        const withRoll = parsed.rows.filter((r) => r.roll_no).length;
+        const withEmail = parsed.rows.filter((r) => r.attendee_email).length;
+        const nameOnly = parsed.rows.length - withRoll - withEmail;
+        const countParts = [];
+        if (withRoll) countParts.push(`${withRoll} with Roll No`);
+        if (withEmail) countParts.push(`${withEmail} with Email`);
+        if (nameOnly) countParts.push(`${nameOnly} Name only`);
+        const previewRows = parsed.rows.slice(0, 5).map((r, i) => `<tr><td style="padding:4px 6px;border-bottom:1px solid #e0e0e0;color:#666">${i+1}</td><td style="padding:4px 6px;border-bottom:1px solid #e0e0e0"><b>${esc(r.attendee_name)}</b></td><td style="padding:4px 6px;border-bottom:1px solid #e0e0e0">${esc(r.roll_no || '—')}</td><td style="padding:4px 6px;border-bottom:1px solid #e0e0e0">${esc(r.attendee_email || '—')}</td><td style="padding:4px 6px;border-bottom:1px solid #e0e0e0">${esc(r.attendance_status || 'attended')}</td></tr>`).join('');
+        const previewTable = `<div style="margin:8px 0;overflow-x:auto;max-width:100%"><table style="width:100%;font-size:12px;border-collapse:collapse;border:1px solid #dadce0"><thead><tr style="background:#f8f9fa;text-align:left"><th style="padding:4px 6px;border-bottom:1px solid #dadce0">#</th><th style="padding:4px 6px;border-bottom:1px solid #dadce0">Name</th><th style="padding:4px 6px;border-bottom:1px solid #dadce0">Roll No</th><th style="padding:4px 6px;border-bottom:1px solid #dadce0">Email</th><th style="padding:4px 6px;border-bottom:1px solid #dadce0">Status</th></tr></thead><tbody>${previewRows}</tbody></table></div>`;
+        const nameOnlyNote = nameOnly > 0 ? `<p class="muted small" style="color:var(--b,#4285f4);margin:4px 0 8px">ℹ️ <b>Name-only roster:</b> Attendees without roll numbers or emails can claim their certificates on the Certificates page using their name.</p>` : '';
+        $('[data-names-preview]').innerHTML = `<p><b>${parsed.rows.length}</b> attendees ready to import <span class="muted small">(${countParts.join(', ') || 'All verified'})</span></p>${nameOnlyNote}${previewTable}${warnings.join('')}`;
       } else {
-        blob = file;
+        $('[data-names-preview]').innerHTML = c.msg(parsed.issues[0] || 'No names found.');
       }
-    }
-    if (blob.size > 1024 * 1024) {
-      throw new Error(`Image size is ${(blob.size / 1024 / 1024).toFixed(2)} MB, exceeding the 1 MB limit.`);
-    }
-    return blob;
-  }
-
-  function blobToDataUrl(blob) {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result || '');
-      reader.onerror = () => resolve('');
-      reader.readAsDataURL(blob);
-    });
-  }
-
-  async function uploadToStorage(sb, path, blob) {
-    if (window.MC?.uploadStorage) {
-      await window.MC.uploadStorage('certificate-logos', path, blob, {
-        isPublic: false,
-        contentType: blob.type || 'image/png'
-      });
-      return path;
-    }
-    let { error } = await sb.storage.from('certificate-logos').upload(path, blob, {
-      contentType: blob.type || 'image/png',
-      upsert: true,
-    });
-    if (error && (error.message?.toLowerCase().includes('not found') || error.statusCode === '404' || error.status === 404)) {
+    };
+    $('[data-names-file]').addEventListener('change', async (e) => { const f = e.target.files?.[0]; if (f) { $('[data-names-text]').value = ''; show(await f.text()); } });
+    $('[data-names-text]').addEventListener('input', (e) => { $('[data-names-file]').value = ''; show(e.target.value); });
+    $('[data-names-import]').addEventListener('click', async (e) => {
+      const eventId = getEventId();
+      if (!eventId) return c.adminMessage('Choose an event first.');
+      if (!parsed.rows.length) return c.adminMessage('Add a file or paste names first.');
+      if (parsed.issues?.length) return c.adminMessage('Correct the CSV issues shown in the preview before importing.');
+      if (parsed.ambiguousNames?.length) return c.adminMessage('Make duplicate names unique before importing; the public certificate form checks names only.');
+      const replace = $('[data-names-replace]').checked;
+      if (replace && !confirm('Replace the list? Names not in this upload will be removed for this event.')) return;
+      e.target.disabled = true;
       try {
-        const { error: createErr } = await sb.storage.createBucket('certificate-logos', { public: false });
-        if (!createErr) {
-          const retry = await sb.storage.from('certificate-logos').upload(path, blob, {
-            contentType: blob.type || 'image/png',
-            upsert: true,
-          });
-          error = retry.error;
+        const r = await importNames(eventId, parsed.rows, replace);
+        await c.audit('import', 'attendance_records', `${r.added} added, ${r.updated} updated, ${r.removed} removed`);
+        await onDone();
+        c.adminMessage(`Done: ${r.added} added, ${r.updated} updated, ${r.removed} removed.`, true);
+      } catch (err) {
+        const errMsg = String(err?.message || '');
+        if (err?.code === '23505') {
+          c.adminMessage('The import repeats a roll number, email, or name. Correct the file and retry.');
+        } else if (/needs a (roll number or email|name, a roll number or email)|attendance_has_identifier/i.test(errMsg)) {
+          c.adminMessage('Database migration required: please run migration 20261023120000_allow_name_only_attendance_rosters.sql in your Supabase SQL Editor to enable name-only attendance.');
+        } else {
+          c.adminMessage(c.authErrorText(err));
         }
-      } catch (_) {}
-    }
-    if (error) {
-      if (error.message?.toLowerCase().includes('bucket not found')) {
-        throw new Error('Storage bucket "certificate-logos" does not exist in Supabase. Please create the "certificate-logos" bucket under Supabase Storage.');
       }
-      throw error;
-    }
-    return path;
+      finally { e.target.disabled = false; }
+    });
   }
 
-  async function getStorageDataUrl(sb, path) {
-    if (!path) return '';
-    try {
-      const { data, error } = await sb.storage.from('certificate-logos').download(path);
-      if (error || !data) return '';
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = () => resolve('');
-        reader.readAsDataURL(data);
+
+
+  /* ------------------------------------------------------------------ Attendance tab */
+  async function renderAttendance(ctx) {
+    c = ctx; const { sb, $, $$, setWorkspace, adminMessage, authErrorText, audit } = c;
+    const currentEventId = ctx.preselect || (ctx.keepEvent || '');
+    const [{ data: events }, { data: allRows, error }] = await Promise.all([
+      sb.from('events').select('id,title').order('start_at', { ascending: false }),
+      sb.from('attendance_records').select('id,event_id,attendee_name,roll_no,attendee_email,attendance_status,imported_at').order('imported_at', { ascending: false }).limit(200),
+    ]);
+    if (error) throw error;
+    const title = Object.fromEntries((events || []).map((e) => [e.id, e.title]));
+    const rerender = () => renderAttendance(ctx);
+
+    const renderTableRows = (filterEventId, searchFilter = '') => {
+      let filtered = allRows || [];
+      if (filterEventId) filtered = filtered.filter((r) => r.event_id === filterEventId);
+      if (searchFilter) {
+        const q = searchFilter.toLowerCase();
+        filtered = filtered.filter((r) =>
+          String(r.attendee_name || '').toLowerCase().includes(q) ||
+          String(r.roll_no || '').toLowerCase().includes(q) ||
+          String(r.attendee_email || '').toLowerCase().includes(q)
+        );
+      }
+      if (!filtered.length) {
+        return '<tr><td colspan="7" style="text-align:center;color:#666;padding:16px">No attendance records found.</td></tr>';
+      }
+      return filtered.map((r) => {
+        const isNameOnly = !r.roll_no && !r.attendee_email;
+        const nameBadge = isNameOnly ? ' <span class="cert-badge" style="background:#e8f0fe;color:#1a73e8;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:normal">Name only</span>' : '';
+        return `<tr>
+          <td><b>${esc(r.attendee_name)}</b>${nameBadge}</td>
+          <td>${r.roll_no ? esc(r.roll_no) : '<span class="muted small">—</span>'}</td>
+          <td>${esc(title[r.event_id] || '')}</td>
+          <td>${r.attendee_email ? esc(r.attendee_email) : '<span class="muted small">—</span>'}</td>
+          <td><span class="cert-badge" style="${r.attendance_status === 'attended' ? 'background:#e6f4ea;color:#137333' : 'background:#f1f3f4;color:#5f6368'}">${esc(r.attendance_status || 'attended')}</span></td>
+          <td><small class="muted">${esc(new Date(r.imported_at || Date.now()).toLocaleDateString('en-IN'))}</small></td>
+          <td style="text-align:right"><button type="button" class="button-outline" data-att-del="${esc(r.id)}" style="padding:2px 8px;font-size:11px;color:#d93025;border-color:#fad2cf">Delete</button></td>
+        </tr>`;
+      }).join('');
+    };
+
+    setWorkspace('Attendance', `
+      <p class="admin-lead">Upload the attendees who participated in an event. Visitors can then claim their certificate on the Certificates page. You can upload a full roster (Name + Roll number / Email) or a simple list of names (e.g. from an informal Q&A session). Keep this list private.</p>
+      
+      <section class="admin-panel">
+        <h2>Upload names</h2>
+        <div class="admin-form">
+          <label>Event
+            <select id="att-event">
+              <option value="">Choose event</option>
+              ${(events || []).map((e) => `<option value="${esc(e.id)}" ${e.id === currentEventId ? 'selected' : ''}>${esc(e.title)}</option>`).join('')}
+            </select>
+          </label>
+          ${importerHtml()}
+        </div>
+        
+        <details class="cert-details" style="margin-top:16px">
+          <summary><b>+ Add a single attendee manually (by name)</b></summary>
+          <form id="single-att-form" class="admin-form" style="margin-top:12px">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:12px">
+              <label>Full name *<input name="name" required minlength="3" maxlength="120" placeholder="Asha Rao"></label>
+              <label>Roll number (optional)<input name="roll" maxlength="40" placeholder="26BCE1001"></label>
+              <label>Email address (optional)<input name="email" type="email" maxlength="80" placeholder="asha@example.com"></label>
+              <label>Status
+                <select name="status">
+                  <option value="attended" selected>Attended</option>
+                  <option value="absent">Absent</option>
+                  <option value="pending">Pending</option>
+                </select>
+              </label>
+            </div>
+            <div style="margin-top:12px;display:flex;gap:8px">
+              <button type="submit">Add attendee</button>
+            </div>
+          </form>
+        </details>
+      </section>
+
+      <section class="admin-panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:12px">
+          <h2 style="margin:0">Attendance records (<span id="att-count">${(allRows || []).length}</span>)</h2>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input type="search" id="att-search" placeholder="Search name, roll, email…" style="font-size:12px;padding:4px 8px;width:180px">
+            <button type="button" class="button-outline" id="att-clear-event" style="font-size:12px;padding:4px 10px;color:#d93025;border-color:#fad2cf;display:none">Clear event records</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Roll no</th>
+                <th>Event</th>
+                <th>Email</th>
+                <th>Status</th>
+                <th>Imported</th>
+                <th style="text-align:right">Action</th>
+              </tr>
+            </thead>
+            <tbody id="att-tbody">
+              ${renderTableRows(currentEventId)}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    `);
+
+    // Wire up importer
+    wireImporter($('#admin-workspace'), () => $('#att-event').value, rerender);
+
+    // Wire up event selection & filtering
+    const attEventSelect = $('#att-event');
+    const tbody = $('#att-tbody');
+    const countSpan = $('#att-count');
+    const searchInp = $('#att-search');
+    const clearBtn = $('#att-clear-event');
+
+    const bindDeleteButtons = () => {
+      $$('[data-att-del]').forEach((btn) => {
+        btn.onclick = async () => {
+          if (!confirm('Remove this attendee from the event list?')) return;
+          btn.disabled = true;
+          try {
+            const { error } = await sb.from('attendance_records').delete().eq('id', btn.dataset.attDel);
+            if (error) throw error;
+            await audit('delete', 'attendance_records', btn.dataset.attDel);
+            adminMessage('Attendee removed.', true);
+            await rerender();
+          } catch (err) {
+            adminMessage(authErrorText(err));
+            btn.disabled = false;
+          }
+        };
       });
-    } catch {
-      return '';
+    };
+
+    const updateView = () => {
+      const evId = attEventSelect.value;
+      ctx.keepEvent = evId; ctx.preselect = evId;
+      const q = searchInp.value.trim();
+      tbody.innerHTML = renderTableRows(evId, q);
+      countSpan.textContent = evId ? `${(allRows || []).filter(r => r.event_id === evId).length}` : `${(allRows || []).length}`;
+      if (clearBtn) clearBtn.style.display = evId ? 'inline-block' : 'none';
+      bindDeleteButtons();
+    };
+
+    attEventSelect.addEventListener('change', updateView);
+    searchInp.addEventListener('input', updateView);
+    bindDeleteButtons();
+
+    // Clear event attendance
+    if (clearBtn) {
+      clearBtn.addEventListener('click', async () => {
+        const evId = attEventSelect.value;
+        const evTitle = title[evId] || 'this event';
+        if (!evId) return;
+        if (!confirm(`Are you sure you want to remove ALL attendance records for "${evTitle}"? This cannot be undone.`)) return;
+        clearBtn.disabled = true;
+        try {
+          const { error } = await sb.from('attendance_records').delete().eq('event_id', evId);
+          if (error) throw error;
+          await audit('delete_all', 'attendance_records', `Cleared all records for event ${evId}`);
+          adminMessage(`All attendance records for ${evTitle} removed.`, true);
+          await rerender();
+        } catch (err) {
+          adminMessage(authErrorText(err));
+          clearBtn.disabled = false;
+        }
+      });
+    }
+
+    // Add single attendee manually
+    const singleForm = $('#single-att-form');
+    if (singleForm) {
+      singleForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const evId = attEventSelect.value;
+        if (!evId) return adminMessage('Choose an event first in the dropdown above.');
+        const fd = new FormData(singleForm);
+        const name = String(fd.get('name') || '').trim();
+        const roll = String(fd.get('roll') || '').trim();
+        const email = String(fd.get('email') || '').trim().toLowerCase();
+        const status = String(fd.get('status') || 'attended');
+        if (!name || name.length < 3) return adminMessage('Name must be at least 3 characters.');
+        if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return adminMessage('Please enter a valid email address.');
+        
+        const submitBtn = singleForm.querySelector('button[type=submit]');
+        submitBtn.disabled = true;
+        try {
+          const { error } = await sb.from('attendance_records').insert({
+            event_id: evId,
+            attendee_name: name,
+            roll_no: roll ? roll.toUpperCase() : null,
+            attendee_email: email || null,
+            attendance_status: status,
+            created_by: c.adminUser?.id || null
+          });
+          if (error) {
+            if (/attendance_has_identifier|needs a name, a roll number or email/i.test(error.message || '')) {
+              adminMessage('Database migration required: please run migration 20261023120000_allow_name_only_attendance_rosters.sql in Supabase to save name-only attendees.');
+            } else {
+              throw error;
+            }
+            return;
+          }
+          await audit('create', 'attendance_records', `${name} added to ${evId}`);
+          adminMessage(`Attendee "${name}" added successfully.`, true);
+          singleForm.reset();
+          await rerender();
+        } catch (err) {
+          adminMessage(authErrorText(err));
+        } finally {
+          submitBtn.disabled = false;
+        }
+      });
+    }
+
+    if (currentEventId && attEventSelect) {
+      attEventSelect.value = currentEventId;
+      updateView();
     }
   }
 
-  /* ------------------------------------------------------------------ Studio Libs */
+  /* ------------------------------------------------------------------ Certificates tab */
   async function loadStudioLibs() {
     if (window.html2canvas && window.jspdf && window.JSZip) return;
-    const loadScriptWithFallback = (localSrc, fallbackSrc) => new Promise((resolve, reject) => {
-      if (document.querySelector(`script[src="${localSrc}"], script[src="${fallbackSrc}"]`)) return resolve();
+    const loadScript = (src) => new Promise((resolve) => {
+      if (document.querySelector(`script[src="${src}"]`)) return resolve();
       const s = document.createElement('script');
-      s.src = localSrc;
+      s.src = src;
       s.onload = resolve;
-      s.onerror = () => {
-        const fb = document.createElement('script');
-        fb.src = fallbackSrc;
-        fb.onload = resolve;
-        fb.onerror = reject;
-        document.head.appendChild(fb);
-      };
+      s.onerror = resolve;
       document.head.appendChild(s);
     });
     await Promise.all([
-      loadScriptWithFallback('/assets/vendor/html2canvas.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'),
-      loadScriptWithFallback('/assets/vendor/jspdf.umd.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'),
-      loadScriptWithFallback('/assets/vendor/jszip.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js')
+      loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'),
+      loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'),
+      loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js')
     ]);
   }
 
-  /* ------------------------------------------------------------------ Main Per-Event Workbench */
-  async function renderWorkbench(ctx, activeTabName = 'certificate') {
+  async function renderCertificates(ctx) {
     c = ctx; const { sb, $, $$, setWorkspace, adminMessage, authErrorText, audit } = c;
-
-    // Load initial data
-    const [eventsRes, globalRes] = await Promise.all([
+    const [ev, tp, cf, att] = await Promise.all([
       sb.from('events').select('id,title,start_at').order('start_at', { ascending: false }),
-      sb.from('certificate_global_settings').select('default_layout').eq('id', 1).maybeSingle(),
+      sb.from('certificate_templates').select('*').order('created_at', { ascending: false }),
+      sb.from('certificate_configs').select('*'),
+      sb.from('attendance_records').select('event_id').eq('attendance_status', 'attended').range(0, 19999),
     ]);
-
-    const events = (eventsRes.data && eventsRes.data.length) ? eventsRes.data : [];
-    if (!events.length) {
-      setWorkspace('Certificates', `<div class="card pp" style="margin-top:20px"><p>No events found. Please create an event before configuring certificates.</p></div>`);
-      return;
-    }
-
-    let selectedEventId = ctx.keepEvent || ctx.preselect || events[0].id;
-    if (!events.some((e) => e.id === selectedEventId)) selectedEventId = events[0].id;
-
-    let globalDefaultLayout = globalRes.data?.default_layout || {};
-    let isDirty = false;
-    let currentViewMode = localStorage.getItem('gdg_cert_view_mode') || 'split';
-    let currentStudioZoom = 1;
-
-    // Fetch initial badge data
-    const [attCountRes, ecStatusRes] = await Promise.all([
-      sb.from('attendance_records').select('id', { count: 'exact', head: true }).eq('event_id', selectedEventId),
-      sb.from('event_certificates').select('claims_enabled').eq('event_id', selectedEventId).maybeSingle(),
-    ]);
-    let rosterCount = attCountRes.count || 0;
-    let claimsActive = !!ecStatusRes.data?.claims_enabled;
+    const events = (ev.data && ev.data.length) ? ev.data : [{ id: "live-cloud-jam", title: "Google Cloud Study Jam", start_at: new Date().toISOString() }], templates = tp.data || [], configs = Object.fromEntries((cf.data || []).map((x) => [x.event_id, x]));
+    const counts = {}; (att.data || []).forEach((r) => { counts[r.event_id] = (counts[r.event_id] || 0) + 1; });
+    const active = templates.find((t) => t.is_active);
+    const rerender = () => renderCertificates(ctx);
 
     if (!document.getElementById('gdg-cert-studio-fonts')) {
       const l = document.createElement('link');
@@ -269,11 +429,15 @@
     }
     loadStudioLibs();
 
-    // Render Workbench Shell
-    setWorkspace('Certificates & Attendance', `
-      <style id="mc-workbench-css">
-        .mc-wb-container { display: flex; flex-direction: column; gap: 16px; margin-top: 4px; }
-        .mc-wb-header {
+    const selectedEventId = ctx.keepEvent || (events[0]?.id || '');
+    let currentGdgLogo = { dataUrl: '', path: '', size: 60, x: 0, y: 0, hide_chapter_text: false };
+
+    setWorkspace('Certificates', `
+      <style id="mc-cert-native-css">
+        .mc-cert-container { display: flex; flex-direction: column; gap: 18px; margin-top: 4px; }
+        
+        /* Top Action Bar */
+        .mc-cert-header-card {
           background: var(--surface);
           border: 1px solid var(--line);
           border-radius: var(--r-l);
@@ -282,61 +446,56 @@
           justify-content: space-between;
           align-items: center;
           flex-wrap: wrap;
-          gap: 12px;
+          gap: 14px;
           box-shadow: var(--sh-sm);
         }
-        .mc-wb-header-left { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-        .mc-wb-header-right { display: flex; align-items: center; gap: 8px; }
+        .mc-cert-header-left { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; flex: 1; min-width: 280px; }
+        .mc-cert-header-right { display: flex; align-items: center; gap: 10px; }
         
-        /* 3-Tab Bar */
-        .mc-wb-tabs {
-          display: flex;
-          gap: 6px;
-          background: var(--sunk, #f1f3f4);
-          padding: 4px;
-          border-radius: var(--r-m);
-          border: 1px solid var(--line);
-          width: fit-content;
+        /* Two-Column Responsive Layout */
+        .mc-cert-grid {
+          display: grid;
+          grid-template-columns: minmax(360px, 420px) minmax(0, 1fr);
+          gap: 20px;
+          align-items: start;
         }
-        .mc-wb-tab-btn {
-          border: none;
-          background: none;
-          padding: 6px 16px;
-          border-radius: calc(var(--r-m) - 2px);
-          font-size: 13px;
-          font-weight: 700;
-          color: var(--ink-2);
-          cursor: pointer;
-          transition: all 0.15s ease;
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-        }
-        .mc-wb-tab-btn:hover { color: var(--ink); }
-        .mc-wb-tab-btn.active {
-          background: var(--surface);
-          color: var(--primary, #1a73e8);
-          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        @media (max-width: 1080px) {
+          .mc-cert-grid { grid-template-columns: 1fr; }
         }
 
-        /* Panes */
-        .mc-wb-pane { display: none; }
-        .mc-wb-pane.active { display: block; }
-
-        /* General Forms */
-        .mc-card {
+        /* Form Controls Panels */
+        .mc-cert-cards-col { display: flex; flex-direction: column; gap: 16px; }
+        .mc-cert-card {
           background: var(--surface);
           border: 1px solid var(--line);
           border-radius: var(--r-l);
           padding: 18px 20px;
-          box-shadow: var(--sh-sm);
           display: flex;
           flex-direction: column;
           gap: 12px;
+          box-shadow: var(--sh-sm);
         }
-        .mc-f-group { display: flex; flex-direction: column; gap: 5px; }
-        .mc-f-group label { font-size: 11.5px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.3px; }
-        .mc-f-group input, .mc-f-group textarea, .mc-f-group select {
+        .mc-cert-card-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 2px;
+        }
+        .mc-cert-card-header h3 {
+          margin: 0;
+          font-size: 15px;
+          font-weight: 700;
+          color: var(--ink);
+        }
+        .mc-cert-card-header p {
+          margin: 2px 0 0;
+          font-size: 12px;
+          color: var(--ink-3);
+        }
+
+        .mc-form-group { display: flex; flex-direction: column; gap: 5px; }
+        .mc-form-group label { font-size: 11.5px; font-weight: 600; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.3px; }
+        .mc-form-group input, .mc-form-group textarea, .mc-form-group select {
           background: var(--surface);
           border: 1px solid var(--line);
           border-radius: var(--r-m);
@@ -345,185 +504,43 @@
           color: var(--ink);
           font-family: inherit;
           outline: none;
+          transition: border-color 0.15s;
         }
-        .mc-f-group input:focus, .mc-f-group textarea:focus, .mc-f-group select:focus {
+        .mc-form-group input:focus, .mc-form-group textarea:focus, .mc-form-group select:focus {
           border-color: var(--primary, #1a73e8);
         }
-        .mc-f-row { display: flex; gap: 12px; }
-        .mc-f-row > * { flex: 1; }
+        .mc-form-row { display: flex; gap: 10px; }
+        .mc-form-row > * { flex: 1; }
 
-        /* Stepper & Badges */
-        .mc-tab-num {
+        /* Item Rows (Signatories & Partners) */
+        .mc-item-card {
+          background: var(--sunk, #f8f9fa);
+          border: 1px solid var(--line);
+          border-radius: var(--r-m);
+          padding: 10px 12px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+        .mc-item-row { display: flex; gap: 8px; align-items: center; }
+        .mc-upload-btn {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          width: 20px;
-          height: 20px;
-          border-radius: 50%;
-          background: rgba(0,0,0,0.07);
-          font-size: 11px;
-          font-weight: 800;
-          line-height: 1;
-        }
-        .mc-wb-tab-btn.active .mc-tab-num {
-          background: var(--primary, #1a73e8);
-          color: #fff;
-        }
-        .mc-tab-badge {
-          background: rgba(0,0,0,0.06);
-          color: var(--ink-2);
-          font-size: 11px;
-          padding: 1px 6px;
-          border-radius: 10px;
-          font-weight: 700;
-        }
-        .mc-tab-pill {
-          font-size: 10px;
-          font-weight: 800;
-          padding: 2px 6px;
-          border-radius: 4px;
-          text-transform: uppercase;
-          letter-spacing: 0.3px;
-        }
-        .mc-tab-pill.live {
-          background: #DCFCE7;
-          color: #15803D;
-        }
-        .mc-tab-pill.draft {
-          background: #F1F5F9;
-          color: #64748B;
-        }
-
-        /* Designer Sub-Toolbar */
-        .mc-designer-toolbar {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          flex-wrap: wrap;
-          gap: 12px;
+          gap: 4px;
+          padding: 6px 10px;
           background: var(--surface);
-          border: 1px solid var(--line);
+          border: 1px dashed var(--line-bold, #c4c7c5);
           border-radius: var(--r-m);
-          padding: 8px 14px;
-          margin-bottom: 16px;
-        }
-        .mc-quick-nav {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          flex-wrap: wrap;
-        }
-        .mc-qn-label, .mc-vm-label {
-          font-size: 11px;
-          font-weight: 700;
-          color: var(--ink-2);
-          text-transform: uppercase;
-          letter-spacing: 0.4px;
-        }
-        .mc-qn-btn {
           font-size: 11.5px;
           font-weight: 600;
-          padding: 4px 10px;
-          border-radius: var(--r-m);
-          background: var(--sunk, #f1f3f4);
-          color: var(--ink-2);
-          text-decoration: none;
-          transition: all 0.15s ease;
-          border: 1px solid transparent;
-          cursor: pointer;
-        }
-        .mc-qn-btn:hover {
-          background: var(--surface);
-          border-color: var(--line);
-          color: var(--primary, #1a73e8);
-        }
-        .mc-view-mode-group {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-        .mc-view-modes {
-          display: flex;
-          gap: 4px;
-          background: var(--sunk, #f1f3f4);
-          padding: 3px;
-          border-radius: var(--r-m);
-          border: 1px solid var(--line);
-        }
-        .mc-vm-btn {
-          border: none;
-          background: none;
-          padding: 4px 12px;
-          border-radius: calc(var(--r-m) - 2px);
-          font-size: 12px;
-          font-weight: 700;
           color: var(--ink-2);
           cursor: pointer;
-          transition: all 0.15s ease;
         }
-        .mc-vm-btn:hover { color: var(--ink); }
-        .mc-vm-btn.active {
-          background: var(--surface);
-          color: var(--primary, #1a73e8);
-          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
+        .mc-upload-btn:hover { border-color: var(--primary, #1a73e8); color: var(--primary, #1a73e8); }
+        .mc-upload-btn input[type=file] { display: none; }
 
-        /* Certificate Grid Layout Variants */
-        .mc-cert-grid {
-          display: grid;
-          grid-template-columns: minmax(380px, 460px) minmax(0, 1fr);
-          gap: 20px;
-          align-items: start;
-        }
-        .mc-cert-grid.view-form {
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
-        }
-        .mc-cert-grid.view-form .mc-controls-col { width: 100%; }
-        .mc-cert-grid.view-form .mc-preview-card { position: static; width: 100%; }
-
-        .mc-cert-grid.view-canvas {
-          display: flex;
-          flex-direction: column-reverse;
-          gap: 20px;
-        }
-        .mc-cert-grid.view-canvas .mc-preview-card { position: static; width: 100%; }
-        .mc-cert-grid.view-canvas .mc-preview-stage { min-height: 700px; max-height: 85vh; }
-        .mc-cert-grid.view-canvas .mc-controls-col { width: 100%; }
-
-        @media (max-width: 1180px) {
-          .mc-cert-grid:not(.view-canvas) { grid-template-columns: 1fr; }
-          .mc-preview-card { position: static; }
-        }
-
-        /* Floating Sticky Save Bar */
-        .mc-save-bar {
-          position: sticky;
-          bottom: 16px;
-          z-index: 50;
-          background: var(--surface);
-          border: 1.5px solid var(--line);
-          border-radius: var(--r-l);
-          padding: 10px 18px;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          gap: 12px;
-          box-shadow: 0 4px 18px rgba(0,0,0,0.12);
-          margin-top: 10px;
-        }
-        .mc-save-status {
-          font-size: 12.5px;
-          font-weight: 600;
-          display: flex;
-          align-items: center;
-          gap: 6px;
-        }
-        .mc-save-status.dirty { color: #b45309; }
-        .mc-save-status.clean { color: #15803d; }
-
-        /* Preview card */
+        /* Preview Canvas Viewport */
         .mc-preview-card {
           background: var(--surface);
           border: 1px solid var(--line);
@@ -531,2407 +548,1631 @@
           overflow: hidden;
           box-shadow: var(--sh-sm);
           position: sticky;
-          top: 72px;
+          top: calc(var(--top, 56px) + 16px);
         }
-        .mc-preview-bar {
+        .mc-preview-toolbar {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 8px 16px;
+          padding: 10px 16px;
           background: var(--surface);
           border-bottom: 1px solid var(--line);
           font-size: 12px;
           font-weight: 600;
+          color: var(--ink-2);
         }
+        .mc-preview-zoom { display: flex; gap: 4px; align-items: center; }
+        .mc-p-btn {
+          background: var(--surface);
+          border: 1px solid var(--line);
+          border-radius: 4px;
+          padding: 3px 8px;
+          font-size: 11px;
+          font-weight: 600;
+          color: var(--ink-2);
+          cursor: pointer;
+        }
+        .mc-p-btn:hover { background: var(--sunk, #f8f9fa); color: var(--ink); }
+        .mc-p-btn.active { background: var(--primary, #1a73e8); border-color: var(--primary, #1a73e8); color: #fff; }
+
         .mc-preview-stage {
           background: #eef2f6;
           padding: 24px;
           overflow: auto;
-          display: block;
-          text-align: center;
+          display: flex;
+          justify-content: center;
+          align-items: flex-start;
           min-height: 480px;
-          max-height: calc(100vh - 180px);
+          max-height: calc(100vh - 160px);
         }
-        .mc-canvas-scaler {
-          display: inline-block;
-          margin: 0 auto;
-          transform-origin: 0 0;
-          transition: transform 0.15s ease-out, width 0.15s ease-out, height 0.15s ease-out;
-          box-shadow: 0 10px 30px rgba(15, 23, 42, 0.15);
-          border-radius: 8px;
-        }
-        .mc-zoom-btn.active {
-          background: #1a73e8 !important;
-          color: #fff !important;
-          border-color: #1a73e8 !important;
-          font-weight: 700 !important;
+        .mc-canvas-scaler { transform-origin: top center; transition: transform 0.15s ease-out; }
+
+        /* Exact Theme Colors & Variables matching master certificate */
+        :root {
+          --g-blue: #4285F4; --g-red: #EA4335; --g-yellow: #FBBC05; --g-green: #34A853;
+          --g-light-yellow: #FEF0C3;
+          --paper-bg: #F8F9FA;
+          --text-main: #0F172A;
+          --text-muted: #475569;
+          --font-display: 'Space Grotesk', sans-serif;
+          --font-title: 'Outfit', sans-serif;
+          --font-body: 'Inter', sans-serif;
+          --font-mono: 'JetBrains Mono', monospace;
+          --font-sign: 'Kalam', cursive;
         }
 
-        /* Checklist */
-        .checklist-item {
+        /* Master A4 Landscape (1123 x 794) */
+        .a4-landscape {
+          width: 1123px;
+          height: 794px;
+          background: #F8F9FA;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.08);
+          position: relative;
+          color: #0F172A;
+          padding: 40px 48px;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          box-sizing: border-box;
+          text-align: left;
+        }
+        .tech-grid { position: absolute; inset: 0; background-image: radial-gradient(rgba(15, 23, 42, 0.08) 1.5px, transparent 1.5px); background-size: 26px 26px; z-index: 0; pointer-events: none; }
+        .bleed-watermark-year { position: absolute; top: -60px; right: -30px; font-family: 'Space Grotesk', sans-serif; font-size: 380px; font-weight: 900; line-height: 0.8; color: transparent; -webkit-text-stroke: 4px rgba(15, 23, 42, 0.05); z-index: 1; pointer-events: none; user-select: none; letter-spacing: -14px; }
+        .bleed-watermark-gdg { position: absolute; top: 220px; right: 30px; font-family: 'Space Grotesk', sans-serif; font-size: 260px; font-weight: 900; line-height: 0.8; color: transparent; -webkit-text-stroke: 3.5px rgba(66, 133, 244, 0.07); z-index: 1; pointer-events: none; user-select: none; letter-spacing: -6px; }
+        .tape-accent { position: absolute; top: 12px; left: -35px; width: 130px; height: 32px; background: rgba(255, 255, 255, 0.95); border: 1px solid rgba(0,0,0,0.06); box-shadow: 0 2px 4px rgba(0,0,0,0.04); transform: rotate(-45deg); z-index: 100; pointer-events: none; }
+        .circuit-path { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; }
+
+        .brutal-shadow { box-shadow: 6px 6px 0px #0F172A; }
+        .brutal-shadow-sm { box-shadow: 3px 3px 0px #0F172A; }
+
+        .header-row { display: flex; justify-content: space-between; align-items: center; width: 100%; position: relative; z-index: 20; border-bottom: 2.5px solid #0F172A; padding-bottom: 12px; }
+        .main-logo-area { display: flex; align-items: center; gap: 18px; }
+                .main-logo-area { display: flex; align-items: center; gap: 16px; position: relative; z-index: 10; }
+        .main-logo-area svg { width: 72px; height: auto; flex: none; filter: drop-shadow(2px 2px 0px rgba(15,23,42,0.12)); }
+        .gdg-logo-interactive { cursor: grab; touch-action: none; user-select: none; }
+        .gdg-logo-interactive.dragging { cursor: grabbing !important; }
+        .custom-gdg-logo-img { max-width: 340px; object-fit: contain; display: block; }
+        .logo-text h1 { font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 900; margin: 0 0 2px 0; line-height: 1.1; letter-spacing: -0.5px; color: #0F172A; }
+        .logo-text h2 { font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 800; margin: 0; color: #475569; text-transform: uppercase; letter-spacing: 2.5px; }
+
+        .partners-cluster { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; max-width: 54%; }
+        .partner-item { display: flex; align-items: center; gap: 10px; background: #FFFFFF; border: 2px solid #0F172A; border-radius: 10px; padding: 6px 14px; box-shadow: 3px 3px 0px #0F172A; height: 48px; box-sizing: border-box; }
+        .partner-item img { height: 34px; max-width: 120px; object-fit: contain; }
+        .partner-item .partner-title-badge { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 800; color: #0F172A; line-height: 1.2; }
+
+        .content-body-grid { display: flex; justify-content: space-between; position: relative; z-index: 10; flex: 1; margin-top: 14px; gap: 32px; }
+        .left-col { width: 57%; display: flex; flex-direction: column; justify-content: flex-start; z-index: 10; }
+        .title-deck { margin-top: 2px; }
+        .cert-tag { display: inline-block; background: #FFFFFF; border: 2px solid #0F172A; padding: 4px 12px; border-radius: 14px; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 800; color: #0F172A; margin-bottom: 8px; }
+        .cert-title { font-family: 'Outfit', sans-serif; font-size: 40px; font-weight: 900; text-transform: uppercase; letter-spacing: -0.5px; color: #0F172A; margin: 0; line-height: 1.05; }
+
+        .statement-deck { margin: 15px 0 0 0; }
+        .cert-statement { font-family: 'Space Grotesk', sans-serif; font-size: 13.5px; color: #475569; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 6px; }
+        
+        .cert-name-wrapper { margin: 4px 0 16px 0; }
+        .cert-name-badge { 
+          background: #4285F4; 
+          color: #fff; 
+          border: 3.5px solid #0F172A; 
+          border-radius: 12px; 
+          padding: 9px 24px; 
+          font-family: 'Outfit', sans-serif; 
+          font-size: 52px; 
+          letter-spacing: -1px; 
+          font-weight: 900; 
+          display: inline-block; 
+          line-height: 1.1; 
+          max-width: 100%; 
+          word-break: normal; 
+          overflow-wrap: anywhere; 
+          box-shadow: 6px 6px 0px #0F172A;
+          box-sizing: border-box;
+        }
+
+        .cert-event-text { 
+          font-family: 'Inter', sans-serif; 
+          font-size: 15.5px; 
+          color: #475569; 
+          line-height: 2.4; 
+          margin-bottom: 25px; 
+        }
+        .highlight-box { 
+          background: #FEF0C3; 
+          border: 1.5px solid #0F172A; 
+          border-radius: 5px; 
+          padding: 3px 8px; 
+          font-weight: 800; 
+          color: #0F172A; 
+          display: inline-block; 
+          margin: 0 4px; 
+          vertical-align: middle; 
+          line-height: 1.2;
+          box-shadow: 3px 3px 0px #0F172A;
+        }
+
+        .event-syllabus-card { 
+          background: #FFFFFF; 
+          border: 2px solid #0F172A; 
+          border-radius: 10px; 
+          padding: 12px 16px; 
+          box-shadow: 3px 3px 0px #0F172A; 
+          margin-bottom: auto; 
+          display: flex; 
+          flex-direction: column; 
+          gap: 6px; 
+          width: 95%; 
+          box-sizing: border-box;
+        }
+        .syllabus-header { 
+          display: flex; 
+          justify-content: space-between; 
+          align-items: center; 
+          font-family: 'JetBrains Mono', monospace; 
+          font-size: 9px; 
+          font-weight: 800; 
+          text-transform: uppercase; 
+          color: #4285F4; 
+          letter-spacing: 0.5px; 
+        }
+        .syllabus-body { 
+          font-family: 'Inter', sans-serif; 
+          font-size: 12.5px; 
+          color: #475569; 
+          line-height: 1.5; 
+          font-weight: 500; 
+        }
+
+        .signatures-row { display: flex; gap: 20px; align-items: flex-end; width: 100%; margin-top: 40px; }
+        .sig-block { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 2px 4px; }
+        .sig-img-container { height: 42px; display: flex; align-items: flex-end; margin-bottom: 4px; width: 100%; position: relative; z-index: 5; }
+        .sig-img { height: calc(42px * var(--sig-scale, 1)); width: auto; max-width: none; flex: none; object-fit: contain; mix-blend-mode: multiply; transform: translate(var(--sig-x, 0px), var(--sig-y, 0px)); cursor: grab; touch-action: none; user-select: none; }
+        .sig-img.dragging { cursor: grabbing; }
+        .sig-fallback { font-family: 'Kalam', cursive; font-size: calc(26px * var(--sig-scale, 1)); color: #0F172A; line-height: 0.8; white-space: normal; transform: translate(var(--sig-x, 0px), var(--sig-y, 0px)); }
+        .sig-line { width: 100%; height: 2px; background: #0F172A; margin-bottom: 4px; }
+        .sig-name { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: calc(13px * var(--sig-name-scale, 1)); color: #0F172A; line-height: 1.2; word-break: normal; }
+        .sig-role { font-family: 'JetBrains Mono', monospace; font-size: calc(9px * var(--sig-role-scale, 1)); font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; line-height: 1.2; word-break: normal; }
+
+        .right-col {
+          width: 38%;
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-start;
+          align-items: flex-end;
+          position: relative;
+          z-index: 10;
+          gap: 25px;
+        }
+
+        /* CUSTOMIZABLE TECH STICKER CLUSTER */
+        .top-art-row {
           display: flex;
           align-items: center;
-          justify-content: space-between;
-          padding: 12px 16px;
-          background: var(--sunk, #f8f9fa);
-          border: 1px solid var(--line);
-          border-radius: var(--r-m);
+          gap: 10px;
+          width: 100%;
+          justify-content: flex-end;
+          flex-wrap: wrap;
+          position: relative;
+          margin-top: 10px;
         }
-        .checklist-item.pass { border-left: 4px solid #34a853; }
-        .checklist-item.fail { border-left: 4px solid #ea4335; }
+        .dev-badge-card {
+          background: #FFFFFF;
+          border: 2.5px solid #0F172A;
+          border-radius: 12px;
+          padding: 7px 14px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          box-shadow: 3px 3px 0px #0F172A;
+        }
+        .dev-badge-icon {
+          width: 28px;
+          height: 28px;
+          background: #4285F4;
+          border: 1.5px solid #0F172A;
+          border-radius: 6px;
+          color: #fff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-family: 'JetBrains Mono', monospace;
+          font-weight: 800;
+          font-size: 13px;
+        }
+        .dev-badge-title { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; font-weight: 800; color: #0F172A; }
+
+        .custom-sticker-pill {
+          padding: 6px 14px;
+          border-radius: 14px;
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 11px;
+          font-weight: 800;
+          border: 2px solid #0F172A;
+          box-shadow: 2.5px 2.5px 0px #0F172A;
+        }
+
+        .terminal-log-card {
+          width: 100%;
+          background: #FFFFFF;
+          border: 2.5px solid #0F172A;
+          border-radius: 12px;
+          padding: 10px 14px;
+          box-shadow: 4px 4px 0px #0F172A;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          box-sizing: border-box;
+        }
+        .terminal-head {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          margin-bottom: 2px;
+        }
+        .term-dot { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid #0F172A; }
+        .term-code {
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 10.5px;
+          font-weight: 700;
+          color: #0F172A;
+          line-height: 1.45;
+        }
+        .term-highlight { color: #34A853; font-weight: 800; }
+
+        .dossier-card-wrap {
+          width: 100%;
+          position: relative;
+          margin-top: auto;
+        }
+        .dossier-card {
+          width: 100%;
+          background: #4285F4;
+          border: 3px solid #0F172A;
+          border-radius: 16px;
+          padding: 20px 16px 16px 16px;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          position: relative;
+          box-sizing: border-box;
+        }
+
+        .dossier-label { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; font-weight: 800; color: #FFFFFF; text-transform: uppercase; letter-spacing: 1px; }
+        .skills-cluster { display: flex; flex-wrap: wrap; gap: 7px; }
+        .skill-pill {
+          background: #FFFFFF;
+          color: #0F172A;
+          border: 2px solid #0F172A;
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 10.5px;
+          font-weight: 800;
+          padding: 4px 10px;
+          border-radius: 14px;
+          box-shadow: 2px 2px 0px #0F172A;
+          white-space: nowrap;
+        }
+
+        .meta-console {
+          background: rgba(15, 23, 42, 0.35);
+          border: 2px solid #0F172A;
+          border-radius: 8px;
+          padding: 10px 12px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-top: 5px;
+        }
+        .meta-item { display: flex; flex-direction: column; gap: 2px; }
+        .meta-title { font-family: 'JetBrains Mono', monospace; font-size: 7.5px; font-weight: 700; color: #CBD5E1; text-transform: uppercase; }
+        .meta-val { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; font-weight: 800; color: #FFFFFF; }
+
+        .sticker-tag {
+          position: absolute;
+          top: -14px;
+          left: -10px;
+          background: #FBBC05;
+          padding: 5px 12px;
+          border-radius: 14px;
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 11px;
+          font-weight: 800;
+          color: #0F172A;
+          z-index: 10;
+          border: 2px solid #0F172A;
+          box-shadow: 0 0 0 3px #fff, 4px 4px 0px 3px #0F172A;
+        }
+        .sticker-heart {
+          position: absolute;
+          bottom: -12px;
+          right: -8px;
+          background: #34A853;
+          width: 42px;
+          height: 42px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 18px;
+          color: #0F172A;
+          z-index: 10;
+          border: 2px solid #0F172A;
+          box-shadow: 0 0 0 3px #fff, 4px 4px 0px 3px #0F172A;
+        }
+
+        [contenteditable="true"] { outline: none; }
+        [contenteditable="true"]:hover { opacity: 0.85; }
+        [contenteditable="true"]:focus { outline: 2px dashed #4285f4; }
+
+        /* Progress Bar */
+        .mc-progress-box { display: none; margin: 6px 0; }
+        .mc-progress-bar { height: 6px; width: 100%; background: var(--line); border-radius: 3px; overflow: hidden; }
+        .mc-progress-fill { height: 100%; width: 0%; background: #34a853; transition: width 0.2s; }
+        .mc-progress-text { font-size: 11px; color: var(--ink-2); margin-top: 4px; font-family: 'JetBrains Mono', monospace; }
       </style>
 
-      <div class="mc-wb-container">
-        <!-- Header: Event Selector + 1-2-3 Stepper Tabs -->
-        <div class="mc-wb-header">
-          <div class="mc-wb-header-left">
-            <div style="display:flex;align-items:center;gap:8px">
-              <label style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px">
-                <span>Event:</span>
-                <select id="wb-event-select" style="font-size:13px;padding:6px 12px;border-radius:var(--r-m);border:1px solid var(--line);min-width:240px">
-                  ${events.map((e) => `<option value="${esc(e.id)}" ${e.id === selectedEventId ? 'selected' : ''}>${esc(e.title)}</option>`).join('')}
-                </select>
-              </label>
-              <span id="wb-event-status-pill" class="tag ${claimsActive ? 't3' : 't2'}" style="font-size:11px;padding:3px 8px">${claimsActive ? '● Claims Active' : '○ Draft'}</span>
-            </div>
-            
-            <div class="mc-wb-tabs">
-              <button type="button" class="mc-wb-tab-btn ${activeTabName === 'attendance' ? 'active' : ''}" data-tab="attendance">
-                <span class="mc-tab-num">1</span>
-                <span>Event Roster</span>
-                <span class="mc-tab-badge" id="wb-tab-roster-badge">(${rosterCount})</span>
-              </button>
-              <button type="button" class="mc-wb-tab-btn ${activeTabName === 'certificate' ? 'active' : ''}" data-tab="certificate">
-                <span class="mc-tab-num">2</span>
-                <span>Certificate Designer</span>
-              </button>
-              <button type="button" class="mc-wb-tab-btn ${activeTabName === 'publish' ? 'active' : ''}" data-tab="publish">
-                <span class="mc-tab-num">3</span>
-                <span>Publish & Claims</span>
-                <span class="mc-tab-pill ${claimsActive ? 'live' : 'draft'}" id="wb-tab-pub-pill">${claimsActive ? 'Live' : 'Draft'}</span>
-              </button>
-            </div>
-          </div>
-          <div class="mc-wb-header-right">
-            <button type="button" class="btn sm" id="wb-test-claim-btn-top" style="font-size:12px;display:inline-flex;align-items:center;gap:6px">🎯 Test Claim Preview</button>
-            <button type="button" class="btn o sm" id="wb-global-defaults-btn">⚙️ Default Layout</button>
-          </div>
-        </div>
-
-        <!-- TAB 1: Attendance Pane -->
-        <div id="pane-attendance" class="mc-wb-pane ${activeTabName === 'attendance' ? 'active' : ''}"></div>
-
-        <!-- TAB 2: Certificate Pane -->
-        <div id="pane-certificate" class="mc-wb-pane ${activeTabName === 'certificate' ? 'active' : ''}"></div>
-
-        <!-- TAB 3: Publish Pane -->
-        <div id="pane-publish" class="mc-wb-pane ${activeTabName === 'publish' ? 'active' : ''}"></div>
-      </div>
-
-      <!-- Test Claim Preview Modal -->
-      <dialog id="wb-test-claim-modal" style="border:none;border-radius:var(--r-l);box-shadow:var(--sh-l);padding:24px;width:95%;max-width:980px;background:var(--surface);color:var(--ink)">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:12px">
-          <div>
-            <div style="display:flex;align-items:center;gap:8px">
-              <span style="font-size:20px">🎯</span>
-              <h3 style="margin:0;font-size:17px;font-weight:800">Live Test Claim Preview</h3>
-              <span class="tag t3" style="font-size:11px">SAMPLE AUDIT READY</span>
-            </div>
-            <p style="font-size:12.5px;color:var(--ink-2);margin:3px 0 0">Simulate attendee claim verification, test real export fidelity, and inspect download packages without leaving Mission Control.</p>
-          </div>
-          <button type="button" class="btn o sm" id="wb-test-claim-close">✕ Close</button>
-        </div>
-
-        <!-- Test Claim Controls Bar -->
-        <div style="background:var(--sunk,#f8f9fa);border:1px solid var(--line);border-radius:var(--r-m);padding:12px 16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:14px">
-          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-            <label style="font-size:12px;font-weight:700">
-              Recipient:
-              <select id="tc-attendee-select" style="font-size:12px;padding:5px 8px;margin-left:4px;border:1px solid var(--line);border-radius:var(--r-m);background:var(--surface)">
-                <option value="">Loading attendees…</option>
+      <div class="mc-cert-container">
+        <!-- Top Action Card -->
+        <div class="mc-cert-header-card">
+          <div class="mc-cert-header-left">
+            <label style="font-weight:600;font-size:13px;display:flex;align-items:center;gap:8px">
+              <span>Event</span>
+              <select id="mc-event-select" style="font-size:13px;padding:6px 12px;border-radius:var(--r-m);border:1px solid var(--line);min-width:240px">
+                ${events.map((e) => `<option value="${esc(e.id)}" ${e.id === selectedEventId ? 'selected' : ''}>${esc(e.title)}${configs[e.id]?.enabled ? ' ✓ (Public Open)' : ''}</option>`).join('')}
               </select>
             </label>
-            <input type="text" id="tc-custom-name" placeholder="Or test custom name" style="font-size:12px;padding:5px 8px;border:1px solid var(--line);border-radius:var(--r-m);width:150px;background:var(--surface)">
-            <button type="button" class="btn o sm" id="tc-btn-apply-name">Update</button>
+            <span id="mc-att-badge" class="cert-badge" style="background:#e8f0fe;color:#1a73e8;font-size:11px;padding:4px 9px">
+              ${counts[selectedEventId] || 0} verified attendees
+            </span>
+            <label class="check" style="font-size:12.5px;font-weight:600;cursor:pointer">
+              <input type="checkbox" id="mc-public-toggle" ${configs[selectedEventId]?.enabled ? 'checked' : ''}> Open public claims on /certificates/
+            </label>
           </div>
-
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <button type="button" class="btn sm" id="tc-btn-download-png">📥 Download PNG</button>
-            <button type="button" class="btn sm" id="tc-btn-download-pdf">📥 Download PDF</button>
-            <button type="button" class="btn o sm" id="tc-btn-copy-link">🔗 Copy Verify URL</button>
-          </div>
-        </div>
-
-        <!-- Test Preview Stage -->
-        <div id="tc-stage" style="background:#eef2f6;padding:16px;border-radius:var(--r-m);border:1px solid var(--line);overflow:auto;display:flex;justify-content:center;align-items:flex-start;min-height:380px;max-height:55vh">
-          <div id="tc-scaler" style="transform-origin:top center;transition:transform 0.1s ease-out">
-            <div id="tc-canvas-wrap"></div>
+          <div class="mc-cert-header-right">
+            <button type="button" id="mc-save-config-btn" style="background:var(--primary, #1a73e8);color:#fff;border:none;padding:8px 16px;border-radius:var(--r-m);font-size:13px;font-weight:700;cursor:pointer">Save Settings</button>
           </div>
         </div>
-        <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:var(--ink-2);flex-wrap:wrap;gap:8px">
-          <span>✓ Dynamic QR codes, SHA-256 fingerprint simulation, and responsive styling active.</span>
-          <span id="tc-cred-id-display" style="font-family:monospace;font-weight:700"></span>
-        </div>
-      </dialog>
 
-      <!-- Global Default Layout Modal -->
-      <dialog id="wb-global-modal" style="border:none;border-radius:var(--r-l);box-shadow:var(--sh-l);padding:24px;width:90%;max-width:540px;background:var(--surface);color:var(--ink)">
-        <h3 style="margin:0 0 8px">Global Default Layout</h3>
-        <p style="font-size:13px;color:var(--ink-2);margin:0 0 16px">Shared layout settings applied across all certificates (unless overridden per event).</p>
-        <div class="mc-f-group" style="margin-bottom:12px">
-          <label>GDG Logo Default Position (X, Y, Scale)</label>
-          <div class="mc-f-row">
-            <input type="number" id="g-inp-gdg-x" placeholder="X (e.g. 40)">
-            <input type="number" id="g-inp-gdg-y" placeholder="Y (e.g. 30)">
-            <input type="number" step="0.05" id="g-inp-gdg-s" placeholder="Scale (e.g. 1)">
-          </div>
-        </div>
-        <div class="mc-f-group" style="margin-bottom:16px">
-          <label>Raw Default Layout (JSON)</label>
-          <textarea id="g-inp-raw-json" rows="6" style="font-family:'JetBrains Mono',monospace;font-size:12px"></textarea>
-        </div>
-        <div style="display:flex;justify-content:flex-end;gap:8px">
-          <button type="button" class="btn o sm" id="wb-global-modal-close">Cancel</button>
-          <button type="button" class="btn sm" id="wb-global-modal-save">Save Global Defaults</button>
-        </div>
-      </dialog>
-    `);
-
-    // Tab Switching logic
-    const tabBtns = $$('.mc-wb-tab-btn');
-    const panes = {
-      attendance: $('#pane-attendance'),
-      certificate: $('#pane-certificate'),
-      publish: $('#pane-publish'),
-    };
-    async function switchTab(name) {
-      tabBtns.forEach((b) => b.classList.toggle('active', b.dataset.tab === name));
-      Object.keys(panes).forEach((k) => panes[k].classList.toggle('active', k === name));
-      if (name === 'attendance') await renderAttendanceTab();
-      if (name === 'certificate') {
-        if (!panes.certificate.hasChildNodes()) await renderCertificateTab();
-        setTimeout(fitStudioCanvas, 60);
-      }
-      if (name === 'publish') refreshPublishTab();
-    }
-    tabBtns.forEach((b) => b.addEventListener('click', () => switchTab(b.dataset.tab)));
-
-    // Event Switcher logic with dirty protection
-    $('#wb-event-select').addEventListener('change', (e) => {
-      if (isDirty && !confirm('You have unsaved changes in the Certificate Designer. Discard them and switch event?')) {
-        e.target.value = selectedEventId;
-        return;
-      }
-      ctx.keepEvent = e.target.value;
-      const currentActive = document.querySelector('.mc-wb-tab-btn.active')?.dataset.tab || 'certificate';
-      renderWorkbench(ctx, currentActive);
-    });
-
-    // Test Claim Modal logic
-    const testClaimModal = $('#wb-test-claim-modal');
-    $('#wb-test-claim-close')?.addEventListener('click', () => testClaimModal.close());
-    $('#wb-test-claim-btn-top')?.addEventListener('click', () => openTestClaimModal());
-
-    // Global Modal logic
-    const globalModal = $('#wb-global-modal');
-    $('#wb-global-defaults-btn').addEventListener('click', () => {
-      const gdg = globalDefaultLayout.gdg || {};
-      $('#g-inp-gdg-x').value = gdg.x ?? 40;
-      $('#g-inp-gdg-y').value = gdg.y ?? 30;
-      $('#g-inp-gdg-s').value = gdg.scale ?? 1;
-      $('#g-inp-raw-json').value = JSON.stringify(globalDefaultLayout, null, 2);
-      globalModal.showModal();
-    });
-    $('#wb-global-modal-close').addEventListener('click', () => globalModal.close());
-    $('#wb-global-modal-save').addEventListener('click', async () => {
-      try {
-        let parsed = {};
-        try { parsed = JSON.parse($('#g-inp-raw-json').value); } catch {
-          parsed = { ...globalDefaultLayout };
-        }
-        parsed.gdg = {
-          x: Number($('#g-inp-gdg-x').value) || 0,
-          y: Number($('#g-inp-gdg-y').value) || 0,
-          scale: Number($('#g-inp-gdg-s').value) || 1,
-        };
-        const { error } = await sb.from('certificate_global_settings').upsert({ id: 1, default_layout: parsed });
-        if (error) throw error;
-        globalDefaultLayout = parsed;
-        adminMessage('Global default layout saved.', true);
-        globalModal.close();
-        renderCertificateTab();
-      } catch (err) {
-        adminMessage(authErrorText(err));
-      }
-    });
-
-    /* ==================================================================
-       TAB 1: ATTENDANCE IMPLEMENTATION
-       ================================================================== */
-    async function renderAttendanceTab() {
-      const root = panes.attendance;
-      root.innerHTML = `<div class="mc-loading" role="status"><span>Loading roster…</span></div>`;
-
-      const { data: records, error } = await sb.from('attendance_records')
-        .select('*')
-        .eq('event_id', selectedEventId)
-        .order('attendee_name');
-
-      if (error) {
-        root.innerHTML = `<div class="card pp"><p role="alert">Could not load roster: ${esc(authErrorText(error))}</p></div>`;
-        return;
-      }
-
-      const rows = records || [];
-      rosterCount = rows.length;
-      if ($('#wb-tab-roster-badge')) $('#wb-tab-roster-badge').textContent = `(${rosterCount})`;
-      const currentEv = events.find((e) => e.id === selectedEventId) || currentEventObj;
-      const purgeDate = rows[0]?.purge_at ? new Date(rows[0].purge_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : '1 year after event';
-      const eventDateStr = currentEv?.start_at ? new Date(currentEv.start_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Date not set';
-
-      root.innerHTML = `
-        <div style="display:flex;flex-direction:column;gap:18px">
-          <!-- Multi-Event Context Header Banner -->
-          <div style="background:var(--card,#fff);border:2px solid var(--line);border-radius:var(--r-m);padding:16px 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;box-shadow:var(--sh-s,0 2px 8px rgba(0,0,0,0.04))">
-            <div style="display:flex;align-items:center;gap:12px">
-              <span style="font-size:28px">📋</span>
-              <div>
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
-                  <span class="tag t1" style="font-size:10.5px;font-weight:700;letter-spacing:0.5px">EVENT ROSTER</span>
-                  <span style="font-size:12px;color:var(--ink-2)">📅 ${esc(eventDateStr)}</span>
-                </div>
-                <h2 style="margin:0;font-size:18px;font-weight:900;color:var(--ink-0)">${esc(currentEv?.title || 'Selected Event')}</h2>
+        <!-- Two-Column Grid -->
+        <div class="mc-cert-grid">
+          <!-- Left Column: Simple Card Controls -->
+          <div class="mc-cert-cards-col">
+            <!-- 1. Certificate Content -->
+            <section class="mc-cert-card">
+              <div class="mc-cert-card-header">
+                <h3>1. Content & Details</h3>
+                <p>Live preview syncs as you type.</p>
               </div>
-            </div>
-            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-              <span class="tag ${rows.length ? 't3' : 't2'}" style="font-size:12px;font-weight:700;padding:5px 12px">${rows.length} Confirmed Attendees</span>
-              ${rows.length ? `<button type="button" class="btn o sm" id="att-btn-export" style="font-size:12px">📥 Export CSV</button>` : ''}
-              <button type="button" class="btn sm" id="att-btn-open-import">➕ Add / Import Attendees</button>
-            </div>
-          </div>
 
-          <!-- Import / Add Attendees Card -->
-          <div id="att-import-box" style="display:none;" class="mc-card">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-              <h3 style="margin:0;font-size:15px">Add or Import Attendees</h3>
-              <button type="button" class="btn o sm" id="att-btn-cancel-import">✕ Close</button>
-            </div>
+              <input type="hidden" id="inpRecipientName" value="Asha Rao">
 
-            <!-- Single Attendee Quick Add -->
-            <div style="background:var(--sunk,#f8f9fa);padding:12px 14px;border-radius:var(--r-m);border:1px solid var(--line);margin-bottom:16px">
-              <b style="font-size:12px;display:block;margin-bottom:8px">Quick Add Single Attendee:</b>
-              <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)) auto;gap:8px;align-items:flex-end">
-                <div class="mc-f-group" style="margin:0">
-                  <label style="font-size:11px">Full Name *</label>
-                  <input type="text" id="att-quick-name" placeholder="e.g. Asha Rao" style="font-size:12px;padding:6px 10px">
-                </div>
-                <div class="mc-f-group" style="margin:0">
-                  <label style="font-size:11px">Roll Number (optional)</label>
-                  <input type="text" id="att-quick-roll" placeholder="e.g. 26BCE1001" style="font-size:12px;padding:6px 10px">
-                </div>
-                <div class="mc-f-group" style="margin:0">
-                  <label style="font-size:11px">Email (optional)</label>
-                  <input type="email" id="att-quick-email" placeholder="e.g. asha@example.com" style="font-size:12px;padding:6px 10px">
-                </div>
-                <button type="button" class="btn sm" id="att-btn-quick-add" style="height:32px;font-size:12px;font-weight:700">+ Add</button>
-              </div>
-            </div>
-
-            <!-- Bulk CSV / Text Import -->
-            <h4 style="margin:0 0 6px;font-size:13px">Bulk CSV Import:</h4>
-            <p style="font-size:12px;color:var(--ink-2);margin:0 0 10px">Upload a CSV file containing <code>name</code>, optional <code>roll_no</code>, <code>email</code>, or paste comma-separated lines below.</p>
-            
-            <div class="mc-f-row" style="margin-bottom:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-              <label class="btn o sm" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px">
-                📁 Choose CSV File
-                <input type="file" id="att-file-input" accept=".csv,.txt" style="display:none">
-              </label>
-              <button type="button" class="btn o sm" id="att-btn-download-sample" style="font-size:12px">📥 Download Sample CSV</button>
-              <label class="check" style="font-size:12px;display:flex;align-items:center;gap:6px">
-                <input type="checkbox" id="att-chk-replace"> Replace entire existing roster
-              </label>
-            </div>
-
-            <textarea id="att-paste-area" rows="4" placeholder="Name, Roll No, Email&#10;Asha Rao, 26BCE1001, asha@example.com&#10;Rahul Verma, 26BCE1002, rahul@example.com" style="font-family:monospace;font-size:12px;width:100%;margin-bottom:10px;box-sizing:border-box"></textarea>
-            
-            <div style="display:flex;justify-content:flex-end;gap:8px">
-              <button type="button" class="btn sm" id="att-btn-run-import">Start Bulk Import</button>
-            </div>
-            <div id="att-import-feedback" style="margin-top:8px;font-size:12px"></div>
-          </div>
-
-          <!-- Attendee Table Card -->
-          <div class="mc-card">
-            <!-- Top Search and Filter Bar -->
-            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px">
-              <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-                <input type="text" id="att-search" placeholder="Search attendees by name, roll, or email…" style="font-size:13px;padding:7px 12px;border-radius:var(--r-m);border:1px solid var(--line);min-width:300px">
-                <span id="att-filter-count" style="font-size:12px;color:var(--ink-2);font-weight:600">Showing ${rows.length} of ${rows.length}</span>
-              </div>
-              <div style="display:flex;gap:8px;align-items:center">
-                ${rows.length ? `<button type="button" class="btn o sm" id="att-btn-clear" style="color:var(--r);font-size:11px">Delete Entire Roster</button>` : ''}
-              </div>
-            </div>
-
-            <!-- Bulk Multi-Select Action Bar (Shows when 1+ checkboxes are checked) -->
-            <div id="att-bulk-bar" style="display:none;background:#FEF2F2;border:1.5px solid #F87171;border-radius:var(--r-m);padding:10px 16px;margin-bottom:14px;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-              <div style="display:flex;align-items:center;gap:8px">
-                <span style="font-size:16px">☑️</span>
-                <span style="font-weight:800;color:#991B1B;font-size:13px" id="att-selected-count">0 attendees selected</span>
-              </div>
-              <div style="display:flex;gap:8px">
-                <button type="button" class="btn o sm" id="att-btn-deselect-all" style="font-size:12px;background:#fff">Deselect All</button>
-                <button type="button" class="btn sm" id="att-btn-bulk-delete" style="background:#DC2626;color:#fff;border-color:#DC2626;font-size:12px;font-weight:700">🗑️ Delete Selected (<span id="att-del-count">0</span>)</button>
-              </div>
-            </div>
-
-            <!-- Table -->
-            <div style="overflow-x:auto;max-height:520px;border:1px solid var(--line);border-radius:var(--r-m)">
-              <table style="width:100%;border-collapse:collapse;font-size:13px;text-align:left">
-                <thead>
-                  <tr style="border-bottom:1.5px solid var(--line);background:var(--sunk,#f8f9fa)">
-                    <th style="width:40px;padding:10px 12px;text-align:center">
-                      <input type="checkbox" id="att-chk-all" style="cursor:pointer" title="Select all visible attendees">
-                    </th>
-                    <th style="padding:10px 12px">Attendee Name</th>
-                    <th style="padding:10px 12px">Roll Number</th>
-                    <th style="padding:10px 12px">Email</th>
-                    <th style="padding:10px 12px">Status</th>
-                    <th style="padding:10px 12px;text-align:right">Action</th>
-                  </tr>
-                </thead>
-                <tbody id="att-table-body">
-                  ${rows.length ? rows.map((r) => `
-                    <tr style="border-bottom:1px solid var(--line)" data-att-row="${esc(r.id)}">
-                      <td style="padding:10px 12px;text-align:center">
-                        <input type="checkbox" class="att-chk" data-id="${esc(r.id)}" style="cursor:pointer">
-                      </td>
-                      <td style="padding:10px 12px;font-weight:700">${esc(r.attendee_name)}</td>
-                      <td style="padding:10px 12px;font-family:monospace">${esc(r.roll_no || '—')}</td>
-                      <td style="padding:10px 12px;color:var(--ink-2)">${esc(r.attendee_email || '—')}</td>
-                      <td style="padding:10px 12px"><span class="tag ${r.attendance_status === 'attended' ? 't3' : 't2'}" style="font-size:11px">${esc(r.attendance_status)}</span></td>
-                      <td style="padding:10px 12px;text-align:right">
-                        <button type="button" class="btn o sm" data-del-att="${esc(r.id)}" style="padding:2px 8px;font-size:11px;color:var(--r)" title="Delete single attendee">✕</button>
-                      </td>
-                    </tr>
-                  `).join('') : `
-                    <tr>
-                      <td colspan="6" style="padding:0">
-                        <div style="padding:36px 20px;text-align:center;color:var(--ink-2);background:var(--sunk,#f8f9fa)">
-                          <div style="font-size:32px;margin-bottom:8px">👥</div>
-                          <b style="font-size:14px;color:var(--ink-0);display:block;margin-bottom:4px">No attendees on record for this event yet.</b>
-                          <p style="font-size:12.5px;max-width:440px;margin:0 auto 16px">You can upload a CSV file with your attendee list, add attendees one-by-one, or load 3 demo records to test the certificate workflow right away.</p>
-                          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-                            <button type="button" class="btn sm" id="att-btn-add-demo">✨ Load 3 Demo Attendees</button>
-                            <button type="button" class="btn o sm" id="att-btn-csv-template">📥 Download Sample CSV Template</button>
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  `}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      `;
-
-      // Import toggle
-      const importBox = $('#att-import-box');
-      $('#att-btn-open-import').onclick = () => { importBox.style.display = importBox.style.display === 'none' ? 'block' : 'none'; };
-      $('#att-btn-cancel-import').onclick = () => { importBox.style.display = 'none'; };
-
-      // Sample CSV Download
-      $('#att-btn-download-sample')?.addEventListener('click', () => {
-        const csvContent = "attendee_name,roll_no,attendee_email,attendance_status\r\nAsha Rao,26BCE1001,asha@sru.edu.in,attended\r\nRahul Sharma,26BCE1002,rahul@sru.edu.in,attended\r\nPriya Patel,26BCE1003,priya@sru.edu.in,attended\r\n";
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'attendance-roster-sample.csv';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-        adminMessage('Sample CSV template downloaded.', true);
-      });
-
-      // File input
-      $('#att-file-input').onchange = (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (evt) => { $('#att-paste-area').value = evt.target.result; };
-        reader.readAsText(file);
-      };
-
-      // Quick Add Single Attendee
-      $('#att-btn-quick-add').onclick = async () => {
-        const nameInp = $('#att-quick-name');
-        const rollInp = $('#att-quick-roll');
-        const emailInp = $('#att-quick-email');
-        const name = (nameInp?.value || '').trim();
-        const roll = (rollInp?.value || '').trim();
-        const email = (emailInp?.value || '').trim();
-
-        if (!name || name.length < 3) {
-          return adminMessage('Please enter a valid attendee name (min 3 characters).');
-        }
-
-        const singleRow = [{
-          attendee_name: name,
-          roll_no: roll || null,
-          attendee_email: email || null,
-          attendance_status: 'attended',
-        }];
-
-        try {
-          await importNames(selectedEventId, singleRow, false);
-          adminMessage(`Added "${name}" to attendance roster.`, true);
-          nameInp.value = '';
-          if (rollInp) rollInp.value = '';
-          if (emailInp) emailInp.value = '';
-          nameInp.focus();
-          await renderAttendanceTab();
-          refreshPublishTab();
-        } catch (err) {
-          adminMessage(authErrorText(err));
-        }
-      };
-
-      // Demo roster button
-      const demoBtn = $('#att-btn-add-demo', root);
-      if (demoBtn) {
-        demoBtn.onclick = async () => {
-          demoBtn.disabled = true;
-          demoBtn.textContent = 'Adding demo roster…';
-          try {
-            const demoRows = [
-              { attendee_name: 'Asha Rao', roll_no: '26BCE1001', attendee_email: 'asha@example.com', attendance_status: 'attended' },
-              { attendee_name: 'Rahul Verma', roll_no: '26BCE1002', attendee_email: 'rahul@example.com', attendance_status: 'attended' },
-              { attendee_name: 'Priya Sharma', roll_no: '26BCE1003', attendee_email: 'priya@example.com', attendance_status: 'attended' },
-            ];
-            await importNames(selectedEventId, demoRows, false);
-            adminMessage('Added 3 demo attendees to the roster!', true);
-            await renderAttendanceTab();
-            refreshPublishTab();
-          } catch (err) {
-            adminMessage(authErrorText(err));
-          }
-        };
-      }
-
-      // Sample CSV Template download
-      const tplBtn = $('#att-btn-csv-template', root);
-      if (tplBtn) {
-        tplBtn.onclick = () => {
-          const csvContent = 'Name,Roll Number,Email\nAsha Rao,26BCE1001,asha@example.com\nRahul Verma,26BCE1002,rahul@example.com\nPriya Sharma,26BCE1003,priya@example.com\n';
-          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = 'sample_attendance_roster.csv';
-          a.click();
-          URL.revokeObjectURL(url);
-          adminMessage('Downloaded sample CSV template.', true);
-        };
-      }
-
-      // Run bulk import
-      $('#att-btn-run-import').onclick = async () => {
-        const text = $('#att-paste-area').value.trim();
-        const replace = $('#att-chk-replace').checked;
-        const fb = $('#att-import-feedback');
-        if (!text) { fb.innerHTML = '<span style="color:var(--r)">Please paste attendee data or choose a CSV file.</span>'; return; }
-        fb.innerHTML = '<span>Parsing and validating records…</span>';
-        const parsed = parseNames(text);
-        if (parsed.issues.length) {
-          fb.innerHTML = `<span style="color:var(--r)">Found ${parsed.issues.length} issue(s):<br>${parsed.issues.slice(0, 4).join('<br>')}</span>`;
-          return;
-        }
-        fb.innerHTML = `<span>Uploading ${parsed.rows.length} attendee(s)…</span>`;
-        try {
-          const res = await importNames(selectedEventId, parsed.rows, replace);
-          adminMessage(`Roster updated: ${res.added} added, ${res.updated} updated, ${res.removed} removed.`, true);
-          await renderAttendanceTab();
-          refreshPublishTab();
-        } catch (err) {
-          fb.innerHTML = `<span style="color:var(--r)">Import failed: ${esc(authErrorText(err))}</span>`;
-        }
-      };
-
-      // Export CSV
-      const exportBtn = $('#att-btn-export');
-      if (exportBtn) {
-        exportBtn.onclick = () => {
-          if (!rows.length) return;
-          const headers = ['Attendee Name', 'Roll Number', 'Email', 'Status'];
-          const lines = [headers.join(',')];
-          rows.forEach((r) => {
-            const escCsv = (s) => `"${String(s || '').replace(/"/g, '""')}"`;
-            lines.push([
-              escCsv(r.attendee_name),
-              escCsv(r.roll_no),
-              escCsv(r.attendee_email),
-              escCsv(r.attendance_status),
-            ].join(','));
-          });
-          const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          const safeTitle = (currentEv?.title || 'event').toLowerCase().replace(/[^a-z0-9]+/g, '_');
-          a.download = `${safeTitle}_attendance_roster.csv`;
-          a.click();
-          URL.revokeObjectURL(url);
-          adminMessage('Attendance roster CSV downloaded.', true);
-        };
-      }
-
-      // Checkbox Selection Logic
-      const selectAllChk = $('#att-chk-all');
-      const bulkBar = $('#att-bulk-bar');
-      const selectedCountEl = $('#att-selected-count');
-      const delCountEl = $('#att-del-count');
-
-      function updateBulkBar() {
-        const checkedBoxes = Array.from($$('.att-chk:checked', root));
-        const count = checkedBoxes.length;
-        if (count > 0) {
-          bulkBar.style.display = 'flex';
-          selectedCountEl.textContent = `${count} attendee${count > 1 ? 's' : ''} selected`;
-          delCountEl.textContent = String(count);
-        } else {
-          bulkBar.style.display = 'none';
-        }
-        // Update header checkbox indeterminate/checked state
-        const visibleBoxes = Array.from($$('.att-chk', root)).filter((cb) => cb.closest('tr').style.display !== 'none');
-        if (visibleBoxes.length > 0) {
-          const visibleChecked = visibleBoxes.filter((cb) => cb.checked).length;
-          selectAllChk.checked = visibleChecked === visibleBoxes.length;
-          selectAllChk.indeterminate = visibleChecked > 0 && visibleChecked < visibleBoxes.length;
-        } else {
-          selectAllChk.checked = false;
-          selectAllChk.indeterminate = false;
-        }
-      }
-
-      // Select All Toggle
-      selectAllChk.onchange = () => {
-        const visibleBoxes = Array.from($$('.att-chk', root)).filter((cb) => cb.closest('tr').style.display !== 'none');
-        visibleBoxes.forEach((cb) => { cb.checked = selectAllChk.checked; });
-        updateBulkBar();
-      };
-
-      // Individual row checkboxes
-      $$('.att-chk', root).forEach((cb) => {
-        cb.onchange = updateBulkBar;
-      });
-
-      // Deselect All button
-      $('#att-btn-deselect-all').onclick = () => {
-        $$('.att-chk', root).forEach((cb) => { cb.checked = false; });
-        updateBulkBar();
-      };
-
-      // Batch Delete Selected
-      $('#att-btn-bulk-delete').onclick = async () => {
-        const checked = Array.from($$('.att-chk:checked', root)).map((cb) => cb.dataset.id);
-        if (!checked.length) return;
-        if (!confirm(`Are you sure you want to permanently delete ${checked.length} selected attendee(s)?`)) return;
-
-        const delBtn = $('#att-btn-bulk-delete');
-        delBtn.disabled = true;
-        delBtn.textContent = 'Deleting…';
-
-        try {
-          const { error: delErr } = await sb.from('attendance_records').delete().in('id', checked);
-          if (delErr) throw delErr;
-          adminMessage(`Successfully deleted ${checked.length} attendee(s).`, true);
-          await renderAttendanceTab();
-          refreshPublishTab();
-        } catch (err) {
-          adminMessage(authErrorText(err));
-        }
-      };
-
-      // Single Delete Attendee
-      $$('[data-del-att]', root).forEach((btn) => {
-        btn.onclick = async () => {
-          if (!confirm('Remove this attendee from the roster?')) return;
-          const id = btn.dataset.delAtt;
-          const { error } = await sb.from('attendance_records').delete().eq('id', id);
-          if (error) return adminMessage(authErrorText(error));
-          adminMessage('Attendee removed.', true);
-          await renderAttendanceTab();
-          refreshPublishTab();
-        };
-      });
-
-      // Clear entire roster
-      const clearBtn = $('#att-btn-clear');
-      if (clearBtn) {
-        clearBtn.onclick = async () => {
-          if (!confirm('Are you sure you want to delete ALL attendees for this event? This cannot be undone.')) return;
-          const { error } = await sb.from('attendance_records').delete().eq('event_id', selectedEventId);
-          if (error) return adminMessage(authErrorText(error));
-          adminMessage('Attendance roster cleared.', true);
-          await renderAttendanceTab();
-          refreshPublishTab();
-        };
-      }
-
-      // Search filter
-      $('#att-search').oninput = (e) => {
-        const q = e.target.value.toLowerCase().trim();
-        const trs = $$('#att-table-body tr', root);
-        let visible = 0;
-        trs.forEach((tr) => {
-          const text = tr.textContent.toLowerCase();
-          const show = text.includes(q);
-          tr.style.display = show ? '' : 'none';
-          if (show) visible++;
-        });
-        $('#att-filter-count').textContent = `Showing ${visible} of ${rows.length}`;
-        updateBulkBar();
-      };
-    }
-
-    /* ==================================================================
-       TAB 2: CERTIFICATE DETAILS & LAYOUT EDITOR IMPLEMENTATION
-       ================================================================== */
-    let currentEc = null;
-    let currentPartners = [];
-    let currentEventObj = events.find((e) => e.id === selectedEventId) || events[0];
-    let studioTemplateHtml = '';
-
-    function markDirty() {
-      isDirty = true;
-      const ind = $('#mc-save-indicator');
-      if (ind) {
-        ind.className = 'mc-save-status dirty';
-        ind.innerHTML = `<span class="mc-save-icon">⚠️</span> <span class="mc-save-text">Unsaved changes</span>`;
-      }
-    }
-
-    function markClean() {
-      isDirty = false;
-      const ind = $('#mc-save-indicator');
-      if (ind) {
-        ind.className = 'mc-save-status clean';
-        ind.innerHTML = `<span class="mc-save-icon">✓</span> <span class="mc-save-text">All changes saved</span>`;
-      }
-    }
-
-    function setViewMode(mode) {
-      currentViewMode = mode;
-      localStorage.setItem('gdg_cert_view_mode', mode);
-      const grid = $('#mc-cert-grid');
-      if (grid) {
-        grid.className = `mc-cert-grid view-${mode}`;
-      }
-      $$('.mc-vm-btn').forEach((b) => b.classList.toggle('active', b.dataset.view === mode));
-      setTimeout(fitStudioCanvas, 80);
-    }
-
-    async function renderCertificateTab() {
-      const root = panes.certificate;
-      root.innerHTML = `<div class="mc-loading" role="status"><span>Loading certificate designer…</span></div>`;
-
-      // Fetch event certificate row, partners, and master template
-      const [ecRes, partRes, tplRes] = await Promise.all([
-        sb.from('event_certificates').select('*').eq('event_id', selectedEventId).maybeSingle(),
-        sb.from('event_partners').select('*').eq('event_id', selectedEventId).order('sort_order'),
-        fetch('/assets/data/certificate-default-template.html').then((r) => r.text()).catch(() => ''),
-      ]);
-
-      studioTemplateHtml = tplRes || '';
-      currentEc = ecRes.data || {
-        event_id: selectedEventId,
-        event_date: currentEventObj.start_at ? currentEventObj.start_at.slice(0, 10) : new Date().toISOString().slice(0, 10),
-        host_chapter: 'GDG on Campus SR University',
-        cert_tag: 'OFFICIAL CREDENTIAL',
-        cert_title: 'Certificate of Participation',
-        track: 'Community Learning',
-        skills: ['Web Development', 'Git', 'Open Source', 'Cloud'],
-        dossier_tag: 'LEARN_WITH_COMMUNITY',
-        curriculum_status: 'STATUS: Topic / Curriculum Overview',
-        curriculum_text: 'Active participation and hands-on contributions in community learning sessions, exploring developer tools, open-source practices, and foundational computing skills.',
-        curriculum_bullets: false,
-        signatories: [],
-        layout: {
-          credential_base: 'GDGSRU-2026-LWC',
-          dev_tag: 'DEV_COMMUNITY',
-          node_pill: 'ACTIVE_NODE // 01',
-          partner_sticker: '',
-        },
-        claims_enabled: false,
-      };
-
-      if (!currentEc.curriculum_status) {
-        currentEc.curriculum_status = 'STATUS: Topic / Curriculum Overview';
-      }
-      if (!currentEc.layout) currentEc.layout = {};
-      if (currentEc.layout.event_title_override) {
-        currentEc.event_title_override = currentEc.layout.event_title_override;
-      }
-
-      currentPartners = partRes.data || [];
-
-      // Render Designer Layout
-      root.innerHTML = `
-        <!-- Designer Sub-Toolbar: Quick Nav + View Mode Switcher -->
-        <div class="mc-designer-toolbar">
-          <div class="mc-quick-nav">
-            <span class="mc-qn-label">Jump to:</span>
-            <button type="button" class="mc-qn-btn" data-jump="#card-identity">1. Identity</button>
-            <button type="button" class="mc-qn-btn" data-jump="#card-curriculum">2. Curriculum</button>
-            <button type="button" class="mc-qn-btn" data-jump="#card-dossier">3. Dossier</button>
-            <button type="button" class="mc-qn-btn" data-jump="#card-badges">4. Badges</button>
-            <button type="button" class="mc-qn-btn" data-jump="#card-logos">5. Logos & Sigs</button>
-            <button type="button" class="mc-qn-btn" data-jump="#card-positioning">6. Coordinates</button>
-          </div>
-          <div class="mc-view-mode-group">
-            <span class="mc-vm-label">View:</span>
-            <div class="mc-view-modes">
-              <button type="button" class="mc-vm-btn ${currentViewMode === 'split' ? 'active' : ''}" data-view="split" title="Side-by-side view">◫ Split View</button>
-              <button type="button" class="mc-vm-btn ${currentViewMode === 'form' ? 'active' : ''}" data-view="form" title="Full-width editing forms for laptops">▤ Form Focus</button>
-              <button type="button" class="mc-vm-btn ${currentViewMode === 'canvas' ? 'active' : ''}" data-view="canvas" title="Full-width enlarged preview">🖼️ Canvas Focus</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="mc-cert-grid view-${currentViewMode}" id="mc-cert-grid">
-          <!-- Left: Control Panels -->
-          <div class="mc-controls-col" style="display:flex;flex-direction:column;gap:16px">
-            <!-- 1. Event & Certificate Identity -->
-            <div class="mc-card" id="card-identity">
-              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-                <div>
-                  <h3 style="margin:0 0 2px;font-size:15px">1. Event & Certificate Identity</h3>
-                  <p style="margin:0;font-size:12px;color:var(--ink-2)">Core titles, dates, and chapter identification.</p>
-                </div>
-                <button type="button" class="btn o sm" id="btn-fill-defaults" style="font-size:11.5px">✨ Fill GDG Defaults</button>
-              </div>
-              
-              <div class="mc-f-group">
+              <div class="mc-form-group">
                 <label>Event Title</label>
-                <input type="text" id="inp-event-title" value="${esc(currentEc.event_title_override || currentEventObj.title || '')}" placeholder="e.g. Learn with Community">
+                <input type="text" id="inpEventName" value="Google Cloud Study Jam">
               </div>
 
-              <div class="mc-f-group">
-                <label>GDG Chapter Name</label>
-                <input type="text" id="inp-host-chapter" value="${esc(currentEc.host_chapter || 'GDG on Campus SR University')}" maxlength="120" placeholder="GDG on Campus SR University">
-              </div>
-
-              <div class="mc-f-row">
-                <div class="mc-f-group">
+              <div class="mc-form-row">
+                <div class="mc-form-group">
+                  <label>Chapter Name</label>
+                  <input type="text" id="inpChapterName" value="GDG Chapter Name">
+                </div>
+                <div class="mc-form-group">
                   <label>Event Date</label>
-                  <input type="date" id="inp-event-date" value="${esc(currentEc.event_date || '')}">
+                  <input type="text" id="inpEventDate" value="October 4, 2026">
                 </div>
-                <div class="mc-f-group">
+              </div>
+
+              <!-- GDG Chapter Logo Studio -->
+              <div class="mc-cert-card-header" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line)">
+                <div style="display:flex;justify-content:space-between;align-items:center;width:100%">
+                  <h4 style="margin:0;font-size:12px">// GDG Chapter Logo &amp; Studio</h4>
+                  <span id="gdg-logo-status" style="font-size:11px;color:var(--ink-2);font-weight:600">Using Default Vector (&lt; &gt;)</span>
+                </div>
+              </div>
+
+              <div class="mc-form-row" style="align-items:center">
+                <label class="mc-upload-btn" style="flex:1">
+                  📁 Upload Custom GDG Logo
+                  <input type="file" id="inpGdgLogoFile" accept="image/*">
+                </label>
+                <button type="button" class="button-outline" id="btn-reset-gdg-logo" style="display:none;padding:6px 10px;font-size:11.5px;color:#d93025;border-color:#fad2cf">✕ Reset to Default</button>
+              </div>
+
+              <div id="gdg-logo-controls" style="background:var(--sunk,#f8f9fa);border:1px solid var(--line);border-radius:var(--r-m);padding:10px 12px;margin-top:8px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                  <span style="font-size:11.5px;font-weight:700;color:var(--ink)">Logo Size (Height)</span>
+                  <span id="badge-gdg-logo-size" style="font-size:11px;font-weight:700;color:#1a73e8;background:rgba(26,115,232,0.1);padding:2px 8px;border-radius:4px">Height: 60px</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="font-size:11px;color:var(--ink-2)">32px</span>
+                  <input type="range" id="rng-gdg-logo-size" min="32" max="140" step="2" value="60" style="flex:1;cursor:pointer">
+                  <span style="font-size:11px;color:var(--ink-2)">140px</span>
+                </div>
+                <div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap">
+                  <button type="button" class="mc-p-btn btn-gdg-size" data-size="48">48px</button>
+                  <button type="button" class="mc-p-btn btn-gdg-size active" data-size="60">60px</button>
+                  <button type="button" class="mc-p-btn btn-gdg-size" data-size="76">76px</button>
+                  <button type="button" class="mc-p-btn btn-gdg-size" data-size="96">96px</button>
+                  <button type="button" class="mc-p-btn btn-gdg-size" data-size="120">120px</button>
+                </div>
+
+                <div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+                  <div style="display:flex;align-items:center;gap:4px">
+                    <span style="font-size:11px;font-weight:600;color:var(--ink-2);margin-right:2px">Nudge:</span>
+                    <button type="button" class="mc-p-btn btn-gdg-nudge" data-axis="x" data-delta="-5" title="Move Left 5px">←</button>
+                    <button type="button" class="mc-p-btn btn-gdg-nudge" data-axis="x" data-delta="5" title="Move Right 5px">→</button>
+                    <button type="button" class="mc-p-btn btn-gdg-nudge" data-axis="y" data-delta="-5" title="Move Up 5px">↑</button>
+                    <button type="button" class="mc-p-btn btn-gdg-nudge" data-axis="y" data-delta="5" title="Move Down 5px">↓</button>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <span id="badge-gdg-logo-offset" style="font-size:11px;font-family:var(--font-mono,monospace);color:var(--ink-2)">Offset: X:0px, Y:0px</span>
+                    <button type="button" class="mc-p-btn" id="btn-reset-gdg-offset" style="padding:2px 6px;font-size:10.5px">Reset</button>
+                  </div>
+                </div>
+                <div style="margin-top:6px;font-size:10.5px;color:var(--ink-3)">
+                  💡 Tip: You can also drag the logo directly on the canvas preview to reposition it!
+                </div>
+
+                <div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)">
+                  <label class="check" style="font-size:11.5px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px">
+                    <input type="checkbox" id="chk-hide-chapter-text"> Hide chapter text (if already in your logo)
+                  </label>
+                </div>
+              </div>
+
+              <div class="mc-form-row">
+                <div class="mc-form-group">
                   <label>Top Credential Tag</label>
-                  <input type="text" id="inp-cert-tag" value="${esc(currentEc.cert_tag || 'OFFICIAL CREDENTIAL')}" placeholder="OFFICIAL CREDENTIAL">
+                  <input type="text" id="inpCertTag" value="OFFICIAL CREDENTIAL">
+                </div>
+                <div class="mc-form-group">
+                  <label>Certificate Title</label>
+                  <input type="text" id="inpCertTitle" value="Certificate of Participation">
                 </div>
               </div>
 
-              <div class="mc-f-group">
-                <label>Certificate Title</label>
-                <input type="text" id="inp-cert-title" value="${esc(currentEc.cert_title || 'Certificate of Participation')}" maxlength="80" placeholder="Certificate of Participation">
+              <div class="mc-cert-card-header" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line)">
+                <h4 style="margin:0;font-size:12px">// Curriculum Overview Card</h4>
               </div>
-            </div>
+              <div class="mc-form-row">
+                <div class="mc-form-group" style="flex:1">
+                  <label>Header Status Tag</label>
+                  <input type="text" id="inpSyllabusStatus" value="STATUS: COMPLETED">
+                </div>
+              </div>
+              <div class="mc-form-group">
+                <label>Topic / Curriculum Overview</label>
+                <textarea id="inpSyllabus" rows="2" placeholder="Summary of topics, labs, or curriculum...">Completed intensive hands-on development labs exploring Google Cloud infrastructure, Vertex AI foundational model deployments, and Gemini API multi-agent workflows.</textarea>
+              </div>
 
-            <!-- 2. Curriculum Overview Card -->
-            <div class="mc-card" id="card-curriculum">
-              <div style="display:flex;justify-content:space-between;align-items:center">
-                <h3 style="margin:0;font-size:15px">// Curriculum Overview Card</h3>
-                <label class="check" style="font-size:12px;font-weight:700">
-                  <input type="checkbox" id="chk-curriculum-bullets" ${currentEc.curriculum_bullets ? 'checked' : ''}> Show as bullets (one per line)
+              <div class="mc-cert-card-header" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line)">
+                <h4 style="margin:0;font-size:12px">// Blue Dossier Card & Competencies</h4>
+              </div>
+              <div class="mc-form-row">
+                <div class="mc-form-group">
+                  <label>Dossier Tag (Yellow)</label>
+                  <input type="text" id="inpDossierTag" value="BUILD_WITH_AI">
+                </div>
+                <div class="mc-form-group">
+                  <label>Track Name</label>
+                  <input type="text" id="inpTrack" value="AI & Cloud">
+                </div>
+              </div>
+
+              <div class="mc-form-group">
+                <label>Skills & Competencies (comma separated)</label>
+                <input type="text" id="inpSkills" value="Vertex AI, Gemini 2.5, Cloud Run, Python">
+              </div>
+
+              <div class="mc-form-group">
+                <label>Credential ID Base</label>
+                <input type="text" id="inpCredId" value="GDG-SRU-CERT-001">
+              </div>
+
+              <div class="mc-cert-card-header" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line)">
+                <h4 style="margin:0;font-size:12px">// Tech Badges & Stickers</h4>
+              </div>
+              <div class="mc-form-row">
+                <div class="mc-form-group">
+                  <label>Dev Tag</label>
+                  <input type="text" id="inpDevTag" value="#GoogleDeveloper">
+                </div>
+                <div class="mc-form-group">
+                  <label>Active Node Pill</label>
+                  <input type="text" id="inpNodePill" value="NODE_ACTIVE // 2026">
+                </div>
+              </div>
+
+              <div class="mc-form-group">
+                <label>Partner Pill (Optional)</label>
+                <input type="text" id="inpPartnerSticker" value="#SRU_ACM // CO-HOST" placeholder="e.g. #SRU_ACM // CO-HOST (leave blank to hide)">
+              </div>
+
+            </section>
+
+            <!-- 2. Signatures -->
+            <section class="mc-cert-card">
+              <div class="mc-cert-card-header">
+                <div>
+                  <h3>2. Signatories</h3>
+                  <p>Drag signatures on preview or use size/position sliders.</p>
+                </div>
+                <button type="button" class="button-outline" id="btnAddSig" style="padding:3px 8px;font-size:11px">+ Add</button>
+              </div>
+              <div id="sigsContainer" style="display:flex;flex-direction:column;gap:8px"></div>
+            </section>
+
+            <!-- 3. Partners & Co-Branding -->
+            <section class="mc-cert-card">
+              <div class="mc-cert-card-header">
+                <div>
+                  <h3>3. Partner & Collaborator Logos</h3>
+                  <p>Co-hosts, student clubs, or sponsor marks.</p>
+                </div>
+                <button type="button" class="button-outline" id="btnAddPartner" style="padding:3px 8px;font-size:11px">+ Add</button>
+              </div>
+              <div id="partnersContainer" style="display:flex;flex-direction:column;gap:8px"></div>
+            </section>
+
+            <!-- 4. Bulk Generation & Export -->
+            <section class="mc-cert-card">
+              <div class="mc-cert-card-header">
+                <div>
+                  <h3>4. Bulk Export & Roster</h3>
+                  <p>Download certificates for all attendees in one click.</p>
+                </div>
+              </div>
+
+              <div class="mc-form-row">
+                <button type="button" class="button" id="btnPullRoster" style="flex:1;background:var(--sunk,#f8f9fa);color:var(--ink);border:1px solid var(--line);font-size:12px;padding:8px">👥 Pull Event Attendees</button>
+                <label class="mc-upload-btn" style="flex:1" hidden>
+                  Upload CSV
+                  <input type="file" id="inpBulkFile" accept=".csv,.txt,text/csv,text/plain">
                 </label>
               </div>
-              <p style="margin:2px 0 8px;font-size:12px;color:var(--ink-2)">Syllabus, topics, and completion status displayed on the certificate.</p>
-              
-              <div class="mc-f-group">
-                <label>Header Status Tag</label>
-                <input type="text" id="inp-curriculum-status" value="${esc(currentEc.curriculum_status || 'STATUS: Topic / Curriculum Overview')}" placeholder="STATUS: Topic / Curriculum Overview">
-              </div>
-              <div class="mc-f-group">
-                <label>Curriculum / Topic Details</label>
-                <textarea id="inp-curriculum-text" rows="3" maxlength="2000" placeholder="Enter workshop curriculum topics or bullet points...">${esc(currentEc.curriculum_text || '')}</textarea>
-              </div>
-            </div>
 
-            <!-- 3. Blue Dossier Card & Competencies -->
-            <div class="mc-card" id="card-dossier">
-              <h3 style="margin:0 0 2px;font-size:15px">// Blue Dossier Card & Competencies</h3>
-              <p style="margin:0 0 8px;font-size:12px;color:var(--ink-2)">Verified skills, track, and credential reference.</p>
-              
-              <div class="mc-f-row">
-                <div class="mc-f-group">
-                  <label>Dossier Tag (Yellow)</label>
-                  <input type="text" id="inp-dossier-tag" value="${esc(currentEc.dossier_tag || 'LEARN_WITH_COMMUNITY')}" placeholder="e.g. LEARN_WITH_COMMUNITY">
+              <div class="mc-form-group">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                  <label hidden>Attendees List (Name, Roll, Email)</label>
+                  <span id="bulkCountLabel" style="font-size:11px;color:var(--ink-3)">0 loaded</span>
                 </div>
-                <div class="mc-f-group">
-                  <label>Track Name</label>
-                  <input type="text" id="inp-track" value="${esc(currentEc.track || 'Web & Community')}" placeholder="e.g. Web Development / AI & Cloud">
-                </div>
+                <textarea id="inpBulkText" rows="3" hidden placeholder="Asha Rao, 26BCE1001&#10;Rahul Verma, rahul@example.com&#10;Priya Sharma"></textarea>
               </div>
 
-              <div class="mc-f-group">
-                <label>Skills & Competencies (comma separated)</label>
-                <input type="text" id="inp-skills" value="${esc((currentEc.skills || []).join(', '))}" placeholder="e.g. HTML, CSS, JavaScript, Git, Cloud">
+              <div class="mc-progress-box" id="exportProgressWrap">
+                <div class="mc-progress-bar"><div class="mc-progress-fill" id="exportProgressFill"></div></div>
+                <div class="mc-progress-text" id="exportProgressText">Preparing…</div>
               </div>
 
-              <div class="mc-f-group">
-                <label>Credential ID Base</label>
-                <input type="text" id="inp-credential-base" value="${esc(currentEc.layout?.credential_base || 'GDGSRU-2026-LWC')}" placeholder="e.g. GDGSRU-2026-LWC">
-              </div>
-            </div>
-
-            <!-- 4. Tech Badges & Stickers -->
-            <div class="mc-card" id="card-badges">
-              <h3 style="margin:0 0 2px;font-size:15px">// Tech Badges & Stickers</h3>
-              <p style="margin:0 0 8px;font-size:12px;color:var(--ink-2)">Header and sidebar tech accent badges.</p>
-
-              <div class="mc-f-row">
-                <div class="mc-f-group">
-                  <label>Dev Tag</label>
-                  <input type="text" id="inp-dev-tag" value="${esc(currentEc.layout?.dev_tag || 'DEV_COMMUNITY')}" placeholder="e.g. DEV_COMMUNITY or CLOUD_NATIVE">
-                </div>
-                <div class="mc-f-group">
-                  <label>Active Node Pill</label>
-                  <input type="text" id="inp-node-pill" value="${esc(currentEc.layout?.node_pill || 'ACTIVE_NODE // 01')}" placeholder="e.g. ACTIVE_NODE // 01">
+              <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px">
+                <button type="button" id="btnExportZip" style="background:var(--primary, #1a73e8);color:#fff;border:none;border-radius:var(--r-m);padding:9px;font-weight:700;font-size:12.5px;cursor:pointer">📦 Download All (ZIP of PDFs)</button>
+                <button type="button" class="button-outline" id="btnExportMerged" style="font-size:12px;padding:7px">📄 Download All as One Merged PDF</button>
+                <div class="mc-form-row">
+                  <button type="button" class="button-outline" id="btnExportSingle" style="font-size:11.5px;padding:6px">🖨️ Export Current PDF</button>
+                  <button type="button" class="button-outline" id="btnExportPng" style="font-size:11.5px;padding:6px">🖼️ Download PNG</button>
                 </div>
               </div>
-
-              <div class="mc-f-group">
-                <label>Partner Pill (Optional)</label>
-                <input type="text" id="inp-partner-pill" value="${esc(currentEc.layout?.partner_sticker || '')}" placeholder="Optional, e.g. PARTNER // SRU">
-              </div>
-            </div>
-
-            <!-- 5. GDG Logo, Partner Logos & Details -->
-            <div class="mc-card" id="card-logos">
-              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-                <div>
-                  <h3 style="margin:0;font-size:15px">GDG Logo, Partner Logos & Details</h3>
-                  <p style="margin:2px 0 0;font-size:12px;color:var(--ink-2)">Sponsors, co-hosts, and authorized signatures.</p>
-                </div>
-                <div style="display:flex;gap:6px">
-                  <button type="button" class="btn o sm" id="btn-add-partner" ${currentPartners.length >= 8 ? 'disabled' : ''}>+ Add Partner</button>
-                  <button type="button" class="btn o sm" id="btn-add-sig" ${(currentEc.signatories || []).length >= 2 ? 'disabled' : ''}>+ Add Signatory</button>
-                </div>
-              </div>
-
-              <!-- GDG Chapter Logo Uploader -->
-              <div style="background:var(--sunk,#f8f9fa);padding:12px 14px;border-radius:var(--r-m);border:1px solid var(--line);margin-top:12px">
-                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
-                  <div>
-                    <b style="font-size:12.5px;display:block">GDG Chapter Logo:</b>
-                    <span id="gdg-logo-status" style="font-size:11.5px;color:var(--ink-2)">${currentEc.layout?.gdg_logo_path ? 'Custom Logo Uploaded' : 'Using Default Vector Logo (&lt; &gt;)'}</span>
-                  </div>
-                  <div style="display:flex;gap:8px;align-items:center">
-                    <label class="btn o sm" style="cursor:pointer;font-size:11.5px;display:inline-flex;align-items:center;gap:6px">
-                      📷 Upload GDG Logo
-                      <input type="file" id="inp-gdg-logo-file" accept=".png,.jpg,.jpeg,.svg,.webp" style="display:none">
-                    </label>
-                    <button type="button" class="btn o sm" id="btn-reset-gdg-logo" style="font-size:11.5px;color:var(--r);${currentEc.layout?.gdg_logo_path ? '' : 'display:none;'}">✕ Reset to Default</button>
-                  </div>
-                </div>
-                <div id="gdg-logo-preview-thumb" style="margin-top:8px;${currentEc.layout?.gdg_logo_path ? '' : 'display:none;'}">
-                  <img id="gdg-logo-img" src="" alt="GDG Logo" style="max-height:48px;max-width:240px;object-fit:contain;background:#fff;padding:4px 8px;border-radius:6px;border:1px solid var(--line)">
-                </div>
-
-                <!-- Dedicated Logo Size & Offset Studio (active when custom logo is uploaded) -->
-                <div id="gdg-logo-size-controls" style="margin-top:12px;padding:12px 14px;background:var(--surface,#fff);border:1px solid var(--line);border-radius:var(--r-m);${currentEc.layout?.gdg_logo_path ? '' : 'display:none;'}">
-                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-                    <span style="font-size:12px;font-weight:700;color:var(--ink-1);display:flex;align-items:center;gap:6px">
-                      <span>📐 Uploaded Logo Size & Position</span>
-                    </span>
-                    <span id="badge-gdg-logo-size" style="font-size:11.5px;font-weight:700;color:#1a73e8;background:rgba(26,115,232,0.08);padding:2px 8px;border-radius:4px">Height: ${currentEc.layout?.gdg_logo_size || 60}px</span>
-                  </div>
-
-                  <!-- Size presets & Slider -->
-                  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-                    <label style="font-size:11.5px;font-weight:600;min-width:60px">Size (Height):</label>
-                    <input type="range" id="rng-gdg-logo-size" min="32" max="130" step="2" value="${currentEc.layout?.gdg_logo_size || 60}" style="flex:1;min-width:140px;cursor:pointer">
-                    <div style="display:flex;gap:4px">
-                      <button type="button" class="btn o sm btn-gdg-size-preset" data-size="48" style="padding:2px 6px;font-size:11px">48px</button>
-                      <button type="button" class="btn o sm btn-gdg-size-preset" data-size="60" style="padding:2px 6px;font-size:11px">60px</button>
-                      <button type="button" class="btn o sm btn-gdg-size-preset" data-size="76" style="padding:2px 6px;font-size:11px">76px</button>
-                      <button type="button" class="btn o sm btn-gdg-size-preset" data-size="96" style="padding:2px 6px;font-size:11px">96px</button>
-                      <button type="button" class="btn o sm btn-gdg-size-preset" data-size="115" style="padding:2px 6px;font-size:11px">115px</button>
-                    </div>
-                  </div>
-
-                  <!-- Offset Nudge Controls -->
-                  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)">
-                    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-                      <span style="font-size:11.5px;font-weight:600;min-width:60px">Nudge X:</span>
-                      <button type="button" class="btn o sm btn-gdg-nudge" data-axis="x" data-delta="-5" style="padding:2px 6px;font-size:11px">◀◀ 5</button>
-                      <button type="button" class="btn o sm btn-gdg-nudge" data-axis="x" data-delta="-1" style="padding:2px 6px;font-size:11px">◀ 1</button>
-                      <button type="button" class="btn o sm btn-gdg-nudge" data-axis="x" data-delta="1" style="padding:2px 6px;font-size:11px">1 ▶</button>
-                      <button type="button" class="btn o sm btn-gdg-nudge" data-axis="x" data-delta="5" style="padding:2px 6px;font-size:11px">5 ▶▶</button>
-                      
-                      <div style="width:1px;height:16px;background:var(--line);margin:0 4px"></div>
-                      
-                      <span style="font-size:11.5px;font-weight:600">Nudge Y:</span>
-                      <button type="button" class="btn o sm btn-gdg-nudge" data-axis="y" data-delta="-5" style="padding:2px 6px;font-size:11px">▲▲ 5</button>
-                      <button type="button" class="btn o sm btn-gdg-nudge" data-axis="y" data-delta="-1" style="padding:2px 6px;font-size:11px">▲ 1</button>
-                      <button type="button" class="btn o sm btn-gdg-nudge" data-axis="y" data-delta="1" style="padding:2px 6px;font-size:11px">1 ▼</button>
-                      <button type="button" class="btn o sm btn-gdg-nudge" data-axis="y" data-delta="5" style="padding:2px 6px;font-size:11px">5 ▼▼</button>
-                    </div>
-
-                    <div style="display:flex;align-items:center;gap:6px">
-                      <span id="badge-gdg-logo-offset" style="font-size:11px;color:var(--ink-2);font-family:var(--font-mono)">Offset: X:${currentEc.layout?.gdg_logo_x || 0}px, Y:${currentEc.layout?.gdg_logo_y || 0}px</span>
-                      <button type="button" class="btn o sm" id="btn-reset-gdg-offset" style="padding:2px 6px;font-size:11px" title="Reset logo offset to (0,0)">Reset</button>
-                    </div>
-                  </div>
-                </div>
-
-                <div style="margin-top:10px;padding-top:8px;border-top:1px dashed var(--line);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
-                  <label class="check" style="font-size:12px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none">
-                    <input type="checkbox" id="chk-hide-chapter-text" ${currentEc.layout?.hide_chapter_text ? 'checked' : ''}>
-                    <span>Hide text ("Google Developer Groups / Chapter Name") next to logo</span>
-                  </label>
-                  <small style="font-size:11px;color:var(--ink-3)">Only check if your uploaded logo already has the chapter name written inside it.</small>
-                </div>
-              </div>
-
-              <div id="partners-list-wrap" style="display:flex;flex-direction:column;gap:8px;margin-top:10px"></div>
-              <div id="sigs-list-wrap" style="display:flex;flex-direction:column;gap:8px;margin-top:10px"></div>
-            </div>
-
-            <!-- 6. Manual X/Y Positioning & Scale -->
-            <div class="mc-card" id="card-positioning">
-              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-                <div>
-                  <h3 style="margin:0;font-size:15px">6. Manual X/Y Positioning & Scale</h3>
-                  <p style="margin:2px 0 0;font-size:12px;color:var(--ink-2)">Select an element below to fine-tune coordinates, use directional nudge buttons, or drag on the preview canvas.</p>
-                </div>
-                <div style="display:flex;gap:6px">
-                  <button type="button" class="btn o sm" id="btn-reset-element" title="Reset selected element to default">Reset Element</button>
-                  <button type="button" class="btn o sm" id="btn-reset-all-layout" title="Reset all elements to default">Reset All</button>
-                </div>
-              </div>
-
-              <div class="mc-f-group" style="margin-top:10px">
-                <label>Target Element</label>
-                <select id="sel-layout-target">
-                  <option value="gdg">GDG Chapter Logo</option>
-                  <option value="cert_tag">Top Credential Tag</option>
-                  <option value="title">Certificate Title</option>
-                  <option value="name">Attendee Name Badge</option>
-                  <option value="event">Event Statement Text</option>
-                  <option value="curriculum">Curriculum Overview Card</option>
-                  <option value="dossier">Blue Dossier Card (Competencies)</option>
-                  <option value="credential">Terminal Log Card</option>
-                  <option value="sig_1">Signatory 1</option>
-                  <option value="sig_2">Signatory 2</option>
-                </select>
-              </div>
-
-              <!-- Micro-Adjustment Nudge Pad -->
-              <div style="background:var(--sunk,#f8f9fa);border:1px solid var(--line);border-radius:var(--r-m);padding:12px 14px;margin-top:4px">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-                  <span style="font-size:11.5px;font-weight:700;color:var(--ink-2);text-transform:uppercase;letter-spacing:0.3px">Direct Nudge Controls</span>
-                  <span style="font-size:11px;color:var(--ink-3)">Shortcut: Arrow keys / Shift+Arrows</span>
-                </div>
-                <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
-                  <span style="font-size:11px;font-weight:700;color:var(--ink-2);min-width:32px">Move:</span>
-                  <button type="button" class="btn o sm btn-nudge" data-axis="x" data-delta="-10" title="Move Left 10px" style="padding:3px 8px;font-size:11.5px">◀◀ 10</button>
-                  <button type="button" class="btn o sm btn-nudge" data-axis="x" data-delta="-1" title="Move Left 1px" style="padding:3px 8px;font-size:11.5px">◀ 1</button>
-                  <button type="button" class="btn o sm btn-nudge" data-axis="x" data-delta="1" title="Move Right 1px" style="padding:3px 8px;font-size:11.5px">1 ▶</button>
-                  <button type="button" class="btn o sm btn-nudge" data-axis="x" data-delta="10" title="Move Right 10px" style="padding:3px 8px;font-size:11.5px">10 ▶▶</button>
-                  <div style="width:1px;height:18px;background:var(--line);margin:0 2px"></div>
-                  <button type="button" class="btn o sm btn-nudge" data-axis="y" data-delta="-10" title="Move Up 10px" style="padding:3px 8px;font-size:11.5px">▲▲ 10</button>
-                  <button type="button" class="btn o sm btn-nudge" data-axis="y" data-delta="-1" title="Move Up 1px" style="padding:3px 8px;font-size:11.5px">▲ 1</button>
-                  <button type="button" class="btn o sm btn-nudge" data-axis="y" data-delta="1" title="Move Down 1px" style="padding:3px 8px;font-size:11.5px">▼ 1</button>
-                  <button type="button" class="btn o sm btn-nudge" data-axis="y" data-delta="10" title="Move Down 10px" style="padding:3px 8px;font-size:11.5px">▼▼ 10</button>
-                </div>
-                <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px">
-                  <span style="font-size:11px;font-weight:700;color:var(--ink-2);min-width:32px">Scale:</span>
-                  <button type="button" class="btn o sm btn-scale-step" data-delta="-0.05" style="padding:3px 8px;font-size:11.5px">- 5%</button>
-                  <button type="button" class="btn o sm btn-scale-step" data-delta="0.05" style="padding:3px 8px;font-size:11.5px">+ 5%</button>
-                  <button type="button" class="btn o sm btn-scale-step" data-delta="-0.10" style="padding:3px 8px;font-size:11.5px">- 10%</button>
-                  <button type="button" class="btn o sm btn-scale-step" data-delta="0.10" style="padding:3px 8px;font-size:11.5px">+ 10%</button>
-                  <button type="button" class="btn o sm btn-scale-step" data-val="1.0" style="padding:3px 8px;font-size:11.5px">100%</button>
-                </div>
-              </div>
-
-              <!-- Numeric Coordinate Inputs -->
-              <div class="mc-f-row" style="margin-top:10px">
-                <div class="mc-f-group">
-                  <label>X Position (px)</label>
-                  <input type="number" id="inp-pos-x" min="0" max="1123" placeholder="e.g. 48">
-                </div>
-                <div class="mc-f-group">
-                  <label>Y Position (px)</label>
-                  <input type="number" id="inp-pos-y" min="0" max="794" placeholder="e.g. 180">
-                </div>
-                <div class="mc-f-group">
-                  <label>Scale (0.2 - 2.5)</label>
-                  <input type="number" step="0.05" id="inp-pos-s" min="0.2" max="2.5" placeholder="1.0">
-                </div>
-                <div class="mc-f-group">
-                  <label>Width (px, opt)</label>
-                  <input type="number" id="inp-pos-w" min="120" max="1000" placeholder="Auto">
-                </div>
-              </div>
-            </div>
-
-            <!-- Sticky Floating Save Bar -->
-            <div class="mc-save-bar">
-              <div class="mc-save-status clean" id="mc-save-indicator">
-                <span class="mc-save-icon">✓</span>
-                <span class="mc-save-text">All changes saved</span>
-              </div>
-              <div style="display:flex;gap:8px;align-items:center">
-                <button type="button" class="btn o sm" id="btn-test-claim-designer">🎯 Test Claim Preview</button>
-                <button type="button" class="btn sm" id="btn-save-ec" style="font-weight:700;padding:8px 16px">💾 Save Certificate Settings</button>
-              </div>
-            </div>
+            </section>
           </div>
 
-          <!-- Right: Live Interactive Canvas Preview -->
+          <!-- Right Column: Live Preview Card -->
           <div class="mc-preview-card">
-            <div class="mc-preview-bar">
-              <div style="display:flex;align-items:center;gap:8px">
-                <span style="font-weight:700">Live Preview</span>
-                <input type="text" id="inp-preview-name" value="Asha Rao" placeholder="Preview Name" style="font-size:11px;padding:3px 8px;border:1px solid var(--line);border-radius:4px;width:120px">
-              </div>
-              <div style="display:flex;gap:4px;align-items:center">
-                <button type="button" class="btn o sm" id="btn-test-claim-designer-top" style="padding:2px 8px;font-size:11px;font-weight:700;color:var(--primary,#1a73e8);border-color:var(--primary,#1a73e8)">🎯 Test Claim</button>
-                <div style="width:1px;height:16px;background:var(--line);margin:0 4px"></div>
-                <span style="font-size:11px;font-family:var(--font-mono);color:var(--ink-2);margin-right:2px">Zoom:</span>
-                <button type="button" class="btn o sm mc-zoom-btn" id="btn-zoom-out" title="Zoom Out" style="padding:2px 7px;font-size:12px;font-weight:700">−</button>
-                <span id="studio-zoom-display" style="font-size:11px;font-weight:700;min-width:36px;text-align:center;color:var(--ink-1)">Fit</span>
-                <button type="button" class="btn o sm mc-zoom-btn" id="btn-zoom-in" title="Zoom In" style="padding:2px 7px;font-size:12px;font-weight:700">+</button>
-                <div style="width:1px;height:16px;background:var(--line);margin:0 2px"></div>
-                <button type="button" class="btn o sm mc-zoom-btn active" id="btn-zoom-fit" style="padding:2px 6px;font-size:11px" title="Fit to screen">Fit</button>
-                <button type="button" class="btn o sm mc-zoom-btn" id="btn-zoom-50" data-zoom="0.5" style="padding:2px 6px;font-size:11px">50%</button>
-                <button type="button" class="btn o sm mc-zoom-btn" id="btn-zoom-75" data-zoom="0.75" style="padding:2px 6px;font-size:11px">75%</button>
-                <button type="button" class="btn o sm mc-zoom-btn" id="btn-zoom-100" data-zoom="1.0" style="padding:2px 6px;font-size:11px">100%</button>
-                <button type="button" class="btn o sm mc-zoom-btn" id="btn-zoom-125" data-zoom="1.25" style="padding:2px 6px;font-size:11px">125%</button>
+            <div class="mc-preview-toolbar">
+              <span>LIVE CERTIFICATE PREVIEW</span>
+              <div class="mc-preview-zoom">
+                <button type="button" class="mc-p-btn active" data-zoom="fit">Fit</button>
+                <button type="button" class="mc-p-btn" data-zoom="50">50%</button>
+                <button type="button" class="mc-p-btn" data-zoom="75">75%</button>
+                <button type="button" class="mc-p-btn" data-zoom="100">100%</button>
+                <button type="button" class="mc-p-btn" data-zoom="125">125%</button>
+                <button type="button" class="mc-p-btn" id="btnZoomOut">−</button>
+                <button type="button" class="mc-p-btn" id="btnZoomIn">+</button>
               </div>
             </div>
-            <div class="mc-preview-stage" id="studio-stage">
-              <div class="mc-canvas-scaler" id="studio-scaler">
-                <div id="studio-canvas-wrap"></div>
+
+            <div class="mc-preview-stage" id="canvasScrollArea">
+              <div class="mc-canvas-scaler" id="canvasScaler">
+                <!-- MASTER A4 CANVAS -->
+                <div class="a4-landscape" id="certCanvas">
+                  <div class="tech-grid"></div>
+                  
+                  <!-- DUAL WATERMARKS -->
+                  <div class="bleed-watermark-year">2026</div>
+                  <div class="bleed-watermark-gdg">GDG</div>
+                  
+                  <div class="tape-accent"></div>
+
+                  <!-- Orthogonal Circuit Line -->
+                  <svg class="circuit-path" viewBox="0 0 1123 794">
+                    <path d="M 630,420 L 680,420 L 680,560 L 730,560" fill="none" stroke="#0F172A" stroke-width="2.5" stroke-linejoin="miter" />
+                    <circle cx="630" cy="420" r="4" fill="#FBBC05" stroke="#0F172A" stroke-width="2" />
+                    <circle cx="730" cy="560" r="4" fill="#4285F4" stroke="#0F172A" stroke-width="2" />
+                  </svg>
+
+                  <!-- 1. Header Row -->
+                  <div class="header-row">
+                    <div class="main-logo-area" id="cvMainLogoArea">
+                      <svg id="cvDefLogo" class="gdg-logo-interactive" viewBox="0 0 100 60" style="width: 72px; height: auto;">
+                        <path d="M40,10 L10,30 L40,50" fill="none" stroke="#4285F4" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M60,10 L90,30 L60,50" fill="none" stroke="#34A853" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                      <img id="cvCustomLogo" class="custom-gdg-logo-img gdg-logo-interactive" src="" alt="GDG Logo" style="display:none;">
+                      <div class="logo-text" id="cvLogoText">
+                        <h1>Google Developer Groups</h1>
+                        <h2 contenteditable="true" spellcheck="false" id="cvChapterHead">On Campus SR University</h2>
+                      </div>
+                    </div>
+
+                    <div class="partners-cluster" id="cvPartnersCluster"></div>
+                  </div>
+
+                  <!-- 2. Content Body Grid -->
+                  <div class="content-body-grid">
+                    <!-- Left Column -->
+                    <div class="left-col">
+                      <div>
+                        <div class="title-deck">
+                          <div class="cert-tag brutal-shadow-sm" id="cvCertTag" contenteditable="true" spellcheck="false">OFFICIAL CREDENTIAL</div>
+                          <h1 class="cert-title" id="cvCertTitle" contenteditable="true" spellcheck="false">Certificate of Participation</h1>
+                        </div>
+
+                        <div class="statement-deck">
+                          <div class="cert-statement" contenteditable="true" spellcheck="false">This document certifies that</div>
+                          <div class="cert-name-wrapper">
+                            <div class="cert-name-badge brutal-shadow" id="cvCertName" contenteditable="true" spellcheck="false">Asha Rao</div>
+                          </div>
+
+                          <div class="cert-event-text">
+                            <span contenteditable="true" spellcheck="false">has successfully attended and contributed to</span>&nbsp;<span class="highlight-box brutal-shadow-sm" id="cvEventName" contenteditable="true" spellcheck="false">Google Cloud Study Jam</span>&nbsp;<span contenteditable="true" spellcheck="false">hosted by</span>&nbsp;<span class="highlight-box brutal-shadow-sm" id="cvChapterName" contenteditable="true" spellcheck="false">GDG Chapter Name</span>&nbsp;<span contenteditable="true" spellcheck="false">on</span>&nbsp;<span class="highlight-box brutal-shadow-sm" id="cvEventDate" contenteditable="true" spellcheck="false">October 4, 2026</span>.
+                          </div>
+
+                          <div class="event-syllabus-card">
+                            <div class="syllabus-header">
+                              <span>// CURRICULUM OVERVIEW</span>
+                              <span id="cvSyllabusStatus" contenteditable="true" spellcheck="false">STATUS: COMPLETED</span>
+                            </div>
+                            <div class="syllabus-body" id="cvSyllabus" contenteditable="true" spellcheck="false">
+                              Completed intensive hands-on development labs exploring Google Cloud infrastructure, Vertex AI foundational model deployments, and Gemini API multi-agent workflows.
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Signatures Cluster -->
+                      <div class="signatures-row" id="cvSignaturesCluster"></div>
+                    </div>
+
+                    <!-- RIGHT COLUMN -->
+                    <div class="right-col">
+                      <!-- CUSTOMIZABLE TECH STICKER CLUSTER -->
+                      <div class="top-art-row">
+                        <div class="dev-badge-card">
+                          <div class="dev-badge-icon">&lt;/&gt;</div>
+                          <div class="dev-badge-title" id="cvDevTag" contenteditable="true" spellcheck="false">#GoogleDeveloper</div>
+                        </div>
+                        <div class="custom-sticker-pill" id="cvNodePillBadge" style="background:#EA4335; color:#fff;">
+                          <span id="cvNodePill" contenteditable="true" spellcheck="false">NODE_ACTIVE // 2026</span>
+                        </div>
+                        <div class="custom-sticker-pill" id="cvPartnerStickerBadge" style="background:#FBBC05; color:#0F172A; display:flex;">
+                          <span id="cvPartnerStickerText" contenteditable="true" spellcheck="false">#SRU_ACM // CO-HOST</span>
+                        </div>
+                      </div>
+
+                      <!-- TERMINAL LOG CARD -->
+                      <div class="terminal-log-card">
+                        <div class="terminal-head">
+                          <div class="term-dot" style="background:#EA4335;"></div>
+                          <div class="term-dot" style="background:#FBBC05;"></div>
+                          <div class="term-dot" style="background:#34A853;"></div>
+                          <span style="font-family:'JetBrains Mono',monospace; font-size:8px; font-weight:800; margin-left:4px; color:#475569;">SHELL_SESSION_NODE</span>
+                        </div>
+                        <div class="term-code">
+                          &gt; node deploy_credential.js --auth=true<br>
+                          &gt; status: <span class="term-highlight">200_OK_VERIFIED</span><br>
+                          &gt; ref_sha: <span id="cvTermId" style="color:#4285F4;">GDG-SRU-CERT-001</span>
+                        </div>
+                      </div>
+
+                      <!-- DOSSIER CARD -->
+                      <div class="dossier-card-wrap">
+                        <div class="sticker-tag" id="cvDossierTag" contenteditable="true" spellcheck="false">BUILD_WITH_AI</div>
+                        <div class="dossier-card brutal-shadow">
+                          <div class="dossier-label">// Verified Competencies</div>
+                          <div class="skills-cluster" id="cvSkillsCluster"></div>
+                          <div class="meta-console">
+                            <div class="meta-item">
+                              <span class="meta-title">Credential ID</span>
+                              <span class="meta-val" id="cvDossierRef">GDG-SRU-CERT-001</span>
+                            </div>
+                            <div class="meta-item">
+                              <span class="meta-title">Track</span>
+                              <span class="meta-val" id="cvMetaTrack">AI & Cloud</span>
+                            </div>
+                            <div class="meta-item">
+                              <span class="meta-title">Issued</span>
+                              <span class="meta-val" id="cvMetaDate">Oct 4, 2026</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="sticker-heart">&hearts;</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
               </div>
             </div>
           </div>
         </div>
-      `;
 
-      // Wire Quick Nav jump buttons
-      $$('.mc-qn-btn', root).forEach((btn) => {
-        btn.onclick = () => {
-          const target = $(btn.dataset.jump, root);
-          if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        };
-      });
+        <!-- Optional Collapsible: Advanced HTML Templates -->
+        <details class="cert-details" style="margin-top:8px">
+          <summary style="font-size:12.5px;color:var(--ink-2)"><b>Advanced: Programmatic HTML Templates</b></summary>
+          <div style="margin-top:12px">
+            <p class="muted small">Active template: <b>${esc(active ? active.name : 'Master Template')}</b>. Templates are stored in Supabase for programmatic and automated issuance.</p>
+            <div id="tpl-list" style="margin:10px 0">${templates.map((t) => `<div class="admin-list-row"><div><b>${esc(t.name)}</b>${t.is_active ? ' <span class="cert-badge">Active</span>' : ''}<small>Updated ${esc(new Date(t.updated_at || t.created_at).toLocaleDateString('en-IN'))}</small></div><div class="row-actions"><button type="button" class="button-outline" data-tpl-edit="${esc(t.id)}">Edit</button>${t.is_active ? '' : `<button type="button" class="button-outline" data-tpl-activate="${esc(t.id)}">Make active</button>`}<button type="button" class="button-outline" data-tpl-delete="${esc(t.id)}">Delete</button></div></div>`).join('') || '<p class="muted">No custom templates yet.</p>'}</div>
+            <form id="tpl-form" class="admin-form" style="margin-top:12px"><input type="hidden" name="id">
+              <label>Template Name<input name="name" required maxlength="80" placeholder="GDG SRU Master Design"></label>
+              <div class="cert-row"><button type="button" id="tpl-builtin" class="button-outline">Load Master HTML Template</button><label class="cert-filebtn">Upload .html file<input type="file" id="tpl-file" accept=".html,.htm,text/html"></label></div>
+              <label>Template HTML<textarea name="html_template" id="tpl-html" rows="8" spellcheck="false" class="cert-code"></textarea></label>
+              <label class="check"><input type="checkbox" name="is_active"> Make this the active template</label>
+              <div class="cert-row"><button type="submit">Save template to Supabase</button><button type="button" id="tpl-reset" class="button-outline">Clear</button></div>
+            </form>
+          </div>
+        </details>
+      </div>
+    `);
 
-      // Wire View Mode buttons
-      $$('.mc-vm-btn', root).forEach((btn) => {
-        btn.onclick = () => setViewMode(btn.dataset.view);
-      });
+    /* ------------------------------------------------------------------ Logic & State */
+    const uid = () => Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+    let currentEvent = events.find((e) => e.id === selectedEventId) || events[0] || null;
+    let currentConfig = (currentEvent ? configs[currentEvent.id] : null) || {};
 
-      // Wire Preset Defaults Button
-      $('#btn-fill-defaults', root)?.addEventListener('click', () => {
-        if (!confirm('Populate empty fields with recommended GDG on Campus SR University defaults?')) return;
-        if (!$('#inp-host-chapter').value) $('#inp-host-chapter').value = 'GDG on Campus SR University';
-        if (!$('#inp-cert-tag').value) $('#inp-cert-tag').value = 'OFFICIAL CREDENTIAL';
-        if (!$('#inp-cert-title').value) $('#inp-cert-title').value = 'Certificate of Participation';
-        if (!$('#inp-curriculum-status').value) $('#inp-curriculum-status').value = 'STATUS: Topic / Curriculum Overview';
-        if (!$('#inp-curriculum-text').value) {
-          $('#inp-curriculum-text').value = 'Active participation in hands-on developer workshops, exploring Google developer technologies, system architecture design, collaborative git workflows, and cloud-native solutions.';
-        }
-        if (!$('#inp-dossier-tag').value) $('#inp-dossier-tag').value = 'SRU_TECH_ACADEMY';
-        if (!$('#inp-track').value) $('#inp-track').value = 'Web & Cloud Technologies';
-        if (!$('#inp-skills').value) $('#inp-skills').value = 'Modern Web, JavaScript, Cloud Architecture, Git, Open Source';
-        if (!$('#inp-dev-tag').value) $('#inp-dev-tag').value = 'DEV_COMMUNITY';
-        if (!$('#inp-node-pill').value) $('#inp-node-pill').value = 'ACTIVE_NODE // 01';
-        if (!$('#inp-credential-base').value) {
-          const slug = (currentEventObj?.title || 'WORKSHOP').replace(/[^a-zA-Z0-9]/g, '').slice(0, 8).toUpperCase();
-          $('#inp-credential-base').value = `GDGSRU-2026-${slug}`;
-        }
-        syncFormToEc();
-        markDirty();
-        updateStudioPreview();
-        adminMessage('Standard GDG defaults applied.', true);
-      });
+    let signatories = [
+      { id: uid(), name: "Narayan Bora", role: "Lead Organizer", img: "", scale: 100, x: 0, y: 0, nameSize: 100, roleSize: 100 },
+      { id: uid(), name: "Dr. Siddhartha Bhattacharyya", role: "Faculty Advisor", img: "", scale: 100, x: 0, y: 0, nameSize: 100, roleSize: 100 }
+    ];
 
-      // Wire GDG Logo uploader
-      initGdgLogoUploader();
-      // Wire Partners list
-      renderPartnersList();
-      // Wire Signatories list
-      renderSignatoriesList();
-      // Populate Layout inputs for current target
-      updateLayoutInputs();
-      // Render Initial Certificate Canvas
-      updateStudioPreview();
+    let partners = [
+      { id: uid(), name: "SR University ACM", logo: "" }
+    ];
 
-      // Form change listeners
-      const inputs = [
-        '#inp-event-title', '#inp-host-chapter', '#inp-event-date', '#inp-cert-tag', '#inp-cert-title',
-        '#inp-curriculum-status', '#inp-curriculum-text', '#chk-curriculum-bullets',
-        '#inp-dossier-tag', '#inp-track', '#inp-skills', '#inp-credential-base',
-        '#inp-dev-tag', '#inp-node-pill', '#inp-partner-pill',
-        '#inp-preview-name'
-      ];
-      inputs.forEach((sel) => {
-        $(sel, root)?.addEventListener('input', () => {
-          syncFormToEc();
-          markDirty();
-          updateStudioPreview();
-        });
-      });
+    let recipients = [];
+    let currentRecIndex = 0;
+    let nameScale = 1;
+    let currentZoom = 'fit';
+    let zoomLevel = 0.85;
 
-      // Layout selector change (if present)
-      $('#sel-layout-target', root)?.addEventListener('change', () => {
-        updateLayoutInputs();
-        highlightActiveDragTarget();
-      });
+    function applyEventToStudio(evId) {
+      currentEvent = events.find((e) => e.id === evId) || null;
+      currentConfig = configs[evId] || {};
+      const f = currentConfig.fields || {};
 
-      // Layout numeric inputs change (if present)
-      ['#inp-pos-x', '#inp-pos-y', '#inp-pos-s', '#inp-pos-w'].forEach((sel) => {
-        $(sel, root)?.addEventListener('input', () => {
-          applyLayoutInputsToEc();
-          markDirty();
-          updateStudioPreview();
-        });
-      });
+      $('#mc-att-badge').textContent = `${counts[evId] || 0} verified attendees`;
+      $('#mc-public-toggle').checked = !!currentConfig.enabled;
 
-      // Wire Nudge Buttons
-      function nudgeTargetElement(axis, delta) {
-        const target = $('#sel-layout-target')?.value || 'gdg';
-        if (!currentEc.layout) currentEc.layout = {};
-        const globalBox = (globalDefaultLayout && globalDefaultLayout[target]) || {};
-        const curBox = currentEc.layout[target] || {};
-        const effective = { ...globalBox, ...curBox };
-
-        let currentVal = effective[axis];
-        if (currentVal == null) currentVal = 0;
-        const minLimit = -500;
-        const maxLimit = 500;
-        const newVal = Math.max(minLimit, Math.min(maxLimit, Math.round(Number(currentVal) + delta)));
-
-        currentEc.layout[target] = {
-          ...effective,
-          [axis]: newVal,
-        };
-
-        if (axis === 'x' && $('#inp-pos-x')) $('#inp-pos-x').value = newVal;
-        if (axis === 'y' && $('#inp-pos-y')) $('#inp-pos-y').value = newVal;
-
-        markDirty();
-        updateStudioPreview();
+      if (f.event_name || currentEvent?.title) {
+        $('#inpEventName').value = f.event_name || currentEvent.title;
+        $('#cvEventName').textContent = f.event_name || currentEvent.title;
       }
-
-      function scaleTargetElement(delta, absoluteVal) {
-        const target = $('#sel-layout-target')?.value || 'gdg';
-        if (!currentEc.layout) currentEc.layout = {};
-        const globalBox = (globalDefaultLayout && globalDefaultLayout[target]) || {};
-        const curBox = currentEc.layout[target] || {};
-        const effective = { ...globalBox, ...curBox };
-
-        let newScale;
-        if (absoluteVal != null) {
-          newScale = Number(absoluteVal);
-        } else {
-          const curScale = effective.scale != null ? Number(effective.scale) : 1;
-          newScale = Math.max(0.2, Math.min(2.5, Math.round((curScale + delta) * 100) / 100));
-        }
-
-        currentEc.layout[target] = {
-          ...effective,
-          scale: newScale,
-        };
-
-        if ($('#inp-pos-s')) $('#inp-pos-s').value = newScale;
-
-        markDirty();
-        updateStudioPreview();
+      if (f.chapter_name) {
+        $('#inpChapterName').value = f.chapter_name;
+        $('#cvChapterName').textContent = f.chapter_name;
       }
+      if (f.date || currentEvent?.start_at) {
+        const dStr = f.date || new Date(currentEvent.start_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        $('#inpEventDate').value = dStr;
+        $('#cvEventDate').textContent = dStr;
+        $('#cvMetaDate').textContent = dStr.slice(0, 12);
+      }
+      if (f.syllabus) {
+        $('#inpSyllabus').value = f.syllabus;
+        $('#cvSyllabus').textContent = f.syllabus;
+      }
+      const certTag = f.cert_tag || 'OFFICIAL CREDENTIAL';
+      if ($('#inpCertTag')) $('#inpCertTag').value = certTag;
+      if ($('#cvCertTag')) $('#cvCertTag').textContent = certTag;
 
-      $$('.btn-nudge', root).forEach((btn) => {
-        btn.onclick = () => {
-          const axis = btn.dataset.axis;
-          const delta = Number(btn.dataset.delta);
-          nudgeTargetElement(axis, delta);
-        };
-      });
+      const certTitle = f.cert_title || 'Certificate of Participation';
+      if ($('#inpCertTitle')) $('#inpCertTitle').value = certTitle;
+      if ($('#cvCertTitle')) $('#cvCertTitle').textContent = certTitle;
 
-      $$('.btn-scale-step', root).forEach((btn) => {
-        btn.onclick = () => {
-          if (btn.dataset.val) {
-            scaleTargetElement(0, Number(btn.dataset.val));
-          } else {
-            scaleTargetElement(Number(btn.dataset.delta), null);
-          }
-        };
-      });
+      const syllabusStatus = f.syllabus_status || 'STATUS: COMPLETED';
+      if ($('#inpSyllabusStatus')) $('#inpSyllabusStatus').value = syllabusStatus;
+      if ($('#cvSyllabusStatus')) $('#cvSyllabusStatus').textContent = syllabusStatus;
 
-      // Keyboard nudge shortcuts
-      const onDocKeyDown = (e) => {
-        if (!panes.certificate.classList.contains('active')) return;
-        if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') && !['inp-pos-x', 'inp-pos-y', 'inp-pos-s'].includes(document.activeElement.id)) {
-          return;
-        }
-        if (testClaimModal && testClaimModal.open) return;
+      if (f.track) {
+        $('#inpTrack').value = f.track;
+        $('#cvMetaTrack').textContent = f.track;
+      }
+      const devTag = f.dev_tag || '#GoogleDeveloper';
+      if ($('#inpDevTag')) $('#inpDevTag').value = devTag;
+      if ($('#cvDevTag')) $('#cvDevTag').textContent = devTag;
 
-        const step = e.shiftKey ? 10 : 1;
-        if (e.key === 'ArrowUp') { e.preventDefault(); nudgeTargetElement('y', -step); }
-        else if (e.key === 'ArrowDown') { e.preventDefault(); nudgeTargetElement('y', step); }
-        else if (e.key === 'ArrowLeft') { e.preventDefault(); nudgeTargetElement('x', -step); }
-        else if (e.key === 'ArrowRight') { e.preventDefault(); nudgeTargetElement('x', step); }
+      const nodePill = f.node_pill || 'NODE_ACTIVE // 2026';
+      if ($('#inpNodePill')) $('#inpNodePill').value = nodePill;
+      if ($('#cvNodePill')) $('#cvNodePill').textContent = nodePill;
+
+      const dossierTag = f.dossier_tag || 'BUILD_WITH_AI';
+      if ($('#inpDossierTag')) $('#inpDossierTag').value = dossierTag;
+      if ($('#cvDossierTag')) $('#cvDossierTag').textContent = dossierTag;
+
+      const partnerSticker = f.partner_sticker !== undefined ? f.partner_sticker : '#SRU_ACM // CO-HOST';
+      if ($('#inpPartnerSticker')) $('#inpPartnerSticker').value = partnerSticker;
+      if ($('#cvPartnerStickerText')) $('#cvPartnerStickerText').textContent = partnerSticker;
+      if ($('#cvPartnerStickerBadge')) $('#cvPartnerStickerBadge').style.display = partnerSticker ? 'flex' : 'none';
+
+      const baseCred = f.credential_id || 'GDG-SRU-CERT-001';
+      if ($('#inpCredId')) $('#inpCredId').value = baseCred;
+      if ($('#cvDossierRef')) $('#cvDossierRef').textContent = baseCred;
+      if ($('#cvTermId')) $('#cvTermId').textContent = baseCred;
+
+      if (Array.isArray(f.signatories) && f.signatories.length) {
+        signatories = f.signatories.map((s) => ({ id: s.id || uid(), ...s }));
+      }
+      if (Array.isArray(f.partners) && f.partners.length) {
+        partners = f.partners.map((p) => ({ id: p.id || uid(), ...p }));
+      }
+      if (f.skills) {
+        const sk = Array.isArray(f.skills) ? f.skills.map((x) => x.tag || x).join(', ') : String(f.skills);
+        $('#inpSkills').value = sk;
+        renderSkills(sk);
+      }
+      if (f.dossier_tag && $('#cvDossierTag')) {
+        $('#cvDossierTag').textContent = f.dossier_tag;
+      }
+      // Apply GDG Logo configuration
+      const gdgLogo = f.gdg_logo || {};
+      currentGdgLogo = {
+        dataUrl: gdgLogo.dataUrl || f.gdg_custom_logo || '',
+        path: gdgLogo.path || '',
+        size: Number(gdgLogo.size) || 60,
+        x: Number(gdgLogo.x) || 0,
+        y: Number(gdgLogo.y) || 0,
+        hide_chapter_text: gdgLogo.hide_chapter_text !== undefined ? !!gdgLogo.hide_chapter_text : !!f.hide_chapter_text
       };
-      document.removeEventListener('keydown', onDocKeyDown);
-      document.addEventListener('keydown', onDocKeyDown);
+      applyGdgLogo();
 
-      // Reset Element button (if present)
-      $('#btn-reset-element', root)?.addEventListener('click', () => {
-        const target = $('#sel-layout-target', root)?.value;
-        if (target && currentEc.layout && currentEc.layout[target]) {
-          delete currentEc.layout[target];
-          updateLayoutInputs();
-          markDirty();
-          updateStudioPreview();
-          adminMessage(`Position for "${target}" reset to default.`, true);
+      renderSignatories();
+      renderPartners();
+      fitName();
+    }
+
+
+    /* ------------------------------------------------------------------ GDG Chapter Logo Studio */
+    function applyGdgLogo() {
+      const defSvg = $('#cvDefLogo');
+      const customImg = $('#cvCustomLogo');
+      const logoText = $('#cvLogoText');
+      const status = $('#gdg-logo-status');
+      const resetBtn = $('#btn-reset-gdg-logo');
+      const rngSize = $('#rng-gdg-logo-size');
+      const badgeSize = $('#badge-gdg-logo-size');
+      const badgeOffset = $('#badge-gdg-logo-offset');
+      const chkHideText = $('#chk-hide-chapter-text');
+
+      const hasCustom = !!(currentGdgLogo.dataUrl || currentGdgLogo.path);
+      const size = currentGdgLogo.size || 60;
+      const x = currentGdgLogo.x || 0;
+      const y = currentGdgLogo.y || 0;
+
+      if (customImg && defSvg) {
+        if (hasCustom) {
+          customImg.src = currentGdgLogo.dataUrl || currentGdgLogo.path;
+          customImg.style.display = 'block';
+          customImg.style.height = `${size}px`;
+          customImg.style.maxHeight = `${size}px`;
+          customImg.style.transform = `translate(${x}px, ${y}px)`;
+          defSvg.style.display = 'none';
+        } else {
+          customImg.style.display = 'none';
+          defSvg.style.display = 'block';
+          defSvg.style.height = `${size}px`;
+          defSvg.style.width = 'auto';
+          defSvg.style.transform = `translate(${x}px, ${y}px)`;
         }
-      });
+      }
+      if (logoText) {
+        logoText.style.display = currentGdgLogo.hide_chapter_text ? 'none' : 'block';
+      }
+      if (status) {
+        status.textContent = hasCustom ? 'Custom Logo Uploaded' : 'Using Default Vector (< >)';
+      }
+      if (resetBtn) {
+        resetBtn.style.display = hasCustom ? 'inline-flex' : 'none';
+      }
+      if (rngSize) rngSize.value = size;
+      if (badgeSize) badgeSize.textContent = `Height: ${size}px`;
+      if (badgeOffset) badgeOffset.textContent = `Offset: X:${x > 0 ? '+' : ''}${x}px, Y:${y > 0 ? '+' : ''}${y}px`;
+      if (chkHideText) chkHideText.checked = !!currentGdgLogo.hide_chapter_text;
 
-      // Reset All Layout button (if present)
-      $('#btn-reset-all-layout', root)?.addEventListener('click', () => {
-        if (!confirm('Reset all element positions for this event to default layout?')) return;
-        ['gdg', 'cert_tag', 'title', 'name', 'event', 'curriculum', 'dossier', 'credential', 'sig_1', 'sig_2'].forEach((k) => {
-          if (currentEc.layout) delete currentEc.layout[k];
-        });
-        updateLayoutInputs();
-        markDirty();
-        updateStudioPreview();
-        adminMessage('All element positions reset to default.', true);
+      $$('.btn-gdg-size').forEach((b) => {
+        b.classList.toggle('active', Number(b.dataset.size) === size);
       });
+    }
 
-      // Add Partner button
-      $('#btn-add-partner', root).addEventListener('click', () => {
-        if (currentPartners.length >= 8) return;
-        const newP = {
-          id: 'temp_' + Date.now(),
-          event_id: selectedEventId,
-          role: 'cohost',
-          name: 'Partner Name',
-          logo_path: null,
-          sort_order: currentPartners.length,
-          isNew: true,
+    function enableLogoDrag(el) {
+      if (!el) return;
+      el.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        const currentScale = scaler ? (scaler.getBoundingClientRect().width / 1123 || 1) : 1;
+        const sx = e.clientX, sy = e.clientY, ox = currentGdgLogo.x || 0, oy = currentGdgLogo.y || 0;
+        el.setPointerCapture(e.pointerId);
+        el.classList.add('dragging');
+        const move = (ev) => {
+          currentGdgLogo.x = Math.max(-400, Math.min(400, Math.round(ox + (ev.clientX - sx) / currentScale)));
+          currentGdgLogo.y = Math.max(-250, Math.min(250, Math.round(oy + (ev.clientY - sy) / currentScale)));
+          applyGdgLogo();
         };
-        currentPartners.push(newP);
-        renderPartnersList();
-        updateStudioPreview();
+        const up = () => {
+          el.classList.remove('dragging');
+          el.removeEventListener('pointermove', move);
+          el.removeEventListener('pointerup', up);
+          el.removeEventListener('pointercancel', up);
+        };
+        el.addEventListener('pointermove', move);
+        el.addEventListener('pointerup', up);
+        el.addEventListener('pointercancel', up);
       });
+    }
 
-      // Add Signatory button
-      $('#btn-add-sig', root).addEventListener('click', () => {
-        if (!currentEc.signatories) currentEc.signatories = [];
-        if (currentEc.signatories.length >= 2) return;
-        currentEc.signatories.push({
-          name: 'Signatory Name',
-          role: 'Lead Organizer',
-          image_path: null,
-        });
-        renderSignatoriesList();
-        updateStudioPreview();
-      });
+    function initGdgLogoControls() {
+      const inp = $('#inpGdgLogoFile');
+      if (inp) {
+        inp.onchange = (e) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = async (ev) => {
+            currentGdgLogo.dataUrl = ev.target.result;
+            applyGdgLogo();
+            adminMessage('Custom GDG logo loaded! Drag on preview or use sliders to adjust.', true);
 
-      // Save Certificate Settings
-      async function handleSaveEc() {
-        syncFormToEc();
-        const saveBtns = $$('#btn-save-ec', root);
-        saveBtns.forEach((b) => { b.disabled = true; b.textContent = 'Saving…'; });
-        try {
-          // 1. Save partners
-          for (let i = 0; i < currentPartners.length; i++) {
-            const p = currentPartners[i];
-            p.sort_order = i;
-            const payload = {
-              event_id: selectedEventId,
-              role: p.role,
-              name: p.name.trim().slice(0, 80),
-              logo_path: p.logo_path || null,
-              sort_order: i,
-            };
-            if (p.isNew || String(p.id).startsWith('temp_')) {
-              const { data, error } = await sb.from('event_partners').insert(payload).select('id').single();
-              if (error) throw error;
-              p.id = data.id;
-              delete p.isNew;
-            } else {
-              const { error } = await sb.from('event_partners').update(payload).eq('id', p.id);
-              if (error) throw error;
+            try {
+              const ext = file.name.split('.').pop() || 'png';
+              const path = `logos/${selectedEventId || 'common'}/gdg_logo_${Date.now()}.${ext}`;
+              if (window.MC?.uploadStorage) {
+                await window.MC.uploadStorage('certificate-logos', path, file, { isPublic: true, contentType: file.type });
+                currentGdgLogo.path = path;
+              } else if (sb?.storage) {
+                await sb.storage.from('certificate-logos').upload(path, file, { upsert: true });
+                currentGdgLogo.path = path;
+              }
+            } catch (err) {
+              console.warn('Storage background upload notice:', err);
             }
-          }
-
-          // 2. Save event certificate details
-          const ecPayload = {
-            event_id: selectedEventId,
-            event_date: currentEc.event_date || null,
-            host_chapter: currentEc.host_chapter.trim().slice(0, 120),
-            cert_tag: currentEc.cert_tag.trim(),
-            cert_title: currentEc.cert_title.trim().slice(0, 80),
-            track: currentEc.track.trim(),
-            skills: currentEc.skills.slice(0, 12),
-            dossier_tag: currentEc.dossier_tag.trim(),
-            curriculum_status: currentEc.curriculum_status.trim(),
-            curriculum_text: currentEc.curriculum_text.trim().slice(0, 2000),
-            curriculum_bullets: !!currentEc.curriculum_bullets,
-            signatories: (currentEc.signatories || []).slice(0, 2),
-            layout: currentEc.layout || {},
-            claims_enabled: !!currentEc.claims_enabled,
           };
-
-          const { error: ecErr } = await sb.from('event_certificates').upsert(ecPayload);
-          if (ecErr) throw ecErr;
-
-          markClean();
-          adminMessage('Certificate details and layout saved successfully.', true);
-          refreshPublishTab();
-        } catch (err) {
-          adminMessage(authErrorText(err));
-        } finally {
-          saveBtns.forEach((b) => { b.disabled = false; b.textContent = '💾 Save Certificate Settings'; });
-        }
-      }
-
-      $$('#btn-save-ec', root).forEach((b) => { b.onclick = handleSaveEc; });
-
-      // Test Claim buttons in Designer
-      $('#btn-test-claim-designer', root)?.addEventListener('click', () => openTestClaimModal());
-      $('#btn-test-claim-designer-top', root)?.addEventListener('click', () => openTestClaimModal());
-
-      // Zoom buttons
-      $('#btn-zoom-out', root)?.addEventListener('click', () => {
-        const next = Math.max(0.25, Math.round((currentStudioZoom - 0.1) * 10) / 10);
-        setStudioZoom(next, false);
-      });
-      $('#btn-zoom-in', root)?.addEventListener('click', () => {
-        const next = Math.min(1.5, Math.round((currentStudioZoom + 0.1) * 10) / 10);
-        setStudioZoom(next, false);
-      });
-      $('#btn-zoom-fit', root)?.addEventListener('click', () => fitStudioCanvas());
-      $$('.mc-zoom-btn[data-zoom]', root).forEach((b) => {
-        b.onclick = () => setStudioZoom(Number(b.dataset.zoom), false);
-      });
-
-      setTimeout(fitStudioCanvas, 80);
-    }
-
-    /* Helper: Sync Form to Memory Model */
-    function syncFormToEc() {
-      if (!currentEc) return;
-      if (!currentEc.layout) currentEc.layout = {};
-
-      currentEc.event_title_override = $('#inp-event-title')?.value.trim() || '';
-      currentEc.host_chapter = $('#inp-host-chapter')?.value.trim() || 'GDG on Campus SR University';
-      currentEc.event_date = $('#inp-event-date')?.value || null;
-      currentEc.cert_tag = $('#inp-cert-tag')?.value.trim() || 'OFFICIAL CREDENTIAL';
-      currentEc.cert_title = $('#inp-cert-title')?.value.trim() || 'Certificate of Participation';
-
-      currentEc.curriculum_status = $('#inp-curriculum-status')?.value.trim() || 'STATUS: Topic / Curriculum Overview';
-      currentEc.curriculum_text = $('#inp-curriculum-text')?.value.trim() || '';
-      currentEc.curriculum_bullets = $('#chk-curriculum-bullets')?.checked || false;
-
-      currentEc.dossier_tag = $('#inp-dossier-tag')?.value.trim() || '';
-      currentEc.track = $('#inp-track')?.value.trim() || '';
-      const rawSkills = $('#inp-skills')?.value || '';
-      currentEc.skills = rawSkills.split(',').map((s) => s.trim()).filter(Boolean);
-
-      currentEc.layout.credential_base = $('#inp-credential-base')?.value.trim() || '';
-      currentEc.layout.dev_tag = $('#inp-dev-tag')?.value.trim() || '';
-      currentEc.layout.node_pill = $('#inp-node-pill')?.value.trim() || '';
-      currentEc.layout.partner_sticker = $('#inp-partner-pill')?.value.trim() || '';
-      if ($('#chk-hide-chapter-text')) {
-        currentEc.layout.hide_chapter_text = $('#chk-hide-chapter-text').checked;
-      }
-      if ($('#rng-gdg-logo-size')) {
-        currentEc.layout.gdg_logo_size = Number($('#rng-gdg-logo-size').value) || 60;
-      }
-      if (currentEc.event_title_override) {
-        currentEc.layout.event_title_override = currentEc.event_title_override;
-      } else {
-        delete currentEc.layout.event_title_override;
-      }
-    }
-
-    /* Helper: Update Layout Editor Inputs */
-    function updateLayoutInputs() {
-      const target = $('#sel-layout-target')?.value || 'gdg';
-      const eventBox = (currentEc.layout && currentEc.layout[target]) || {};
-      const globalBox = (globalDefaultLayout && globalDefaultLayout[target]) || {};
-      const box = { ...globalBox, ...eventBox };
-      if ($('#inp-pos-x')) $('#inp-pos-x').value = box.x ?? 0;
-      if ($('#inp-pos-y')) $('#inp-pos-y').value = box.y ?? 0;
-      if ($('#inp-pos-s')) $('#inp-pos-s').value = box.scale ?? 1;
-      if ($('#inp-pos-w')) $('#inp-pos-w').value = box.w ?? '';
-    }
-
-    function applyLayoutInputsToEc() {
-      const target = $('#sel-layout-target')?.value || 'gdg';
-      if (!currentEc.layout) currentEc.layout = {};
-      const x = $('#inp-pos-x').value !== '' ? Number($('#inp-pos-x').value) : null;
-      const y = $('#inp-pos-y').value !== '' ? Number($('#inp-pos-y').value) : null;
-      const s = $('#inp-pos-s').value !== '' ? Number($('#inp-pos-s').value) : null;
-      const w = $('#inp-pos-w').value !== '' ? Number($('#inp-pos-w').value) : null;
-
-      if (x === null && y === null && s === null && w === null) {
-        delete currentEc.layout[target];
-      } else {
-        currentEc.layout[target] = {
-          ...(x !== null ? { x } : {}),
-          ...(y !== null ? { y } : {}),
-          ...(s !== null ? { scale: s } : {}),
-          ...(w !== null ? { w } : {}),
-        };
-      }
-    }
-
-    /* Helper: GDG Chapter Logo */
-    function initGdgLogoUploader() {
-      const gdgLogoInp = $('#inp-gdg-logo-file');
-      const gdgLogoReset = $('#btn-reset-gdg-logo');
-      const gdgLogoStatus = $('#gdg-logo-status');
-      const gdgLogoThumb = $('#gdg-logo-preview-thumb');
-      const gdgLogoImg = $('#gdg-logo-img');
-      const hideTextChk = $('#chk-hide-chapter-text');
-      const logoSizeControls = $('#gdg-logo-size-controls');
-      const rngLogoSize = $('#rng-gdg-logo-size');
-      const badgeLogoSize = $('#badge-gdg-logo-size');
-      const badgeLogoOffset = $('#badge-gdg-logo-offset');
-      const btnResetOffset = $('#btn-reset-gdg-offset');
-
-      const updateLogoOffsetBadge = () => {
-        if (!badgeLogoOffset) return;
-        const x = currentEc.layout?.gdg_logo_x || 0;
-        const y = currentEc.layout?.gdg_logo_y || 0;
-        badgeLogoOffset.textContent = `Offset: X:${x > 0 ? '+' : ''}${x}px, Y:${y > 0 ? '+' : ''}${y}px`;
-      };
-
-      if (rngLogoSize) {
-        rngLogoSize.oninput = (e) => {
-          const val = Number(e.target.value);
-          if (!currentEc.layout) currentEc.layout = {};
-          currentEc.layout.gdg_logo_size = val;
-          if (badgeLogoSize) badgeLogoSize.textContent = `Height: ${val}px`;
-          markDirty();
-          updateStudioPreview();
+          reader.readAsDataURL(file);
         };
       }
 
-      $$('.btn-gdg-size-preset', root).forEach((btn) => {
+      const resetBtn = $('#btn-reset-gdg-logo');
+      if (resetBtn) {
+        resetBtn.onclick = () => {
+          if (!confirm('Reset back to standard GDG vector logo?')) return;
+          currentGdgLogo.dataUrl = '';
+          currentGdgLogo.path = '';
+          currentGdgLogo.x = 0;
+          currentGdgLogo.y = 0;
+          currentGdgLogo.size = 60;
+          currentGdgLogo.hide_chapter_text = false;
+          applyGdgLogo();
+          adminMessage('GDG Logo reset to default vector.', true);
+        };
+      }
+
+      const rng = $('#rng-gdg-logo-size');
+      if (rng) {
+        rng.oninput = (e) => {
+          currentGdgLogo.size = Number(e.target.value) || 60;
+          applyGdgLogo();
+        };
+      }
+
+      $$('.btn-gdg-size').forEach((btn) => {
         btn.onclick = () => {
-          const sz = Number(btn.dataset.size);
-          if (!currentEc.layout) currentEc.layout = {};
-          currentEc.layout.gdg_logo_size = sz;
-          if (rngLogoSize) rngLogoSize.value = sz;
-          if (badgeLogoSize) badgeLogoSize.textContent = `Height: ${sz}px`;
-          markDirty();
-          updateStudioPreview();
+          currentGdgLogo.size = Number(btn.dataset.size) || 60;
+          applyGdgLogo();
         };
       });
 
-      $$('.btn-gdg-nudge', root).forEach((btn) => {
+      $$('.btn-gdg-nudge').forEach((btn) => {
         btn.onclick = () => {
           const axis = btn.dataset.axis;
-          const delta = Number(btn.dataset.delta);
-          if (!currentEc.layout) currentEc.layout = {};
-          const key = axis === 'x' ? 'gdg_logo_x' : 'gdg_logo_y';
-          const cur = Number(currentEc.layout[key]) || 0;
-          currentEc.layout[key] = Math.max(-200, Math.min(200, cur + delta));
-          updateLogoOffsetBadge();
-          markDirty();
-          updateStudioPreview();
+          const delta = Number(btn.dataset.delta) || 0;
+          if (axis === 'x') {
+            currentGdgLogo.x = Math.max(-400, Math.min(400, (currentGdgLogo.x || 0) + delta));
+          } else {
+            currentGdgLogo.y = Math.max(-250, Math.min(250, (currentGdgLogo.y || 0) + delta));
+          }
+          applyGdgLogo();
         };
       });
 
-      if (btnResetOffset) {
-        btnResetOffset.onclick = () => {
-          if (!currentEc.layout) currentEc.layout = {};
-          currentEc.layout.gdg_logo_x = 0;
-          currentEc.layout.gdg_logo_y = 0;
-          updateLogoOffsetBadge();
-          markDirty();
-          updateStudioPreview();
+      const resetOffsetBtn = $('#btn-reset-gdg-offset');
+      if (resetOffsetBtn) {
+        resetOffsetBtn.onclick = () => {
+          currentGdgLogo.x = 0;
+          currentGdgLogo.y = 0;
+          applyGdgLogo();
         };
       }
 
-      if (hideTextChk) {
-        hideTextChk.onchange = (e) => {
-          if (!currentEc.layout) currentEc.layout = {};
-          currentEc.layout.hide_chapter_text = e.target.checked;
-          markDirty();
-          updateStudioPreview();
+      const chkHide = $('#chk-hide-chapter-text');
+      if (chkHide) {
+        chkHide.onchange = (e) => {
+          currentGdgLogo.hide_chapter_text = !!e.target.checked;
+          applyGdgLogo();
         };
       }
 
-      const currentLogoPath = currentEc.layout?.gdg_logo_path;
-      if (currentLogoPath) {
-        if (logoSizeControls) logoSizeControls.style.display = 'block';
-        if (currentEc.gdg_logo_dataUrl) {
-          if (gdgLogoImg) gdgLogoImg.src = currentEc.gdg_logo_dataUrl;
-          if (gdgLogoThumb) gdgLogoThumb.style.display = 'block';
+      enableLogoDrag($('#cvDefLogo'));
+      enableLogoDrag($('#cvCustomLogo'));
+    }
+
+    /* ------------------------------------------------------------------ Zoom & Canvas Fit */
+    const scaler = $('#canvasScaler');
+    const scrollArea = $('#canvasScrollArea');
+    function fitCanvas() {
+      if (!scrollArea || !scaler) return;
+      const availableW = scrollArea.clientWidth - 48;
+      const fitScale = Math.min(1.0, Math.max(0.35, availableW / 1123));
+      scaler.style.transform = `scale(${fitScale})`;
+      scaler.style.marginBottom = `${-(794 * (1 - fitScale))}px`;
+    }
+
+    function scaleCanvas(factor) {
+      if (!scaler) return;
+      scaler.style.transform = `scale(${factor})`;
+      scaler.style.marginBottom = `${-(794 * (1 - factor))}px`;
+    }
+
+    $$('.mc-p-btn[data-zoom]').forEach((b) => {
+      b.onclick = () => {
+        $$('.mc-p-btn').forEach((x) => x.classList.remove('active'));
+        b.classList.add('active');
+        currentZoom = b.dataset.zoom;
+        if (currentZoom === 'fit') fitCanvas();
+        else { zoomLevel = Number(currentZoom) / 100; scaleCanvas(zoomLevel); }
+      };
+    });
+    $('#btnZoomIn').onclick = () => { zoomLevel = Math.min(1.5, zoomLevel + 0.1); scaleCanvas(zoomLevel); };
+    $('#btnZoomOut').onclick = () => { zoomLevel = Math.max(0.3, zoomLevel - 0.1); scaleCanvas(zoomLevel); };
+    window.addEventListener('resize', () => { if (currentZoom === 'fit') fitCanvas(); });
+
+    /* ------------------------------------------------------------------ Name Fitting */
+    function fitName() {
+      const el = $('#cvCertName');
+      if (!el || !el.parentElement) return;
+      const max = el.parentElement.clientWidth || 540;
+      const MAX = 52 * nameScale, MIN_ONE = 34 * nameScale, MIN_TWO = 28 * nameScale;
+      el.style.whiteSpace = 'nowrap';
+      let size = MAX; el.style.fontSize = size + 'px';
+      while (el.scrollWidth > max && size > MIN_ONE) { size--; el.style.fontSize = size + 'px'; }
+      if (el.scrollWidth <= max) return;
+      el.style.whiteSpace = 'normal';
+      size = 40 * nameScale; el.style.fontSize = size + 'px';
+      while (el.scrollHeight > size * 2.4 && size > MIN_TWO) { size--; el.style.fontSize = size + 'px'; }
+    }
+
+    function renderSkills(str) {
+      const cluster = $('#cvSkillsCluster');
+      if (!cluster) return;
+      cluster.innerHTML = '';
+      const items = String(str || '').split(',').map((s) => s.trim()).filter(Boolean);
+      items.forEach((item) => {
+        const pill = document.createElement('div');
+        pill.className = 'skill-pill';
+        pill.textContent = item.startsWith('#') ? item : `#${item.replace(/\s+/g, '')}`;
+        cluster.appendChild(pill);
+      });
+    }
+
+    /* ------------------------------------------------------------------ Partners */
+    function renderPartners() {
+      const inputList = $('#partnersContainer'), cluster = $('#cvPartnersCluster');
+      if (!inputList || !cluster) return;
+      inputList.innerHTML = ''; cluster.innerHTML = '';
+
+      partners.forEach((p) => {
+        const card = document.createElement('div');
+        card.className = 'mc-item-card';
+        card.innerHTML = `
+          <div class="mc-item-row">
+            <input type="text" data-p-name="${esc(p.id)}" value="${esc(p.name)}" placeholder="Partner Name / Club" style="flex:1">
+            <button type="button" class="button-outline" data-p-del="${esc(p.id)}" style="color:#d93025;padding:4px 8px;font-size:11px">✕</button>
+          </div>
+          <div class="mc-item-row">
+            <label class="mc-upload-btn" style="flex:1">
+              ${p.logo ? 'Change Logo' : 'Upload Logo'}
+              <input type="file" data-p-file="${esc(p.id)}" accept="image/*">
+            </label>
+            ${p.logo ? `<img src="${esc(p.logo)}" alt="" style="height:24px;max-width:60px;object-fit:contain">` : '<small class="muted" style="font-size:10px">No logo</small>'}
+          </div>`;
+        inputList.appendChild(card);
+
+        if (p.name || p.logo) {
+          const badge = document.createElement('div');
+          badge.className = 'partner-item';
+          badge.innerHTML = `${p.logo ? `<img src="${esc(p.logo)}" alt="">` : ''}<span class="partner-title-badge">${esc(p.name)}</span>`;
+          cluster.appendChild(badge);
+        }
+      });
+
+      $$('[data-p-name]', inputList).forEach((inp) => {
+        inp.oninput = (e) => {
+          const t = partners.find((x) => x.id === inp.dataset.pName);
+          if (t) { t.name = e.target.value; renderPartners(); }
+        };
+      });
+      $$('[data-p-file]', inputList).forEach((inp) => {
+        inp.onchange = (e) => {
+          const f = e.target.files?.[0]; if (!f) return;
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            const t = partners.find((x) => x.id === inp.dataset.pFile);
+            if (t) { t.logo = ev.target.result; renderPartners(); }
+          };
+          reader.readAsDataURL(f);
+        };
+      });
+      $$('[data-p-del]', inputList).forEach((btn) => {
+        btn.onclick = () => {
+          partners = partners.filter((x) => x.id !== btn.dataset.pDel);
+          renderPartners();
+        };
+      });
+    }
+
+    $('#btnAddPartner').onclick = () => {
+      partners.push({ id: uid(), name: "SR University ACM", logo: "" });
+      renderPartners();
+    };
+
+    /* ------------------------------------------------------------------ Signatories */
+    function applySigPos(id) {
+      const s = signatories.find((x) => x.id === id); if (!s) return;
+      const blk = $(`#cvSignaturesCluster .sig-block[data-id="${id}"]`);
+      if (blk) {
+        blk.style.setProperty('--sig-x', (s.x || 0) + 'px');
+        blk.style.setProperty('--sig-y', (s.y || 0) + 'px');
+      }
+      const card = $(`#sigsContainer [data-sig-card="${id}"]`);
+      if (card) {
+        const rx = card.querySelector('[data-r="x"]'), ry = card.querySelector('[data-r="y"]');
+        if (rx) rx.value = s.x || 0;
+        if (ry) ry.value = s.y || 0;
+      }
+    }
+
+    function enableSigDrag(img, id) {
+      img.addEventListener('pointerdown', (e) => {
+        const s = signatories.find((x) => x.id === id); if (!s) return;
+        e.preventDefault();
+        const currentScale = scaler.getBoundingClientRect().width / 1123 || 1;
+        const sx = e.clientX, sy = e.clientY, ox = s.x || 0, oy = s.y || 0;
+        img.setPointerCapture(e.pointerId);
+        img.classList.add('dragging');
+        const move = (ev) => {
+          s.x = Math.max(-300, Math.min(300, Math.round(ox + (ev.clientX - sx) / currentScale)));
+          s.y = Math.max(-200, Math.min(200, Math.round(oy + (ev.clientY - sy) / currentScale)));
+          applySigPos(id);
+        };
+        const up = () => {
+          img.classList.remove('dragging');
+          img.removeEventListener('pointermove', move);
+          img.removeEventListener('pointerup', up);
+          img.removeEventListener('pointercancel', up);
+        };
+        img.addEventListener('pointermove', move);
+        img.addEventListener('pointerup', up);
+        img.addEventListener('pointercancel', up);
+      });
+    }
+
+    function renderSignatories() {
+      const box = $('#sigsContainer'), cluster = $('#cvSignaturesCluster');
+      if (!box || !cluster) return;
+      box.innerHTML = ''; cluster.innerHTML = '';
+
+      signatories.forEach((s) => {
+        const card = document.createElement('div');
+        card.className = 'mc-item-card';
+        card.dataset.sigCard = s.id;
+        card.innerHTML = `
+          <div class="mc-item-row">
+            <input type="text" data-s-name="${esc(s.id)}" value="${esc(s.name)}" placeholder="Signatory Full Name" style="flex:1">
+            <button type="button" class="button-outline" data-s-del="${esc(s.id)}" style="color:#d93025;padding:4px 8px;font-size:11px">✕</button>
+          </div>
+          <div class="mc-item-row">
+            <input type="text" data-s-role="${esc(s.id)}" value="${esc(s.role)}" placeholder="Role / Title" style="flex:1">
+            <label class="mc-upload-btn" style="width:auto;padding:5px 8px">
+              Upload Sign
+              <input type="file" data-s-file="${esc(s.id)}" accept="image/*">
+            </label>
+          </div>
+          <div class="mc-item-row" style="font-size:11px;color:var(--ink-2)">
+            <span style="width:40px">Size</span>
+            <input type="range" data-s-range="scale" data-id="${esc(s.id)}" min="30" max="300" step="5" value="${s.scale || 100}" style="flex:1;accent-color:#1a73e8">
+            <span class="val" style="width:34px;text-align:right">${s.scale || 100}%</span>
+          </div>
+          <div class="mc-item-row" style="font-size:11px;color:var(--ink-2)">
+            <span style="width:40px">Pos X</span>
+            <input type="range" data-r="x" data-s-range="x" data-id="${esc(s.id)}" min="-250" max="250" step="1" value="${s.x || 0}" style="flex:1;accent-color:#1a73e8">
+            <span style="width:40px;margin-left:6px">Pos Y</span>
+            <input type="range" data-r="y" data-s-range="y" data-id="${esc(s.id)}" min="-150" max="150" step="1" value="${s.y || 0}" style="flex:1;accent-color:#1a73e8">
+          </div>
+        `;
+        box.appendChild(card);
+
+        const blk = document.createElement('div');
+        blk.className = 'sig-block';
+        blk.dataset.id = s.id;
+        blk.style.setProperty('--sig-scale', (s.scale || 100) / 100);
+        blk.style.setProperty('--sig-name-scale', (s.nameSize || 100) / 100);
+        blk.style.setProperty('--sig-role-scale', (s.roleSize || 100) / 100);
+        blk.style.setProperty('--sig-x', (s.x || 0) + 'px');
+        blk.style.setProperty('--sig-y', (s.y || 0) + 'px');
+        blk.innerHTML = `
+          <div class="sig-img-container">
+            ${s.img ? `<img class="sig-img" src="${esc(s.img)}" alt="">` : `<div class="sig-fallback">${esc(s.name)}</div>`}
+          </div>
+          <div class="sig-line"></div>
+          <div class="sig-name" contenteditable="true" spellcheck="false">${esc(s.name)}</div>
+          <div class="sig-role" contenteditable="true" spellcheck="false">${esc(s.role)}</div>
+        `;
+        cluster.appendChild(blk);
+
+        const imgEl = blk.querySelector('.sig-img');
+        if (imgEl) enableSigDrag(imgEl, s.id);
+      });
+
+      $$('[data-s-name]', box).forEach((inp) => {
+        inp.oninput = (e) => {
+          const t = signatories.find((x) => x.id === inp.dataset.sName);
+          if (t) { t.name = e.target.value; renderSignatories(); }
+        };
+      });
+      $$('[data-s-role]', box).forEach((inp) => {
+        inp.oninput = (e) => {
+          const t = signatories.find((x) => x.id === inp.dataset.sRole);
+          if (t) { t.role = e.target.value; renderSignatories(); }
+        };
+      });
+      $$('[data-s-file]', box).forEach((inp) => {
+        inp.onchange = (e) => {
+          const f = e.target.files?.[0]; if (!f) return;
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            const t = signatories.find((x) => x.id === inp.dataset.sFile);
+            if (t) { t.img = ev.target.result; renderSignatories(); }
+          };
+          reader.readAsDataURL(f);
+        };
+      });
+      $$('[data-s-range]', box).forEach((rng) => {
+        rng.oninput = (e) => {
+          const t = signatories.find((x) => x.id === rng.dataset.id);
+          if (!t) return;
+          const k = rng.dataset.sRange;
+          t[k] = Number(e.target.value);
+          if (k === 'scale') {
+            const blk = $(`#cvSignaturesCluster .sig-block[data-id="${t.id}"]`);
+            if (blk) blk.style.setProperty('--sig-scale', t.scale / 100);
+            const valSpan = rng.parentElement.querySelector('.val');
+            if (valSpan) valSpan.textContent = t.scale + '%';
+          } else {
+            applySigPos(t.id);
+          }
+        };
+      });
+      $$('[data-s-del]', box).forEach((btn) => {
+        btn.onclick = () => {
+          signatories = signatories.filter((x) => x.id !== btn.dataset.sDel);
+          renderSignatories();
+        };
+      });
+    }
+
+    $('#btnAddSig').onclick = () => {
+      signatories.push({ id: uid(), name: "Lead Speaker", role: "Special Guest", img: "", scale: 100, x: 0, y: 0, nameSize: 100, roleSize: 100 });
+      renderSignatories();
+    };
+
+    /* ------------------------------------------------------------------ Live Form Bindings */
+    const bindSync = (inpId, cvId, extra) => {
+      const inp = $(inpId), cv = $(cvId);
+      if (!inp || !cv) return;
+      inp.addEventListener('input', () => {
+        cv.textContent = inp.value;
+        if (extra) extra(inp.value);
+      });
+      cv.addEventListener('input', () => {
+        inp.value = cv.textContent;
+        if (extra) extra(cv.textContent);
+      });
+    };
+
+    bindSync('#inpRecipientName', '#cvCertName', () => fitName());
+    bindSync('#inpEventName', '#cvEventName');
+    bindSync('#inpChapterName', '#cvChapterName');
+    bindSync('#inpEventDate', '#cvEventDate', (v) => { $('#cvMetaDate').textContent = String(v).slice(0, 12); });
+    bindSync('#inpCertTag', '#cvCertTag');
+    bindSync('#inpCertTitle', '#cvCertTitle');
+    bindSync('#inpSyllabusStatus', '#cvSyllabusStatus');
+    bindSync('#inpSyllabus', '#cvSyllabus');
+    bindSync('#inpTrack', '#cvMetaTrack');
+    bindSync('#inpCredId', '#cvDossierRef', (v) => { if ($('#cvTermId')) $('#cvTermId').textContent = v; });
+    bindSync('#inpDevTag', '#cvDevTag');
+    bindSync('#inpNodePill', '#cvNodePill');
+    bindSync('#inpDossierTag', '#cvDossierTag');
+    if ($('#inpPartnerSticker') && $('#cvPartnerStickerText')) {
+      $('#inpPartnerSticker').addEventListener('input', (e) => {
+        const val = e.target.value.trim();
+        $('#cvPartnerStickerText').textContent = val;
+        if ($('#cvPartnerStickerBadge')) {
+          $('#cvPartnerStickerBadge').style.display = val ? 'flex' : 'none';
+        }
+      });
+      $('#cvPartnerStickerText').addEventListener('input', () => {
+        $('#inpPartnerSticker').value = $('#cvPartnerStickerText').textContent.trim();
+      });
+    }
+    $('#inpSkills').addEventListener('input', (e) => renderSkills(e.target.value));
+    /* ------------------------------------------------------------------ Bulk Generation */
+    function setRecipientsList(list) {
+      recipients = list;
+      currentRecIndex = 0;
+      const count = recipients.length;
+      $('#bulkCountLabel').textContent = count ? `${count} attendees ready` : '0 loaded';
+      applyRecipient(currentRecIndex);
+    }
+
+    function applyRecipient(i) {
+      if (!recipients.length || !recipients[i]) return;
+      const r = recipients[i];
+      $('#cvCertName').textContent = r.name;
+      fitName();
+      const baseId = $('#inpCredId').value || 'GDG-SRU-CERT-001';
+      const cred = r.id || `${baseId}-${String(i + 1).padStart(3, '0')}`;
+      $('#cvDossierRef').textContent = cred;
+      $('#cvTermId').textContent = cred;
+    }
+
+    $('#inpBulkText').addEventListener('input', (e) => {
+      const parsed = parseNames(e.target.value);
+      if (parsed.rows?.length) {
+        setRecipientsList(parsed.rows.map((r) => ({ name: r.attendee_name, roll_no: r.roll_no, email: r.attendee_email })));
+      } else {
+        const lines = e.target.value.split('\n').map((l) => l.trim()).filter(Boolean);
+        setRecipientsList(lines.map((l) => ({ name: l })));
+      }
+    });
+
+    $('#inpBulkFile').addEventListener('change', async (e) => {
+      const f = e.target.files?.[0]; if (!f) return;
+      const text = await f.text();
+      const parsed = parseNames(text);
+      if (parsed.rows?.length) {
+        $('#inpBulkText').value = parsed.rows.map((r) => `${r.attendee_name}${r.roll_no ? ', ' + r.roll_no : ''}`).join('\n');
+        setRecipientsList(parsed.rows.map((r) => ({ name: r.attendee_name, roll_no: r.roll_no, email: r.attendee_email })));
+        adminMessage(`${parsed.rows.length} attendee(s) loaded from file.`, true);
+      }
+      e.target.value = '';
+    });
+
+    async function loadEventRoster() {
+      const evId = $('#mc-event-select').value;
+      if (!evId) return adminMessage('Choose an event first.');
+      const { data, error } = await sb.from('attendance_records').select('attendee_name,roll_no,attendee_email').eq('event_id', evId).eq('attendance_status', 'attended');
+      if (error) return adminMessage(authErrorText(error));
+      if (!data?.length) return adminMessage('No attended records found for this event. Upload attendance first in Attendance tab.');
+      $('#inpBulkText').value = data.map((r) => `${r.attendee_name}${r.roll_no ? ', ' + r.roll_no : ''}`).join('\n');
+      setRecipientsList(data.map((r) => ({ name: r.attendee_name, roll_no: r.roll_no, email: r.attendee_email })));
+      adminMessage(`${data.length} attendee(s) loaded from event roster!`, true);
+    }
+    $('#btnPullRoster').onclick = loadEventRoster;
+
+    /* ------------------------------------------------------------------ Export Suite */
+    async function renderCertCanvas() {
+      await loadStudioLibs();
+      const cert = $('#certCanvas');
+      return await window.html2canvas(cert, {
+        scale: 2, width: 1123, height: 794, backgroundColor: '#f8f9fa', useCORS: true, logging: false
+      });
+    }
+
+    function newPdf() {
+      return new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    }
+
+    function setProgress(show, pct, text) {
+      const wrap = $('#exportProgressWrap'), fill = $('#exportProgressFill'), txt = $('#exportProgressText');
+      if (!wrap) return;
+      wrap.style.display = show ? 'block' : 'none';
+      if (fill && pct != null) fill.style.width = pct + '%';
+      if (txt && text) txt.textContent = text;
+    }
+
+    async function exportBulk(mode) {
+      if (!recipients.length) return adminMessage('Load attendees first (click "Pull Event Attendees" or paste names).');
+      await loadStudioLibs();
+      const prevScale = scaler.style.transform;
+      scaler.style.transform = 'scale(1)';
+      setProgress(true, 5, `Starting batch export (${recipients.length} certificates)…`);
+
+      try {
+        const zip = mode === 'zip' ? new window.JSZip() : null;
+        const merged = mode === 'merged' ? newPdf() : null;
+
+        for (let i = 0; i < recipients.length; i++) {
+          setProgress(true, Math.round((i / recipients.length) * 100), `Generating ${i + 1} of ${recipients.length}: ${recipients[i].name}`);
+          applyRecipient(i);
+          await new Promise((r) => setTimeout(r, 80));
+          const canvas = await renderCertCanvas();
+          const imgData = canvas.toDataURL('image/jpeg', 0.92);
+
+          if (mode === 'zip') {
+            const pdf = newPdf();
+            pdf.addImage(imgData, 'JPEG', 0, 0, 297, 210);
+            const fname = `GDG_Certificate_${recipients[i].name.replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`;
+            zip.file(fname, pdf.output('arraybuffer'));
+          } else {
+            if (i > 0) merged.addPage();
+            merged.addImage(imgData, 'JPEG', 0, 0, 297, 210);
+          }
+        }
+
+        setProgress(true, 98, 'Finalizing download package…');
+        if (mode === 'zip') {
+          const blob = await zip.generateAsync({ type: 'blob' });
+          const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+          a.download = `GDG_Certificates_${Date.now()}.zip`;
+          document.body.appendChild(a); a.click(); a.remove();
         } else {
-          getStorageDataUrl(sb, currentLogoPath).then((url) => {
-            if (url) {
-              currentEc.gdg_logo_dataUrl = url;
-              if (gdgLogoImg) gdgLogoImg.src = url;
-              if (gdgLogoThumb) gdgLogoThumb.style.display = 'block';
-              updateStudioPreview();
-            }
-          });
+          merged.save(`GDG_Certificates_Batch_${Date.now()}.pdf`);
         }
-      }
-
-      if (gdgLogoInp) {
-        gdgLogoInp.onchange = async (e) => {
-          const file = e.target.files?.[0];
-          if (!file) return;
-          try {
-            const blob = await processImageUpload(file, 800);
-            const path = `logos/${selectedEventId}/gdg_logo_${Date.now()}.png`;
-            const dataUrl = await blobToDataUrl(blob);
-            if (!currentEc.layout) currentEc.layout = {};
-            currentEc.layout.gdg_logo_path = path;
-            currentEc.gdg_logo_dataUrl = dataUrl;
-            if (!currentEc.layout.gdg_logo_size) currentEc.layout.gdg_logo_size = 60;
-
-            if (gdgLogoStatus) gdgLogoStatus.textContent = 'Custom Logo Uploaded';
-            if (gdgLogoThumb) gdgLogoThumb.style.display = 'block';
-            if (gdgLogoImg) gdgLogoImg.src = dataUrl;
-            if (gdgLogoReset) gdgLogoReset.style.display = 'inline-flex';
-            if (logoSizeControls) logoSizeControls.style.display = 'block';
-
-            await uploadToStorage(sb, path, blob);
-            adminMessage('GDG Chapter Logo uploaded successfully.', true);
-            await updateStudioPreview();
-          } catch (err) {
-            adminMessage(authErrorText(err));
-          }
-        };
-      }
-
-      if (gdgLogoReset) {
-        gdgLogoReset.onclick = async () => {
-          if (!confirm('Reset to standard GDG vector logo?')) return;
-          if (!currentEc.layout) currentEc.layout = {};
-          currentEc.layout.gdg_logo_path = null;
-          currentEc.gdg_logo_dataUrl = null;
-          currentEc.layout.hide_chapter_text = false;
-          delete currentEc.layout.gdg_logo_size;
-          delete currentEc.layout.gdg_logo_x;
-          delete currentEc.layout.gdg_logo_y;
-          if (hideTextChk) hideTextChk.checked = false;
-          if (gdgLogoStatus) gdgLogoStatus.textContent = 'Using Default Vector Logo (< >)';
-          if (gdgLogoThumb) gdgLogoThumb.style.display = 'none';
-          if (gdgLogoReset) gdgLogoReset.style.display = 'none';
-          if (logoSizeControls) logoSizeControls.style.display = 'none';
-          markDirty();
-          adminMessage('GDG Logo reset to default vector.', true);
-          await updateStudioPreview();
-        };
+        setProgress(true, 100, `Done! Generated ${recipients.length} certificates.`);
+        setTimeout(() => setProgress(false), 3000);
+      } catch (err) {
+        adminMessage('Export failed: ' + err.message);
+        setProgress(false);
+      } finally {
+        scaler.style.transform = prevScale;
+        applyRecipient(currentRecIndex);
       }
     }
 
-    /* Helper: Partners list */
-    function renderPartnersList() {
-      const wrap = $('#partners-list-wrap');
-      if (!wrap) return;
-      $('#btn-add-partner').disabled = currentPartners.length >= 8;
-      wrap.innerHTML = currentPartners.length ? currentPartners.map((p, idx) => {
-        const thumb = p.dataUrl || '';
-        return `
-        <div class="checklist-item" style="gap:8px" data-partner-idx="${idx}">
-          <div style="display:flex;align-items:center;gap:8px;flex:1">
-            <div class="partner-thumb-box" style="width:34px;height:34px;border-radius:4px;border:1px solid var(--line);background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0">
-              ${thumb ? `<img src="${esc(thumb)}" alt="Logo" style="max-width:100%;max-height:100%;object-fit:contain">` : `<span style="font-size:13px;color:var(--ink-3)">🏢</span>`}
-            </div>
-            <select class="p-role" style="font-size:11.5px;padding:4px">
-              <option value="cohost" ${p.role === 'cohost' ? 'selected' : ''}>Co-host</option>
-              <option value="sponsor" ${p.role === 'sponsor' ? 'selected' : ''}>Sponsor</option>
-            </select>
-            <input type="text" class="p-name" value="${esc(p.name)}" placeholder="Partner Name" style="font-size:12px;padding:4px 8px;flex:1">
-            <label class="btn o sm" style="cursor:pointer;padding:3px 8px;font-size:11px">
-              ${(p.logo_path || p.dataUrl) ? 'Change Logo (✓)' : 'Upload Logo'}
-              <input type="file" class="p-file" accept=".png,.jpg,.jpeg,.svg,.webp" style="display:none">
-            </label>
-          </div>
-          <div style="display:flex;align-items:center;gap:4px">
-            <button type="button" class="btn o sm p-up" ${idx === 0 ? 'disabled' : ''} style="padding:2px 6px">▲</button>
-            <button type="button" class="btn o sm p-dn" ${idx === currentPartners.length - 1 ? 'disabled' : ''} style="padding:2px 6px">▼</button>
-            <button type="button" class="btn o sm p-del" style="padding:2px 6px;color:var(--r)">✕</button>
-          </div>
-        </div>
-      `;
-      }).join('') : `<p style="font-size:12px;color:var(--ink-3);margin:4px 0">No co-hosts or sponsors added yet.</p>`;
+    $('#btnExportZip').onclick = () => exportBulk('zip');
+    $('#btnExportMerged').onclick = () => exportBulk('merged');
+    $('#btnExportSingle').onclick = async () => {
+      await loadStudioLibs();
+      const canvas = await renderCertCanvas();
+      const pdf = newPdf();
+      pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 297, 210);
+      pdf.save(`GDG_Certificate_${$('#cvCertName').textContent.trim().replace(/\s+/g, '_')}.pdf`);
+      adminMessage('Certificate PDF downloaded.', true);
+    };
+    $('#btnExportPng').onclick = async () => {
+      await loadStudioLibs();
+      const canvas = await renderCertCanvas();
+      const a = document.createElement('a'); a.href = canvas.toDataURL('image/png');
+      a.download = `GDG_Certificate_${$('#cvCertName').textContent.trim().replace(/\s+/g, '_')}.png`;
+      document.body.appendChild(a); a.click(); a.remove();
+      adminMessage('High-resolution PNG downloaded.', true);
+    };
 
-      // Load remote thumbnail URLs if not already in memory
-      currentPartners.forEach(async (p, idx) => {
-        if (!p.dataUrl && p.logo_path) {
-          const url = await getStorageDataUrl(sb, p.logo_path);
-          if (url) {
-            p.dataUrl = url;
-            const el = wrap.querySelector(`[data-partner-idx="${idx}"] .partner-thumb-box`);
-            if (el) el.innerHTML = `<img src="${esc(url)}" alt="Logo" style="max-width:100%;max-height:100%;object-fit:contain">`;
-          }
-        }
-      });
+    /* ------------------------------------------------------------------ Save Settings to Supabase */
+    $('#mc-event-select').addEventListener('change', (e) => {
+      ctx.keepEvent = e.target.value;
+      applyEventToStudio(e.target.value);
+    });
 
-      // Wire partner controls
-      $$('#partners-list-wrap [data-partner-idx]').forEach((el) => {
-        const idx = Number(el.dataset.partnerIdx);
-        const p = currentPartners[idx];
-        $('.p-role', el).onchange = (e) => { p.role = e.target.value; updateStudioPreview(); };
-        $('.p-name', el).oninput = (e) => { p.name = e.target.value; updateStudioPreview(); };
-        $('.p-up', el).onclick = () => {
-          if (idx > 0) {
-            const temp = currentPartners[idx - 1]; currentPartners[idx - 1] = p; currentPartners[idx] = temp;
-            renderPartnersList(); updateStudioPreview();
-          }
-        };
-        $('.p-dn', el).onclick = () => {
-          if (idx < currentPartners.length - 1) {
-            const temp = currentPartners[idx + 1]; currentPartners[idx + 1] = p; currentPartners[idx] = temp;
-            renderPartnersList(); updateStudioPreview();
-          }
-        };
-        $('.p-del', el).onclick = async () => {
-          if (!confirm(`Delete partner "${p.name}"?`)) return;
-          if (!String(p.id).startsWith('temp_')) {
-            await sb.from('event_partners').delete().eq('id', p.id);
-          }
-          currentPartners.splice(idx, 1);
-          renderPartnersList(); updateStudioPreview();
-        };
-        $('.p-file', el).onchange = async (e) => {
-          const file = e.target.files?.[0];
-          if (!file) return;
-          try {
-            const blob = await processImageUpload(file, 600);
-            const path = `partners/${selectedEventId}/${crypto.randomUUID()}.png`;
-            const dataUrl = await blobToDataUrl(blob);
-            p.dataUrl = dataUrl;
-            p.logo_path = path;
-            await uploadToStorage(sb, path, blob);
-            adminMessage('Partner logo uploaded successfully.', true);
-            renderPartnersList();
-            await updateStudioPreview();
-          } catch (err) {
-            adminMessage(authErrorText(err));
-          }
-        };
-      });
-    }
-
-    /* Helper: Signatories list */
-    function renderSignatoriesList() {
-      const wrap = $('#sigs-list-wrap');
-      if (!wrap) return;
-      const sigs = currentEc.signatories || [];
-      $('#btn-add-sig').disabled = sigs.length >= 2;
-      wrap.innerHTML = sigs.length ? sigs.map((s, idx) => {
-        const thumb = s.dataUrl || '';
-        return `
-        <div class="checklist-item" style="gap:8px" data-sig-idx="${idx}">
-          <div style="display:flex;align-items:center;gap:8px;flex:1">
-            <div class="sig-thumb-box" style="width:48px;height:32px;border-radius:4px;border:1px solid var(--line);background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0">
-              ${thumb ? `<img src="${esc(thumb)}" alt="Sig" style="max-width:100%;max-height:100%;object-fit:contain">` : `<span style="font-size:12px;color:var(--ink-3)">✍️</span>`}
-            </div>
-            <input type="text" class="s-name" value="${esc(s.name)}" placeholder="Signatory Name" style="font-size:12px;padding:4px 8px;flex:1">
-            <input type="text" class="s-role" value="${esc(s.role)}" placeholder="Role / Title" style="font-size:12px;padding:4px 8px;flex:1">
-            <label class="btn o sm" style="cursor:pointer;padding:3px 8px;font-size:11px">
-              ${(s.image_path || s.dataUrl) ? 'Change Signature (✓)' : 'Upload Image'}
-              <input type="file" class="s-file" accept=".png,.jpg,.jpeg,.svg,.webp" style="display:none">
-            </label>
-          </div>
-          <button type="button" class="btn o sm s-del" style="padding:2px 6px;color:var(--r)">✕</button>
-        </div>
-      `;
-      }).join('') : `<p style="font-size:12px;color:var(--ink-3);margin:4px 0">No signatories configured yet.</p>`;
-
-      // Load remote thumbnail URLs if not already in memory
-      sigs.forEach(async (s, idx) => {
-        if (!s.dataUrl && s.image_path) {
-          const url = await getStorageDataUrl(sb, s.image_path);
-          if (url) {
-            s.dataUrl = url;
-            const el = wrap.querySelector(`[data-sig-idx="${idx}"] .sig-thumb-box`);
-            if (el) el.innerHTML = `<img src="${esc(url)}" alt="Sig" style="max-width:100%;max-height:100%;object-fit:contain">`;
-          }
-        }
-      });
-
-      $$('#sigs-list-wrap [data-sig-idx]').forEach((el) => {
-        const idx = Number(el.dataset.sigIdx);
-        const s = sigs[idx];
-        $('.s-name', el).oninput = (e) => { s.name = e.target.value; updateStudioPreview(); };
-        $('.s-role', el).oninput = (e) => { s.role = e.target.value; updateStudioPreview(); };
-        $('.s-del', el).onclick = () => {
-          sigs.splice(idx, 1);
-          renderSignatoriesList(); updateStudioPreview();
-        };
-        $('.s-file', el).onchange = async (e) => {
-          const file = e.target.files?.[0];
-          if (!file) return;
-          try {
-            const blob = await processImageUpload(file, 600);
-            const path = `signatures/${selectedEventId}/${idx + 1}.png`;
-            const dataUrl = await blobToDataUrl(blob);
-            s.dataUrl = dataUrl;
-            s.image_path = path;
-            await uploadToStorage(sb, path, blob);
-            adminMessage('Signature image uploaded.', true);
-            renderSignatoriesList();
-            await updateStudioPreview();
-          } catch (err) {
-            adminMessage(authErrorText(err));
-          }
-        };
-      });
-    }
-
-    /* Helper: Build Preview Document & Mount */
-    async function updateStudioPreview() {
-      const wrap = $('#studio-canvas-wrap');
-      if (!wrap || !studioTemplateHtml) return;
-
-      const layout = { ...globalDefaultLayout, ...(currentEc.layout || {}) };
-      const pos = (key) => {
-        const b = layout[key];
-        if (!b || (b.x == null && b.y == null && b.scale == null && b.w == null)) return '';
-        const x = b.x ?? 0, y = b.y ?? 0, s = b.scale ?? 1, w = b.w;
-        return `position:relative;left:${x}px;top:${y}px;${w ? `width:${w}px;` : ''}transform:scale(${s});transform-origin:0 0;`;
-      };
-
-      const logoH = Number(currentEc.layout?.gdg_logo_size) || 60;
-      const logoX = Number(currentEc.layout?.gdg_logo_x) || 0;
-      const logoY = Number(currentEc.layout?.gdg_logo_y) || 0;
-      const maxW = Math.max(320, Math.round(logoH * 5));
-      const gdgLogoStyle = `height:${logoH}px;max-height:${logoH}px;max-width:${maxW}px;object-fit:contain;display:block;transform:translate(${logoX}px,${logoY}px);`;
-
-      // Inline partner images
-      const cohosts = [], sponsors = [];
-      for (const p of currentPartners) {
-        let logo = p.dataUrl || '';
-        if (!logo && p.logo_path) logo = await getStorageDataUrl(sb, p.logo_path);
-        const item = { name: p.name, logo, style: pos(`partner_${p.id}`) };
-        (p.role === 'cohost' ? cohosts : sponsors).push(item);
-      }
-
-      // Inline signatories
-      const signatories = [];
-      for (const [idx, s] of (currentEc.signatories || []).entries()) {
-        let img = s.dataUrl || '';
-        if (!img && s.image_path) img = await getStorageDataUrl(sb, s.image_path);
-        signatories.push({
-          name: s.name,
-          role: s.role,
-          img,
-          style: pos(`sig_${idx + 1}`),
-        });
-      }
-
-      // Inline GDG Chapter Logo if uploaded
-      let gdgCustomLogo = currentEc.gdg_logo_dataUrl || '';
-      if (!gdgCustomLogo && currentEc.layout?.gdg_logo_path) {
-        gdgCustomLogo = await getStorageDataUrl(sb, currentEc.layout.gdg_logo_path);
-        currentEc.gdg_logo_dataUrl = gdgCustomLogo;
-      }
-
-      const previewName = $('#inp-preview-name')?.value.trim() || 'Asha Rao';
-      const lines = String(currentEc.curriculum_text || '').split(/\n+/).map((s) => s.trim()).filter(Boolean);
-
-      const eventTitle = currentEc.event_title_override || currentEc.layout?.event_title_override || currentEventObj.title;
-      const credId = currentEc.layout?.credential_base || 'GDGSRU-SAMPLE01';
-      const devTag = currentEc.layout?.dev_tag || 'DEV_COMMUNITY';
-      const nodePill = currentEc.layout?.node_pill || 'ACTIVE_NODE // 01';
-      const partnerSticker = currentEc.layout?.partner_sticker || '';
-
-      const fields = {
-        event_name: eventTitle,
-        chapter: currentEc.host_chapter,
-        host_chapter: currentEc.host_chapter,
-        cert_tag: currentEc.cert_tag,
-        cert_title: currentEc.cert_title,
-        track: currentEc.track,
-        skills: (currentEc.skills || []).join(', '),
-        dossier_tag: currentEc.dossier_tag,
-        curriculum_status: currentEc.curriculum_status,
-        curriculum_text: currentEc.curriculum_text,
-        curriculum_bullets: currentEc.curriculum_bullets ? lines.map((text) => ({ text })) : [],
-        date: currentEc.event_date ? new Intl.DateTimeFormat('en-US', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(currentEc.event_date + 'T00:00:00')) : '',
-        date_short: currentEc.event_date ? new Intl.DateTimeFormat('en-US', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(currentEc.event_date + 'T00:00:00')) : '',
-        dev_tag: devTag,
-        node_pill: nodePill,
-        partner_sticker: partnerSticker,
-        gdg_custom_logo: gdgCustomLogo,
-        gdg_logo_style: gdgLogoStyle,
-        hide_chapter_text: !!currentEc.layout?.hide_chapter_text,
-        cohosts,
-        sponsors,
-        signatories,
-        pos_gdg: pos('gdg'),
-        pos_cert_tag: pos('cert_tag'),
-        pos_title: pos('title'),
-        pos_name: pos('name'),
-        pos_event: pos('event'),
-        pos_host: pos('host'),
-        pos_curriculum: pos('curriculum'),
-        pos_dossier: pos('dossier'),
-        pos_credential: pos('credential'),
-      };
+    $('#mc-save-config-btn').addEventListener('click', async (e) => {
+      const evId = $('#mc-event-select').value;
+      if (!evId) return adminMessage('Choose an event first.');
+      const enabled = $('#mc-public-toggle').checked;
 
       const payload = {
-        template_html: studioTemplateHtml,
-        recipient_name: previewName,
-        credential_id: credId,
-        event_title: eventTitle,
-        event_start: currentEc.event_date ? `${currentEc.event_date}T00:00:00+05:30` : new Date().toISOString(),
-        fields,
+        event_name: $('#inpEventName').value.trim(),
+        chapter_name: $('#inpChapterName').value.trim(),
+        date: $('#inpEventDate').value.trim(),
+        cert_tag: $('#inpCertTag') ? $('#inpCertTag').value.trim() : 'OFFICIAL CREDENTIAL',
+        cert_title: $('#inpCertTitle') ? $('#inpCertTitle').value.trim() : 'Certificate of Participation',
+        syllabus: $('#inpSyllabus').value.trim(),
+        syllabus_status: $('#inpSyllabusStatus') ? $('#inpSyllabusStatus').value.trim() : 'STATUS: COMPLETED',
+        track: $('#inpTrack').value.trim(),
+        skills: $('#inpSkills').value.split(',').map((x) => ({ tag: x.trim() })).filter((x) => x.tag),
+        dev_tag: $('#inpDevTag') ? $('#inpDevTag').value.trim() : '#GoogleDeveloper',
+        node_pill: $('#inpNodePill') ? $('#inpNodePill').value.trim() : 'NODE_ACTIVE // 2026',
+        dossier_tag: $('#inpDossierTag') ? $('#inpDossierTag').value.trim() : 'BUILD_WITH_AI',
+        partner_sticker: $('#inpPartnerSticker') ? $('#inpPartnerSticker').value.trim() : '#SRU_ACM // CO-HOST',
+        signatories,
+        partners,
+        gdg_logo: currentGdgLogo,
+        gdg_custom_logo: currentGdgLogo.dataUrl || currentGdgLogo.path || '',
+        gdg_logo_style: `height:${currentGdgLogo.size || 60}px;max-height:${currentGdgLogo.size || 60}px;max-width:${Math.max(320, Math.round((currentGdgLogo.size || 60) * 5))}px;object-fit:contain;display:block;transform:translate(${currentGdgLogo.x || 0}px,${currentGdgLogo.y || 0}px);`,
+        hide_chapter_text: !!currentGdgLogo.hide_chapter_text
       };
 
-      const built = window.GDGCert.buildDocument(payload);
-      wrap.innerHTML = '';
-      const frame = await window.GDGCert.mount(wrap, built.html);
-      enableDirectCanvasDragging(frame);
-    }
-
-    /* Helper: Dragging elements on canvas */
-    function enableDirectCanvasDragging(frame) {
-      const doc = frame.contentDocument;
-      if (!doc) return;
-
-      if (!doc.getElementById('mc-canvas-drag-styles')) {
-        const style = doc.createElement('style');
-        style.id = 'mc-canvas-drag-styles';
-        style.textContent = `
-          .live-drag-target {
-            cursor: move !important;
-            transition: outline 0.12s ease !important;
-            outline: 1.5px dashed rgba(66, 133, 244, 0.45) !important;
-            outline-offset: 3px !important;
-            border-radius: 4px !important;
-          }
-          .live-drag-target:hover {
-            outline: 2px dashed #1a73e8 !important;
-            background: rgba(66, 133, 244, 0.04) !important;
-          }
-          .live-drag-target.selected {
-            outline: 2.5px solid #1a73e8 !important;
-            outline-offset: 3px !important;
-            background: rgba(26, 115, 232, 0.08) !important;
-            box-shadow: 0 0 10px rgba(26, 115, 232, 0.35) !important;
-          }
-        `;
-        doc.head.appendChild(style);
-      }
-
-      const elementMap = [
-        { key: 'gdg', sel: '.main-logo-area' },
-        { key: 'cert_tag', sel: '.title-deck' },
-        { key: 'title', sel: '.cert-title' },
-        { key: 'name', sel: '.cert-name-wrapper' },
-        { key: 'event', sel: '.cert-event-text' },
-        { key: 'curriculum', sel: '.event-syllabus-card' },
-        { key: 'dossier', sel: '.dossier-card-wrap' },
-        { key: 'credential', sel: '.terminal-log-card' },
-      ];
-
-      elementMap.forEach(({ key, sel }) => {
-        const el = doc.querySelector(sel);
-        if (!el) return;
-        el.classList.add('live-drag-target');
-        el.dataset.dragKey = key;
-
-        el.addEventListener('mousedown', (e) => {
-          e.preventDefault();
-          $('#sel-layout-target').value = key;
-          updateLayoutInputs();
-          highlightActiveDragTarget();
-
-          const target = key;
-          const curBox = (currentEc.layout && currentEc.layout[target]) || {};
-          const startX = e.clientX;
-          const startY = e.clientY;
-          const baseOffsetX = Number(curBox.x) || 0;
-          const baseOffsetY = Number(curBox.y) || 0;
-          let isDragging = true;
-
-          const onMove = (mv) => {
-            if (!isDragging) return;
-            const zoom = currentStudioZoom || 1;
-            const dx = Math.round((mv.clientX - startX) / zoom);
-            const dy = Math.round((mv.clientY - startY) / zoom);
-            const newX = Math.max(-500, Math.min(500, baseOffsetX + dx));
-            const newY = Math.max(-500, Math.min(500, baseOffsetY + dy));
-
-            if (!currentEc.layout) currentEc.layout = {};
-            currentEc.layout[target] = { ...(currentEc.layout[target] || {}), x: newX, y: newY };
-            el.style.position = 'relative';
-            el.style.left = newX + 'px';
-            el.style.top = newY + 'px';
-            if ($('#inp-pos-x')) $('#inp-pos-x').value = newX;
-            if ($('#inp-pos-y')) $('#inp-pos-y').value = newY;
-          };
-
-          const onUp = () => {
-            if (!isDragging) return;
-            isDragging = false;
-            doc.removeEventListener('mousemove', onMove);
-            doc.removeEventListener('mouseup', onUp);
-            window.removeEventListener('mousemove', onMove);
-            window.removeEventListener('mouseup', onUp);
-            markDirty();
-            updateStudioPreview();
-          };
-
-          doc.addEventListener('mousemove', onMove);
-          doc.addEventListener('mouseup', onUp);
-          window.addEventListener('mousemove', onMove);
-          window.addEventListener('mouseup', onUp);
+      e.target.disabled = true;
+      try {
+        const { error } = await sb.from('certificate_configs').upsert({
+          event_id: evId,
+          enabled,
+          fields: payload,
+          updated_at: new Date().toISOString()
         });
-      });
-      highlightActiveDragTarget();
-    }
-
-    function highlightActiveDragTarget() {
-      const frame = $('#studio-canvas-wrap iframe');
-      if (!frame || !frame.contentDocument) return;
-      const target = $('#sel-layout-target')?.value;
-      const all = frame.contentDocument.querySelectorAll('.live-drag-target');
-      all.forEach((el) => el.classList.toggle('selected', el.dataset.dragKey === target));
-    }
-
-    function fitStudioCanvas() {
-      const stage = $('#studio-stage');
-      if (!stage) return;
-      const availW = stage.clientWidth - 48;
-      const availH = stage.clientHeight - 48;
-      const scaleW = availW / 1123;
-      const scaleH = availH > 200 ? availH / 794 : scaleW;
-      const scale = Math.min(1.0, Math.max(0.25, Math.min(scaleW, scaleH)));
-      setStudioZoom(Math.round(scale * 100) / 100, true);
-    }
-
-    function setStudioZoom(scale, isFit = false) {
-      currentStudioZoom = scale;
-      const scaler = $('#studio-scaler');
-      const wrap = $('#studio-canvas-wrap');
-      if (!scaler || !wrap) return;
-
-      const scaledW = Math.round(1123 * scale);
-      const scaledH = Math.round(794 * scale);
-      scaler.style.width = scaledW + 'px';
-      scaler.style.height = scaledH + 'px';
-      scaler.style.transform = `scale(${scale})`;
-      scaler.style.transformOrigin = '0 0';
-
-      wrap.style.width = '1123px';
-      wrap.style.height = '794px';
-
-      $$('.mc-zoom-btn', root).forEach((b) => {
-        if (isFit && b.id === 'btn-zoom-fit') b.classList.add('active');
-        else if (!isFit && b.dataset.zoom && Math.abs(Number(b.dataset.zoom) - scale) < 0.02) b.classList.add('active');
-        else b.classList.remove('active');
-      });
-
-      const display = $('#studio-zoom-display', root);
-      if (display) display.textContent = Math.round(scale * 100) + '%';
-    }
-
-    /* ==================================================================
-       TEST CLAIM SIMULATION MODAL
-       ================================================================== */
-    async function openTestClaimModal() {
-      if (!testClaimModal) return;
-      testClaimModal.showModal();
-
-      const { data: attendees } = await sb.from('attendance_records')
-        .select('attendee_name, roll_no')
-        .eq('event_id', selectedEventId)
-        .order('attendee_name');
-
-      const select = $('#tc-attendee-select');
-      const customInp = $('#tc-custom-name');
-      const list = attendees || [];
-      if (select) {
-        select.innerHTML = `
-          <option value="">-- Choose from Roster (${list.length}) --</option>
-          ${list.map((a) => `<option value="${esc(a.attendee_name)}">${esc(a.attendee_name)}${a.roll_no ? ` (${esc(a.roll_no)})` : ''}</option>`).join('')}
-        `;
-        if (list.length > 0) {
-          select.value = list[0].attendee_name;
-        }
+        if (error) throw error;
+        await audit('update', 'certificate_configs', evId);
+        adminMessage(`Certificate settings saved to Supabase for ${$('#inpEventName').value}!`, true);
+        configs[evId] = { event_id: evId, enabled, fields: payload };
+      } catch (err) {
+        adminMessage(authErrorText(err));
+      } finally {
+        e.target.disabled = false;
       }
+    });
 
-      let activeRecipient = (select && select.value) || $('#inp-preview-name')?.value.trim() || 'Asha Rao';
-      if (customInp) customInp.value = activeRecipient;
+    /* ------------------------------------------------------------------ Advanced Templates */
+    const tf = $('#tpl-form'), html = $('#tpl-html');
+    $('#tpl-builtin').onclick = async () => {
+      try {
+        const r = await fetch('/assets/data/certificate-default-template.html', { cache: 'no-cache' });
+        if (!r.ok) throw new Error();
+        html.value = await r.text();
+        if (!tf.elements.name.value) tf.elements.name.value = 'GDG SRU Master Template';
+        adminMessage('Loaded Master HTML Template into editor.', true);
+      } catch { adminMessage('Could not load built-in HTML template.'); }
+    };
+    $('#tpl-file').onchange = async (e) => {
+      const f = e.target.files?.[0]; if (!f) return;
+      html.value = await f.text();
+      if (!tf.elements.name.value) tf.elements.name.value = f.name.replace(/\.[^.]+$/, '');
+    };
+    $('#tpl-reset').onclick = () => { tf.reset(); tf.elements.id.value = ''; };
+    $$('[data-tpl-edit]').forEach((b) => b.onclick = () => {
+      const t = templates.find((x) => x.id === b.dataset.tplEdit); if (!t) return;
+      tf.elements.id.value = t.id; tf.elements.name.value = t.name; html.value = t.html_template;
+      tf.elements.is_active.checked = t.is_active;
+      tf.closest('details').open = true;
+      tf.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+    $$('[data-tpl-activate]').forEach((b) => b.onclick = async () => {
+      try {
+        const { error } = await sb.rpc('activate_certificate_template', { p_template_id: b.dataset.tplActivate });
+        if (error) throw error;
+        await audit('update', 'certificate_templates', b.dataset.tplActivate);
+        await rerender();
+        adminMessage('Template activated.', true);
+      } catch (e) { adminMessage(authErrorText(e)); }
+    });
+    $$('[data-tpl-delete]').forEach((b) => b.onclick = async () => {
+      if (!confirm('Delete this template?')) return;
+      const r = await sb.from('certificate_templates').delete().eq('id', b.dataset.tplDelete);
+      if (r.error) return adminMessage(authErrorText(r.error));
+      await audit('delete', 'certificate_templates', b.dataset.tplDelete);
+      await rerender();
+      adminMessage('Template deleted.', true);
+    });
+    tf.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = tf.elements.id.value, name = tf.elements.name.value.trim(), tpl = html.value;
+      if (!tpl.trim()) return adminMessage('Template HTML is empty.');
+      try {
+        const payload = { name, html_template: tpl, updated_at: new Date().toISOString() };
+        const r = id ? await sb.from('certificate_templates').update(payload).eq('id', id).select('id').single() : await sb.from('certificate_templates').insert({ ...payload, is_active: false }).select('id').single();
+        if (r.error) throw r.error;
+        if (tf.elements.is_active.checked) await sb.rpc('activate_certificate_template', { p_template_id: r.data.id });
+        await audit(id ? 'update' : 'create', 'certificate_templates', r.data.id);
+        await rerender();
+        adminMessage('Template saved to Supabase.', true);
+      } catch (err) { adminMessage(authErrorText(err)); }
+    });
 
-      async function renderTestPreview(name) {
-        activeRecipient = name || 'Asha Rao';
-        const wrap = $('#tc-canvas-wrap');
-        if (!wrap || !studioTemplateHtml) return;
-
-        const layout = { ...globalDefaultLayout, ...(currentEc?.layout || {}) };
-        const pos = (key) => {
-          const b = layout[key];
-          if (!b || (b.x == null && b.y == null && b.scale == null && b.w == null)) return '';
-          const x = b.x ?? 0, y = b.y ?? 0, s = b.scale ?? 1, w = b.w;
-          return `position:relative;left:${x}px;top:${y}px;${w ? `width:${w}px;` : ''}transform:scale(${s});transform-origin:0 0;`;
-        };
-
-        const logoH = Number(currentEc?.layout?.gdg_logo_size) || 60;
-        const logoX = Number(currentEc?.layout?.gdg_logo_x) || 0;
-        const logoY = Number(currentEc?.layout?.gdg_logo_y) || 0;
-        const maxW = Math.max(320, Math.round(logoH * 5));
-        const gdgLogoStyle = `height:${logoH}px;max-height:${logoH}px;max-width:${maxW}px;object-fit:contain;display:block;transform:translate(${logoX}px,${logoY}px);`;
-
-        const cohosts = [], sponsors = [];
-        for (const p of currentPartners) {
-          let logo = p.dataUrl || '';
-          if (!logo && p.logo_path) logo = await getStorageDataUrl(sb, p.logo_path);
-          const item = { name: p.name, logo, style: pos(`partner_${p.id}`) };
-          (p.role === 'cohost' ? cohosts : sponsors).push(item);
-        }
-
-        const signatories = [];
-        for (const [idx, s] of (currentEc?.signatories || []).entries()) {
-          let img = s.dataUrl || '';
-          if (!img && s.image_path) img = await getStorageDataUrl(sb, s.image_path);
-          signatories.push({
-            name: s.name,
-            role: s.role,
-            img,
-            style: pos(`sig_${idx + 1}`),
-          });
-        }
-
-        let gdgCustomLogo = currentEc?.gdg_logo_dataUrl || '';
-        if (!gdgCustomLogo && currentEc?.layout?.gdg_logo_path) {
-          gdgCustomLogo = await getStorageDataUrl(sb, currentEc.layout.gdg_logo_path);
-          currentEc.gdg_logo_dataUrl = gdgCustomLogo;
-        }
-
-        const lines = String(currentEc?.curriculum_text || '').split(/\n+/).map((s) => s.trim()).filter(Boolean);
-        const eventTitle = currentEc?.event_title_override || currentEc?.layout?.event_title_override || currentEventObj.title;
-        const credId = currentEc?.layout?.credential_base ? `${currentEc.layout.credential_base}-SAMPLE` : 'GDGSRU-SAMPLE01';
-        const devTag = currentEc?.layout?.dev_tag || 'DEV_COMMUNITY';
-        const nodePill = currentEc?.layout?.node_pill || 'ACTIVE_NODE // 01';
-        const partnerSticker = currentEc?.layout?.partner_sticker || '';
-
-        const fields = {
-          event_name: eventTitle,
-          chapter: currentEc?.host_chapter || 'GDG on Campus SR University',
-          host_chapter: currentEc?.host_chapter || 'GDG on Campus SR University',
-          cert_tag: currentEc?.cert_tag || 'OFFICIAL CREDENTIAL',
-          cert_title: currentEc?.cert_title || 'Certificate of Participation',
-          track: currentEc?.track || '',
-          skills: (currentEc?.skills || []).join(', '),
-          dossier_tag: currentEc?.dossier_tag || '',
-          curriculum_status: currentEc?.curriculum_status || 'STATUS: Topic / Curriculum Overview',
-          curriculum_text: currentEc?.curriculum_text || '',
-          curriculum_bullets: currentEc?.curriculum_bullets ? lines.map((text) => ({ text })) : [],
-          date: currentEc?.event_date ? new Intl.DateTimeFormat('en-US', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(currentEc.event_date + 'T00:00:00')) : '',
-          date_short: currentEc?.event_date ? new Intl.DateTimeFormat('en-US', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(currentEc.event_date + 'T00:00:00')) : '',
-          dev_tag: devTag,
-          node_pill: nodePill,
-          partner_sticker: partnerSticker,
-          gdg_custom_logo: gdgCustomLogo,
-          gdg_logo_style: gdgLogoStyle,
-          hide_chapter_text: !!currentEc?.layout?.hide_chapter_text,
-          cohosts,
-          sponsors,
-          signatories,
-          pos_gdg: pos('gdg'),
-          pos_cert_tag: pos('cert_tag'),
-          pos_title: pos('title'),
-          pos_name: pos('name'),
-          pos_event: pos('event'),
-          pos_host: pos('host'),
-          pos_curriculum: pos('curriculum'),
-          pos_dossier: pos('dossier'),
-          pos_credential: pos('credential'),
-        };
-
-        const payload = {
-          template_html: studioTemplateHtml,
-          recipient_name: activeRecipient,
-          credential_id: credId,
-          event_title: eventTitle,
-          event_start: currentEc?.event_date ? `${currentEc.event_date}T00:00:00+05:30` : new Date().toISOString(),
-          fields,
-        };
-
-        const built = window.GDGCert.buildDocument(payload);
-        wrap.innerHTML = '';
-        const frame = await window.GDGCert.mount(wrap, built.html);
-
-        const stage = $('#tc-stage');
-        const scaler = $('#tc-scaler');
-        if (stage && scaler) {
-          const availW = stage.clientWidth - 40;
-          const s = Math.min(1, Math.max(0.3, availW / 1123));
-          scaler.style.transform = `scale(${s})`;
-          scaler.style.width = '1123px';
-          scaler.style.height = `${Math.round(794 * s)}px`;
-        }
-
-        if ($('#tc-cred-id-display')) {
-          $('#tc-cred-id-display').textContent = `Credential Base: ${credId}`;
-        }
-      }
-
-      await renderTestPreview(activeRecipient);
-
-      if (select) {
-        select.onchange = (e) => {
-          if (e.target.value) {
-            if (customInp) customInp.value = e.target.value;
-            renderTestPreview(e.target.value);
-          }
-        };
-      }
-      if ($('#tc-btn-apply-name')) {
-        $('#tc-btn-apply-name').onclick = () => {
-          const val = customInp?.value.trim();
-          if (val) renderTestPreview(val);
-        };
-      }
-
-      $('#tc-btn-download-png').onclick = async () => {
-        const frame = $('#tc-canvas-wrap iframe');
-        if (!frame) return;
-        const btn = $('#tc-btn-download-png');
-        btn.disabled = true;
-        btn.textContent = 'Rendering…';
-        try {
-          await window.GDGCert.downloadPng(frame, `Certificate_${activeRecipient}`);
-          adminMessage('Test Certificate PNG downloaded!', true);
-        } catch (err) {
-          adminMessage('PNG generation error: ' + err.message);
-        } finally {
-          btn.disabled = false;
-          btn.textContent = '📥 Download PNG';
-        }
-      };
-
-      $('#tc-btn-download-pdf').onclick = async () => {
-        const frame = $('#tc-canvas-wrap iframe');
-        if (!frame) return;
-        const btn = $('#tc-btn-download-pdf');
-        btn.disabled = true;
-        btn.textContent = 'Rendering…';
-        try {
-          await window.GDGCert.downloadPdf(frame, `Certificate_${activeRecipient}`);
-          adminMessage('Test Certificate PDF downloaded!', true);
-        } catch (err) {
-          adminMessage('PDF generation error: ' + err.message);
-        } finally {
-          btn.disabled = false;
-          btn.textContent = '📥 Download PDF';
-        }
-      };
-
-      $('#tc-btn-copy-link').onclick = async () => {
-        const credId = currentEc?.layout?.credential_base ? `${currentEc.layout.credential_base}-SAMPLE` : 'GDGSRU-SAMPLE01';
-        const verifyUrl = `${window.location.origin}/verify/?id=${encodeURIComponent(credId)}`;
-        try {
-          await navigator.clipboard.writeText(verifyUrl);
-          adminMessage('Verification URL copied to clipboard!', true);
-        } catch {
-          prompt('Copy verification URL:', verifyUrl);
-        }
-      };
-    }
-
-    /* ==================================================================
-       TAB 3: PUBLISH IMPLEMENTATION
-       ================================================================== */
-    async function refreshPublishTab() {
-      const root = panes.publish;
-      root.innerHTML = `<div class="mc-loading" role="status"><span>Validating publish readiness…</span></div>`;
-
-      // 1. Fetch attendee count
-      const { count } = await sb.from('attendance_records')
-        .select('id', { count: 'exact', head: true })
-        .eq('event_id', selectedEventId);
-      const attCount = count || 0;
-      rosterCount = attCount;
-      if ($('#wb-tab-roster-badge')) $('#wb-tab-roster-badge').textContent = `(${rosterCount})`;
-
-      // 2. Fetch event certificate details
-      const { data: ec } = await sb.from('event_certificates')
-        .select('*')
-        .eq('event_id', selectedEventId)
-        .maybeSingle();
-
-      const hasRoster = attCount > 0;
-      const hasDate = !!ec?.event_date;
-      const hasCurriculum = (ec?.curriculum_text || '').trim().length > 0;
-      const hasHost = (ec?.host_chapter || '').trim().length > 0;
-      const previewRenders = !!studioTemplateHtml;
-
-      const allReady = hasRoster && hasDate && hasCurriculum && hasHost && previewRenders;
-      claimsActive = !!ec?.claims_enabled;
-
-      if ($('#wb-tab-pub-pill')) {
-        $('#wb-tab-pub-pill').className = `mc-tab-pill ${claimsActive ? 'live' : 'draft'}`;
-        $('#wb-tab-pub-pill').textContent = claimsActive ? 'Live' : (allReady ? 'Ready' : 'Draft');
-      }
-      if ($('#wb-event-status-pill')) {
-        $('#wb-event-status-pill').className = `tag ${claimsActive ? 't3' : 't2'}`;
-        $('#wb-event-status-pill').textContent = claimsActive ? '● Claims Active' : '○ Draft';
-      }
-
-      root.innerHTML = `
-        <div style="max-width:760px;display:flex;flex-direction:column;gap:18px">
-          <div class="mc-card">
-            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-              <div>
-                <h3 style="margin:0 0 4px;font-size:16px">Publish Readiness Checklist</h3>
-                <p style="margin:0;font-size:13px;color:var(--ink-2)">All 5 requirements must be satisfied before public certificate claiming can be enabled on the website.</p>
-              </div>
-              <button type="button" class="btn sm" id="btn-test-claim-pub" style="font-size:12px">🎯 Test Claim Preview</button>
-            </div>
-
-            <div style="display:flex;flex-direction:column;gap:10px">
-              <div class="checklist-item ${hasRoster ? 'pass' : 'fail'}">
-                <div>
-                  <b>1. Attendance Roster Uploaded</b>
-                  <div style="font-size:12px;color:var(--ink-2)">${hasRoster ? `✓ ${attCount} confirmed attendees on record.` : '✕ Attendance roster has not been uploaded yet.'}</div>
-                </div>
-                <span class="tag ${hasRoster ? 't3' : 't2'}">${hasRoster ? 'READY' : 'ACTION REQUIRED'}</span>
-              </div>
-
-              <div class="checklist-item ${hasDate ? 'pass' : 'fail'}">
-                <div>
-                  <b>2. Event Date Set</b>
-                  <div style="font-size:12px;color:var(--ink-2)">${hasDate ? `✓ Event date confirmed: ${ec.event_date}.` : '✕ Event date must be specified.'}</div>
-                </div>
-                <span class="tag ${hasDate ? 't3' : 't2'}">${hasDate ? 'READY' : 'ACTION REQUIRED'}</span>
-              </div>
-
-              <div class="checklist-item ${hasCurriculum ? 'pass' : 'fail'}">
-                <div>
-                  <b>3. Curriculum Overview Filled</b>
-                  <div style="font-size:12px;color:var(--ink-2)">${hasCurriculum ? `✓ Curriculum text provided (${ec.curriculum_text.length} characters).` : '✕ Curriculum overview cannot be blank.'}</div>
-                </div>
-                <span class="tag ${hasCurriculum ? 't3' : 't2'}">${hasCurriculum ? 'READY' : 'ACTION REQUIRED'}</span>
-              </div>
-
-              <div class="checklist-item ${hasHost ? 'pass' : 'fail'}">
-                <div>
-                  <b>4. Host Chapter Set</b>
-                  <div style="font-size:12px;color:var(--ink-2)">${hasHost ? `✓ Chapter confirmed: ${esc(ec.host_chapter)}.` : '✕ Chapter name cannot be blank.'}</div>
-                </div>
-                <span class="tag ${hasHost ? 't3' : 't2'}">${hasHost ? 'READY' : 'ACTION REQUIRED'}</span>
-              </div>
-
-              <div class="checklist-item ${previewRenders ? 'pass' : 'fail'}">
-                <div>
-                  <b>5. Certificate Template & Preview</b>
-                  <div style="font-size:12px;color:var(--ink-2)">${previewRenders ? '✓ Master template loaded and rendered.' : '✕ Master template error.'}</div>
-                </div>
-                <span class="tag ${previewRenders ? 't3' : 't2'}">${previewRenders ? 'READY' : 'ACTION REQUIRED'}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Public Claims Toggle Card -->
-          <div class="mc-card" style="border-top:4px solid ${allReady ? 'var(--g)' : 'var(--r)'}">
-            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
-              <div>
-                <h4 style="margin:0 0 4px;font-size:15px">Enable Public Claims</h4>
-                <p style="margin:0;font-size:13px;color:var(--ink-2)">When enabled, attendees can generate their verified certificate on <code>/certificates/</code>.</p>
-              </div>
-              <label class="check" style="font-size:14px;font-weight:700">
-                <input type="checkbox" id="pub-claims-toggle" ${ec?.claims_enabled ? 'checked' : ''} ${allReady ? '' : 'disabled'}> Enable Claims
-              </label>
-            </div>
-            ${!allReady ? `<p style="margin:6px 0 0;font-size:12px;color:var(--r);font-weight:600">Claims cannot be enabled until all 5 checklist items above are passed.</p>` : ''}
-            
-            <div style="margin-top:10px;padding-top:12px;border-top:1px solid var(--line);display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:12.5px">
-              <button type="button" class="btn sm" id="btn-copy-claim-url" style="font-size:12px">🔗 Copy Public Claim Link</button>
-              <button type="button" class="btn o sm" id="btn-copy-claim-msg" style="font-size:12px">📢 Copy Announcement Blurb</button>
-              <a class="btn o sm" href="/certificates/?event=${selectedEventId}" target="_blank">View /certificates/ portal →</a>
-              <a class="btn o sm" href="/verify/" target="_blank">View /verify/ portal →</a>
-            </div>
-          </div>
-        </div>
-      `;
-
-      $('#btn-test-claim-pub')?.addEventListener('click', () => openTestClaimModal());
-
-      $('#btn-copy-claim-url')?.addEventListener('click', async () => {
-        const url = `${window.location.origin}/certificates/?event=${encodeURIComponent(selectedEventId)}`;
-        try {
-          await navigator.clipboard.writeText(url);
-          adminMessage('Public claim link copied to clipboard!', true);
-        } catch {
-          prompt('Public claim link:', url);
-        }
-      });
-
-      $('#btn-copy-claim-msg')?.addEventListener('click', async () => {
-        const evTitle = currentEv?.title || 'GDG SRU Event';
-        const url = `${window.location.origin}/certificates/?event=${encodeURIComponent(selectedEventId)}`;
-        const msg = `🎉 Certificates for "${evTitle}" are now live!\n\nAttendees can verify and claim their official credential here:\n${url}\n\nGDG on Campus · SR University`;
-        try {
-          await navigator.clipboard.writeText(msg);
-          adminMessage('Announcement message copied to clipboard!', true);
-        } catch {
-          prompt('Announcement blurb:', msg);
-        }
-      });
-
-      $('#pub-claims-toggle')?.addEventListener('change', async (e) => {
-        const enabled = e.target.checked;
-        try {
-          const { error } = await sb.from('event_certificates')
-            .update({ claims_enabled: enabled })
-            .eq('event_id', selectedEventId);
-          if (error) throw error;
-          if (currentEc) currentEc.claims_enabled = enabled;
-          adminMessage(enabled ? 'Public certificate claims are now OPEN for this event.' : 'Public certificate claims have been closed.', true);
-        } catch (err) {
-          e.target.checked = !enabled;
-          adminMessage(authErrorText(err));
-        }
-      });
-    }
-
-    // Initialize the default selected tab
-    if (activeTabName === 'attendance') {
-      await renderAttendanceTab();
-    } else if (activeTabName === 'publish') {
-      await refreshPublishTab();
-    } else {
-      await renderCertificateTab();
-    }
+    initGdgLogoControls();
+    if (selectedEventId) applyEventToStudio(selectedEventId);
+    setTimeout(fitCanvas, 50);
   }
 
-  /* ------------------------------------------------------------------ Module Exports */
-  async function renderCertificates(ctx) {
-    return renderWorkbench(ctx, 'certificate');
-  }
-
-  async function renderAttendance(ctx) {
-    return renderWorkbench(ctx, 'attendance');
-  }
-
-  window.GDGCertAdmin = {
-    renderCertificates,
-    renderAttendance,
-    parseNames,
-    importNames,
-  };
+  window.GDGCertAdmin = { renderCertificates, renderAttendance, parseNames, importNames };
 })();
