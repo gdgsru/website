@@ -164,8 +164,12 @@
     const d = p.event_start ? new Date(p.event_start) : null, valid = d && !Number.isNaN(d.getTime());
     const long = f.date || (valid ? fmtDate(d, { day: 'numeric', month: 'long', year: 'numeric' }) : '');
     const short = f.date_short || (valid ? fmtDate(d, { day: 'numeric', month: 'short', year: 'numeric' }) : '');
-    const rawSkills = Array.isArray(f.skills) ? f.skills.join(', ') : String(f.skills || '');
-    const skills = rawSkills.split(',').map((s) => s.trim()).filter(Boolean).map((s) => ({ tag: s.startsWith('#') ? s : '#' + s.replace(/\s+/g, '') }));
+    const rawSkills = Array.isArray(f.skills)
+      ? f.skills.map((x) => (typeof x === 'object' && x !== null ? (x.tag || x.name || x.label || '') : String(x))).filter(Boolean).join(', ')
+      : String(f.skills || '');
+    const skills = rawSkills.split(',').map((s) => s.trim()).filter(Boolean).map((s) => ({
+      tag: s.startsWith('#') ? s : '#' + s.replace(/\s+/g, '')
+    }));
     const rawCurriculum = String(f.curriculum_text || f.syllabus || '');
     const curriculumLines = rawCurriculum.split(/\n+/).map((s) => s.trim()).filter(Boolean);
     const curriculumBullets = (Array.isArray(f.curriculum_bullets) && f.curriculum_bullets.length)
@@ -185,8 +189,9 @@
       ...f,
       recipient_name: p.recipient_name || '', name: p.recipient_name || '', credential_id: p.credential_id || '',
       event_name: f.event_name || p.event_title || '',
-      host_chapter: f.host_chapter || f.chapter || '',
-      chapter: f.host_chapter || f.chapter || '',
+      host_chapter: f.chapter_name || f.host_chapter || f.chapter || 'GDG on Campus SR University',
+      chapter: f.chapter_name || f.host_chapter || f.chapter || 'GDG on Campus SR University',
+      chapter_name: f.chapter_name || f.host_chapter || f.chapter || 'GDG on Campus SR University',
       gdg_custom_logo: f.gdg_custom_logo || '',
       gdg_logo_style: gdgLogoStyle,
       hide_chapter_text: !!f.hide_chapter_text,
@@ -233,18 +238,49 @@
   async function mount(container, html) {
     container.textContent = '';
     const wrap = document.createElement('div');
-    wrap.style.cssText = 'position:relative;width:100%;overflow:hidden;background:#fff;border-radius:8px;box-shadow:0 8px 30px rgba(0,0,0,.18)';
+    wrap.style.cssText = 'position:relative;width:100%;overflow:hidden;background:#fff;border-radius:8px;box-shadow:0 8px 30px rgba(0,0,0,.18);aspect-ratio:1123/794;';
+
     const frame = document.createElement('iframe');
     frame.setAttribute('sandbox', 'allow-same-origin');
     frame.setAttribute('title', 'Certificate preview');
-    frame.style.cssText = 'width:1123px;height:794px;border:0;display:block;background:#fff;transform-origin:0 0;position:absolute;left:0;top:0';
-    wrap.appendChild(frame); container.appendChild(wrap);
-    const rescale = () => { const s = Math.min(1, wrap.clientWidth / 1123) || 1; frame.style.transform = `scale(${s})`; wrap.style.height = Math.round(794 * s) + 'px'; };
-    rescale(); if (window.ResizeObserver) new ResizeObserver(rescale).observe(wrap); else addEventListener('resize', rescale);
+    frame.setAttribute('scrolling', 'no');
+    frame.style.cssText = 'width:1123px!important;min-width:1123px!important;max-width:1123px!important;height:794px!important;min-height:794px!important;max-height:794px!important;border:0;display:block;background:#fff;transform-origin:0 0;position:absolute;left:0;top:0;';
+    wrap.appendChild(frame);
+    container.appendChild(wrap);
+
+    const rescale = () => {
+      const w = wrap.clientWidth || container.clientWidth || 360;
+      const s = Math.min(1, w / 1123) || 1;
+      frame.style.transform = `scale(${s})`;
+      wrap.style.height = Math.round(794 * s) + 'px';
+    };
+    rescale();
+    if (window.ResizeObserver) new ResizeObserver(rescale).observe(wrap);
+    else addEventListener('resize', rescale);
+
     await new Promise((res) => { frame.onload = res; frame.srcdoc = html; });
     const doc = frame.contentDocument;
     try { await Promise.race([doc.fonts.ready, new Promise((r) => setTimeout(r, 4000))]); } catch { /* fonts are best effort */ }
     fitName(doc);
+
+    // On mobile screens and desktop, create an image overlay from canvas so mobile browsers never reflow or clip the iframe!
+    try {
+      const canvas = await toCanvas(frame);
+      const img = document.createElement('img');
+      img.src = canvas.toDataURL('image/png');
+      img.alt = 'Certificate preview';
+      img.style.cssText = 'width:100%;height:auto;display:block;border-radius:8px;position:relative;z-index:2;pointer-events:auto;';
+      wrap.style.height = 'auto';
+      wrap.style.aspectRatio = 'auto';
+      frame.style.opacity = '0';
+      frame.style.pointerEvents = 'none';
+      frame.style.zIndex = '1';
+      wrap.appendChild(img);
+    } catch (e) {
+      console.warn('Canvas preview notice:', e);
+      rescale();
+    }
+
     return frame;
   }
 

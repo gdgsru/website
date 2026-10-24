@@ -2140,7 +2140,9 @@
 
       const payload = {
         event_name: $('#inpEventName').value.trim(),
-        chapter_name: $('#inpChapterName').value.trim(),
+        chapter_name: $('#inpChapterName').value.trim() || 'GDG on Campus SR University',
+        chapter: $('#inpChapterName').value.trim() || 'GDG on Campus SR University',
+        host_chapter: $('#inpChapterName').value.trim() || 'GDG on Campus SR University',
         date: $('#inpEventDate').value.trim(),
         cert_tag: $('#inpCertTag') ? $('#inpCertTag').value.trim() : 'OFFICIAL CREDENTIAL',
         cert_title: $('#inpCertTitle') ? $('#inpCertTitle').value.trim() : 'Certificate of Participation',
