@@ -9,12 +9,13 @@ ALTER TABLE public.events
 
 COMMENT ON COLUMN public.events.speaker IS 'Speaker name(s) shown in the event feature card on the events page.';
 
--- 2. Refresh both versions of the public_event_list view to include speaker.
-CREATE OR REPLACE VIEW public.public_event_list WITH (security_invoker = false) AS
+-- 2. DROP then recreate the view — CREATE OR REPLACE cannot reorder columns.
+DROP VIEW IF EXISTS public.public_event_list;
+
+CREATE VIEW public.public_event_list WITH (security_invoker = false) AS
   SELECT id, title, slug, category, summary, description, image_url,
          start_at, end_at, timezone, venue, speaker, online_url,
          registration_url, featured, pinned_next_session
   FROM public.events WHERE status = 'published';
 
--- Re-grant (CREATE OR REPLACE drops and re-creates, so grants must be re-applied).
 GRANT SELECT ON public.public_event_list TO anon, authenticated;
