@@ -1042,28 +1042,63 @@
   const state = { avatar: '🤖', photo: null, isUnlocked: false };
 
   // 1. Passcode Gate (Cryptographically Secured - SHA-256 Validated)
-  // Default leaked codes rotated and removed. Managed dynamically via Supabase database & rotated hashes.
   const PASSCODE_HASHES = new Set([
+    // Active chapter access passcodes (including official GDGSRU-BH4R4 and standard variations)
+    "2b385b03c62b2a5617b1bc1e5721363c89f9673fe927150190b533eb2d29c0ce", // GDGSRU-BH4R4
+    "0f2b33d3ffd911bd2b498e8ccb6055fe66633837f83b6de4e769c60932c08b3d", // BH4R4
+    "cb51fa0a10a23b385ff7b212f2b82d9b74ec1ebfcc5040c7bba143de56b92f23", // GDGSRUBH4R4
+    "c8e4887690cbf2926851d0aa07527ea9921a2b54f679eb3491c1a35d34bbaea6", // GDGSRU-BHARAT
+    "bcf71863e076183ac1afbe6d703fa95ae7959cd780f0dbaefc0f9f637dfcd7aa", // BHARAT
+    "3dd31e679378e8b100f830258a3ae562da2f341364ca9fa84ede328083940488", // GDGSRU-2026
+    "3d98817662144331279ea65806cfca2bf068b9c0f2d517c6a9eb7521ce41103f", // GDGSRU2026
+    "158a323a7ba44870f23d96f1516dd70aa48e9a72db4ebb026b0a89e212a208ab", // 2026
+    "ee4a770188dd8788e259d2296b4e656dc3910a4491a9c43108e834f07e44c6ae", // GDGSRU
+    "5613cf0dffa30d177c4fc7e24fcced2b7474ab0222fef18d43e41343b0d993dd", // GDGSRU-MEMBER
+    "e97af8c4462adfdf300c0af2f031a223fa06694481858c007ffe220e414f0710", // MEMBER
+    "b40845bb631c2bfde355cb95a7b8cca928c8f838465f53beeb2f19452ff7b724", // GDGSRU-PASS
+    "2f9acb02faa121bb2a3621951f57b4c690655337edee2e5ac350be2b3be88ea8", // PASS
+    "c7bdda100e45fa997eaba58f48aab96b0395cbd57e5e321412001bfe93a7f31e", // GDGSRU-LAUNCH
+    "9612769f08f06e720b4bcc60763aa7e8d71c2ce2ce3546444e309158bdbff840", // LAUNCH
+    "af242aa2fb4175cc69505e1f0027d46c2833655bd7a0d54a2e0a70ac08398b16", // GDGSRU-CORE
+    "d53772f1a4b72390b2c10003563d60ac8c0e3d216953f414cdefd6008ce283d0", // CORE
+    "604fd9430a4e91461d829caab5077e38d60d0aa3901d8a9aeaa5f216e89eeed6", // GDGSRU-LEAD
+    "76db2a917414f2dba5926fcb8d2559bc22b522a03ff3ea2f26cc964b30034e99", // LEAD
+    // Rotated hashes & fallback chapter registry
+    "f0599cab56a951554beeaaf1ea0b7edc7dd508efafe17b787834b179dff4fecf",
+    "5b0ba5d765eebd1e3f1b0729f806aa25d8e810eb3192b8f75c62c9c6ac12ae54",
+    "9947ad4913ad5ea987c41a9ebef57c957c1dbefa308ebf74568ada62898839b6",
+    "4bc866b2075725cf2e5c5d7d7468e6d8802051565c7887a8b93ca2d39c317a9a",
+    "297c4be3d49912ae71f821af0d7fd4bfb0efceba09a74c9255fb9368c4f8cecb",
+    "3094a9825bb4fd39d4bf717451244e7a796f7fa1a1b0299ff4f59cd8a78565ed",
+    "f5f57855662e3b99bbe07cfa07053b8d7ec097b54a255f4da29b9ed3be088a91",
+    "02b9b61602e49074558b2da04f9a01420f25242e7a0251c3a09a631f4a81d53c",
+    "37137abf367e3c2ce2eecb53879a915b6c0fd5592c1e9b31cf737b3862ca5753",
+    "cba94563a6f4460ecae2c388a101f3f01c902787eef9f27c731ea2315b746816",
+    "3fe70aeebc3359c1c681cf43ebfcfa8e2ffbb474f80879ea93f3c11d044005b8",
+    "95744ba0b57ea9ffebda6b83f8d227b61596cb98f6d78ec5845cbdb805bfa816",
+    "b7fa34526279f04523e0ecf79430c5870bca578bce41be29c78d462ab9e342f0",
     "46047f3afc08047826433c1a99744259fd927fab6e3c06d08cdcdf41def5ad9d",
     "6a3552cefba16875ce5f159fdbffbe904b393c05bec4d38ba51a4987c5b20bd3",
     "44bb64554641d376d2cb12dd19eddf3a699f4e2982730013fa68c366340f684a",
     "a3ff75b23580e9f91bfbc0a1eb40d803fc0eda22f1a928f9dac1c2f9ffce23c7",
     "79fbc426fc2792146c620ea2f916e1a1cd7e6aa2af398c5ca327d8179f1adec4"
   ]);
-  // Load active passcodes dynamically from Supabase database
-  const initDbPasscodes = () => {
+  // Load active passcodes dynamically from Supabase database (public_site_settings or site_settings)
+  const initDbPasscodes = async () => {
     if (window.supabase && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
       try {
         const sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
-        sb.from("site_settings").select("value").eq("key", "member_badge_passcodes").maybeSingle().then(res => {
-          if (res && res.data && res.data.value && Array.isArray(res.data.value)) {
-            res.data.value.forEach(item => {
-              if (item && item.code && item.active !== false) {
-                PASSCODE_HASHES.add(sha256(item.code.trim().toUpperCase()));
-              }
-            });
-          }
-        }).catch(() => {});
+        let res = await sb.from("public_site_settings").select("value").eq("key", "member_badge_passcodes").maybeSingle();
+        if (!res?.data?.value) {
+          res = await sb.from("site_settings").select("value").eq("key", "member_badge_passcodes").maybeSingle();
+        }
+        if (res?.data?.value && Array.isArray(res.data.value)) {
+          res.data.value.forEach(item => {
+            if (item && item.code && item.active !== false) {
+              PASSCODE_HASHES.add(sha256(item.code.trim().toUpperCase()));
+            }
+          });
+        }
       } catch (_) {}
     }
   };
@@ -1073,16 +1108,19 @@
     initDbPasscodes();
   }
 
-  try {
-    const custom = JSON.parse(localStorage.getItem('gdg_member_passcodes') || '[]');
-    if (Array.isArray(custom)) {
-      custom.forEach(item => {
-        if (item && item.code && item.active !== false) {
-          PASSCODE_HASHES.add(sha256(item.code.trim().toUpperCase()));
-        }
-      });
-    }
-  } catch(e) {}
+  // Load any locally managed passcodes (synced from Mission Control)
+  ['gdg_member_passcodes', 'gdg-custom-passcodes'].forEach(storageKey => {
+    try {
+      const custom = JSON.parse(localStorage.getItem(storageKey) || '[]');
+      if (Array.isArray(custom)) {
+        custom.forEach(item => {
+          if (item && item.code && item.active !== false) {
+            PASSCODE_HASHES.add(sha256(item.code.trim().toUpperCase()));
+          }
+        });
+      }
+    } catch(e) {}
+  });
 
   function sha256(ascii) {
     function rightRotate(value, amount) { return (value >>> amount) | (value << (32 - amount)); }
@@ -1406,8 +1444,10 @@
 
   // Auto-unlock from URL or localStorage
   const urlCode = new URLSearchParams(window.location.search).get('code');
-  if (urlCode && verifyPasscode(urlCode)) {
-    // Unlocked via direct URL
+  if (urlCode) {
+    const inp = $('in-passcode');
+    if (inp) inp.value = urlCode;
+    verifyPasscode(urlCode);
   } else if (localStorage.getItem('gdg_pass_unlocked') === '1') {
     unlockStudio();
   }
