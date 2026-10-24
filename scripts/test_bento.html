@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mobile Bento Test</title>
+<link rel="stylesheet" href="../cloudflare-pages-site/assets/fonts/fonts.css">
+<link rel="stylesheet" href="../cloudflare-pages-site/assets/css/page-events.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #fdfdfd;
+    padding: 20px 16px;
+    font-family: "Google Sans Flex", "Google Sans", system-ui, sans-serif;
+  }
+  .sec-cap {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #5f6368;
+    margin-bottom: 4px;
+  }
+  h2 { font-size: 22px; font-weight: 800; margin-bottom: 6px; color: #111b2e; }
+  .lead { font-size: 13px; color: #5f6368; margin-bottom: 16px; line-height: 1.4; }
+
+  @media (max-width: 680px) {
+    .g16-row,
+    .event-format-grid,
+    .event-format-grid.g16-row,
+    .editorial-grid.g16-row,
+    .grid.g16-row,
+    #home-tracks .g16-row {
+      display: grid !important;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 10px !important;
+      justify-items: stretch !important;
+      align-items: stretch !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      margin-top: 14px !important;
+    }
+    .g16-tl,
+    .g16-tl.g16-tl-info,
+    .grid > .g16-tl,
+    .g16-row > .g16-tl {
+      width: 100% !important;
+      max-width: 100% !important;
+      min-width: 0 !important;
+      margin: 0 !important;
+      display: flex !important;
+    }
+    .g16-tl-card,
+    .g16-tl-info .g16-tl-card,
+    .g16-tl-info.g16-long .g16-tl-card {
+      min-height: 145px !important;
+      height: 100% !important;
+      border-radius: 18px !important;
+      padding: 12px !important;
+      overflow: hidden !important;
+      box-shadow: 0 4px 14px rgba(17, 27, 46, 0.08) !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: space-between !important;
+      position: relative !important;
+    }
+    .g16-tl-glass {
+      position: relative !important;
+      inset: auto !important;
+      height: 100% !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: space-between !important;
+      pointer-events: auto !important;
+      min-width: 0 !important;
+    }
+    .g16-tl-bottom {
+      position: static !important;
+      inset: auto !important;
+      order: -1 !important;
+      margin-bottom: 8px !important;
+      display: flex !important;
+      justify-content: flex-start !important;
+      gap: 6px !important;
+    }
+    .g16-tl-num {
+      min-width: 24px !important;
+      height: 20px !important;
+      font-size: 9.5px !important;
+      font-weight: 800 !important;
+      padding: 0 6px !important;
+      border-radius: 99px !important;
+      box-shadow: none !important;
+      line-height: 20px !important;
+    }
+    .g16-tl-content {
+      position: static !important;
+      inset: auto !important;
+      display: flex !important;
+      flex-direction: column !important;
+      min-width: 0 !important;
+    }
+    .g16-tl-title {
+      font-size: 14.5px !important;
+      line-height: 1.2 !important;
+      font-weight: 800 !important;
+      letter-spacing: -0.02em !important;
+      color: #111b2e !important;
+      word-break: break-word !important;
+    }
+    :root[data-theme="dark"] .g16-tl-title {
+      color: #ffffff !important;
+    }
+    .g16-tl-text {
+      font-size: 10.5px !important;
+      line-height: 1.35 !important;
+      margin-top: 4px !important;
+      color: #5f6368 !important;
+      display: -webkit-box !important;
+      -webkit-line-clamp: 2 !important;
+      -webkit-box-orient: vertical !important;
+      overflow: hidden !important;
+    }
+    :root[data-theme="dark"] .g16-tl-text {
+      color: rgba(255, 255, 255, 0.68) !important;
+    }
+    .g16-tl-logo {
+      position: absolute !important;
+      top: 10px !important;
+      right: 10px !important;
+      width: 28px !important;
+      height: 28px !important;
+      margin: 0 !important;
+      transform: none !important;
+    }
+    .g16-tl-c1, .g16-tl-c2, .g16-tl-c3, .g16-tl-c4 {
+      display: none !important;
+    }
+    .g16-tl-c5 {
+      position: relative !important;
+      inset: auto !important;
+      width: 28px !important;
+      height: 28px !important;
+      margin: 0 !important;
+      display: grid !important;
+      place-content: center !important;
+      border-radius: 50% !important;
+      box-shadow: 0 0 10px color-mix(in srgb, var(--a) 60%, transparent) !important;
+    }
+    .g16-tl-c5 svg {
+      width: 14px !important;
+      height: 14px !important;
+    }
+    .g16-row > .g16-tl:nth-child(3):last-child {
+      grid-column: 1 / -1 !important;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="sec-cap">WAYS TO TAKE PART</div>
+  <h2>Learn by doing.</h2>
+  <p class="lead">Different formats, same idea: leave with something you understand better.</p>
+  
+  <div class="g16-row event-format-grid">
+    <div class="g16-tl g16-tl-info g16-tl-b" ><div class="g16-tl-card"><div class="g16-tl-glass"><div class="g16-tl-content"><span class="g16-tl-title">Workshops</span><span class="g16-tl-text">Hands-on sessions that walk through a tool or concept, one practical step at a time.</span></div><div class="g16-tl-bottom"><span class="g16-tl-num">01</span></div></div><div class="g16-tl-logo" aria-hidden="true"><span class="g16-tl-c g16-tl-c1"></span><span class="g16-tl-c g16-tl-c2"></span><span class="g16-tl-c g16-tl-c3"></span><span class="g16-tl-c g16-tl-c4"></span><span class="g16-tl-c g16-tl-c5"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 8l-5 4 5 4M15 8l5 4-5 4M13.5 5l-3 14"/></svg></span></div></div></div>
+    <div class="g16-tl g16-tl-info g16-tl-r" ><div class="g16-tl-card"><div class="g16-tl-glass"><div class="g16-tl-content"><span class="g16-tl-title">Tech talks</span><span class="g16-tl-text">Fresh perspectives from builders, researchers, alumni, and people working in tech.</span></div><div class="g16-tl-bottom"><span class="g16-tl-num">02</span></div></div><div class="g16-tl-logo" aria-hidden="true"><span class="g16-tl-c g16-tl-c1"></span><span class="g16-tl-c g16-tl-c2"></span><span class="g16-tl-c g16-tl-c3"></span><span class="g16-tl-c g16-tl-c4"></span><span class="g16-tl-c g16-tl-c5"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span></div></div></div>
+    <div class="g16-tl g16-tl-info g16-tl-y" ><div class="g16-tl-card"><div class="g16-tl-glass"><div class="g16-tl-content"><span class="g16-tl-title">Study jams</span><span class="g16-tl-text">Focused group learning with small goals, shared notes, and time to ask questions.</span></div><div class="g16-tl-bottom"><span class="g16-tl-num">03</span></div></div><div class="g16-tl-logo" aria-hidden="true"><span class="g16-tl-c g16-tl-c1"></span><span class="g16-tl-c g16-tl-c2"></span><span class="g16-tl-c g16-tl-c3"></span><span class="g16-tl-c g16-tl-c4"></span><span class="g16-tl-c g16-tl-c5"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg></span></div></div></div>
+    <div class="g16-tl g16-tl-info g16-tl-g" ><div class="g16-tl-card"><div class="g16-tl-glass"><div class="g16-tl-content"><span class="g16-tl-title">Build sessions</span><span class="g16-tl-text">Bring an idea, find collaborators, and turn a rough prototype into a working demo.</span></div><div class="g16-tl-bottom"><span class="g16-tl-num">04</span></div></div><div class="g16-tl-logo" aria-hidden="true"><span class="g16-tl-c g16-tl-c1"></span><span class="g16-tl-c g16-tl-c2"></span><span class="g16-tl-c g16-tl-c3"></span><span class="g16-tl-c g16-tl-c4"></span><span class="g16-tl-c g16-tl-c5"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2L4 14h6l-1 8 9-12h-6z"/></svg></span></div></div></div>
+  </div>
+
+</body>
+</html>
