@@ -1,6 +1,6 @@
 import re, urllib.request, json
 
-with open('deployment/supabase/FULL_SUPABASE_SETUP.sql', 'r', encoding='utf-8') as f:
+with open('supabase/FULL_SUPABASE_SETUP.sql', 'r', encoding='utf-8') as f:
     text = f.read()
 
 tables = re.findall(r'CREATE TABLE (?:IF NOT EXISTS )?public\.([a-zA-Z0-9_]+)', text, re.IGNORECASE)
