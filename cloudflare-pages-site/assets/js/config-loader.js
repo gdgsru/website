@@ -274,24 +274,32 @@
     style.id = 'gdg-announcement-styles';
     style.textContent = `
       :root { --announcement-h: 0px; }
+      @keyframes gdgMeshFlow {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+      }
+      @keyframes gdgPulseBeacon {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.35; transform: scale(1.3); }
+      }
       .gdg-announcement-bar {
-        background: #111317;
-        color: #f1f3f4;
-        border-bottom: 1px solid rgba(255,255,255,0.12);
-        font: 500 13px/1.35 var(--f-body, system-ui, sans-serif);
-        padding: 8px 16px;
+        background: linear-gradient(180deg, rgba(8, 12, 24, 0.22) 0%, rgba(8, 12, 24, 0.55) 100%),
+                    linear-gradient(90deg, #1A73E8 0%, #6366F1 26%, #EA4335 60%, #FBBC04 84%, #34A853 100%);
+        background-size: 240% 240%;
+        animation: gdgMeshFlow 16s ease infinite;
+        color: #ffffff;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.22);
+        box-shadow: 0 4px 20px -2px rgba(26, 115, 232, 0.28);
+        font: 500 13px/1.4 var(--f-body, system-ui, -apple-system, sans-serif);
+        padding: 8.5px 16px;
         position: relative;
         z-index: 100;
         box-sizing: border-box;
       }
-      html[data-theme="light"] .gdg-announcement-bar {
-        background: #f8f9fa;
-        color: #202124;
-        border-bottom: 1px solid #dadce0;
-      }
       .gdg-announcement-bar[hidden] { display: none !important; }
       .gdg-announcement-wrap {
-        max-width: 1180px;
+        max-width: 1220px;
         margin: 0 auto;
         display: flex;
         align-items: center;
@@ -303,51 +311,80 @@
       .gdg-announcement-badge {
         display: inline-flex;
         align-items: center;
-        padding: 2.5px 8.5px;
-        border-radius: 99px;
-        background: #4285f4;
-        color: #fff;
-        font: 700 10.5px/1 var(--f-mono, monospace);
+        gap: 6.5px;
+        padding: 3px 10px;
+        border-radius: 999px;
+        background: rgba(0, 0, 0, 0.42);
+        border: 1px solid rgba(255, 255, 255, 0.32);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        color: #ffffff;
+        font: 800 10.5px/1 var(--f-mono, monospace);
         letter-spacing: .08em;
         text-transform: uppercase;
         flex-shrink: 0;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+      }
+      .gdg-announcement-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 999px;
+        background: #34A853;
+        box-shadow: 0 0 8px #34A853;
+        animation: gdgPulseBeacon 2s infinite ease-in-out;
       }
       .gdg-announcement-text {
-        font-weight: 500;
-        color: inherit;
+        font-weight: 600;
+        color: #ffffff;
         letter-spacing: -0.01em;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.35);
       }
       .gdg-announcement-btn {
         display: inline-flex;
         align-items: center;
-        gap: 4px;
-        padding: 4px 13px;
-        border-radius: 99px;
-        background: #fff;
-        color: #111;
-        font: 600 12px/1 var(--f-body, system-ui);
+        gap: 5px;
+        padding: 4.5px 14px;
+        border-radius: 999px;
+        background: #ffffff;
+        color: #0f172a !important;
+        font: 700 12px/1 var(--f-body, system-ui);
         text-decoration: none;
         white-space: nowrap;
-        transition: transform .15s ease;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.22);
+        transition: transform .18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow .18s ease, background .15s;
       }
-      html[data-theme="light"] .gdg-announcement-btn {
-        background: #202124;
-        color: #fff;
+      .gdg-announcement-btn:hover {
+        transform: translateY(-1px) scale(1.02);
+        background: #f8fafc;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.35);
       }
-      .gdg-announcement-btn:hover { transform: translateY(-1px); }
       .gdg-announcement-close {
-        background: none;
-        border: 0;
-        color: inherit;
-        opacity: .6;
-        font-size: 19px;
-        line-height: 1;
-        padding: 2px 6px;
+        background: rgba(255, 255, 255, 0.16);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        color: #ffffff;
+        width: 22px;
+        height: 22px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         cursor: pointer;
-        margin-left: 6px;
-        border-radius: 4px;
+        margin-left: 4px;
+        border-radius: 999px;
+        font-size: 14px;
+        line-height: 1;
+        transition: background .15s ease, transform .15s ease;
+        padding: 0;
       }
-      .gdg-announcement-close:hover { opacity: 1; }
+      .gdg-announcement-close:hover {
+        background: rgba(255, 255, 255, 0.35);
+        transform: scale(1.1);
+      }
+      @media (max-width: 640px) {
+        .gdg-announcement-bar { padding: 8px 12px; }
+        .gdg-announcement-wrap { gap: 8px; }
+        .gdg-announcement-text { font-size: 12px; }
+        .gdg-announcement-btn { padding: 4px 11px; font-size: 11.5px; }
+      }
     `;
     document.head.appendChild(style);
   }
@@ -391,10 +428,10 @@
 
     bar.innerHTML = `
       <div class="gdg-announcement-wrap">
-        ${badgeText ? `<span class="gdg-announcement-badge">${esc(badgeText)}</span>` : ''}
+        ${badgeText ? `<span class="gdg-announcement-badge"><span class="gdg-announcement-dot" aria-hidden="true"></span>${esc(badgeText)}</span>` : ''}
         <span class="gdg-announcement-text">${esc(msgText)}</span>
         ${(btnLabel && isSafeHttps) ? `<a class="gdg-announcement-btn" href="${esc(btnUrl)}" target="_blank" rel="noopener noreferrer">${esc(btnLabel)}</a>` : ''}
-        <button type="button" class="gdg-announcement-close" aria-label="Dismiss announcement">×</button>
+        <button type="button" class="gdg-announcement-close" aria-label="Dismiss announcement">✕</button>
       </div>
     `;
     bar.hidden = false;

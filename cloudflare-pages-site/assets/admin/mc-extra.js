@@ -303,10 +303,10 @@
       <section class="admin-panel"><h2>Announcement Bar</h2><p class="muted">Global notification bar displayed above the header on every page. Saving edits auto-increments the announcement version so dismissed visitors see the update.</p>
         <div style="margin:16px 0;padding:14px;border:1px dashed var(--ln);border-radius:12px;background:var(--cd)">
           <small class="muted" style="display:block;margin-bottom:8px;font-weight:600">Live Preview:</small>
-          <div id="ann-preview-bar" style="background:#111317;color:#fff;padding:8px 16px;border-radius:8px;display:flex;align-items:center;justify-content:center;gap:12px;font-size:13px;flex-wrap:wrap">
-            <span id="ann-prev-badge" style="background:#4285f4;color:#fff;padding:2px 8px;border-radius:99px;font-weight:700;font-size:10px">${esc(ann.badge || 'UPCOMING')}</span>
+          <div id="ann-preview-bar" style="background:linear-gradient(180deg,rgba(8,12,24,0.22) 0%,rgba(8,12,24,0.55) 100%),linear-gradient(90deg,#1A73E8 0%,#6366F1 26%,#EA4335 60%,#FBBC04 84%,#34A853 100%);color:#fff;padding:9px 16px;border-radius:10px;display:flex;align-items:center;justify-content:center;gap:12px;font-size:13px;flex-wrap:wrap;box-shadow:0 4px 16px rgba(26,115,232,0.25)">
+            <span id="ann-prev-badge" style="background:rgba(0,0,0,0.42);color:#fff;border:1px solid rgba(255,255,255,0.32);padding:3px 10px;border-radius:99px;font-weight:800;font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;display:inline-flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:#34A853"></span>${esc(ann.badge || 'UPCOMING')}</span>
             <span id="ann-prev-text" style="font-weight:500">${esc(ann.text || 'Your announcement will appear here.')}</span>
-            <span id="ann-prev-btn" style="background:#fff;color:#111;padding:3px 12px;border-radius:99px;font-weight:600;font-size:11px">${esc(ann.button_label || 'Action ↗')}</span>
+            <span id="ann-prev-btn" style="background:#fff;color:#0f172a;padding:4.5px 14px;border-radius:99px;font-weight:700;font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,0.2)">${esc(ann.button_label || 'Action ↗')}</span>
           </div>
         </div>
         <form id="announcement-form" class="admin-form">
