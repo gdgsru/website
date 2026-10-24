@@ -1,43 +1,43 @@
 /* Mission Control — GDG SRU administration design system. Modern Google Developer aesthetics. */
 :root {
-  --ground: #f8fafc;
+  --ground: #f8f9fa;
   --surface: #ffffff;
-  --sunk: #f1f5f9;
-  --sunk-2: #e2e8f0;
-  --ink: #0f172a;
-  --ink-2: #475569;
-  --ink-3: #64748b;
-  --line: #e2e8f0;
-  --line-2: #f1f5f9;
+  --sunk: #f1f3f4;
+  --sunk-2: #e8eaed;
+  --ink: #202124;
+  --ink-2: #5f6368;
+  --ink-3: #80868b;
+  --line: #dadce0;
+  --line-2: #f1f3f4;
   --blue: #1a73e8;
   --blue-hover: #1557b0;
-  --blue-soft: #eff6ff;
-  --blue-border: #bfdbfe;
-  --green: #16a34a;
-  --green-hover: #15803d;
-  --green-soft: #f0fdf4;
-  --green-border: #bbf7d0;
-  --yellow: #d97706;
-  --yellow-ink: #92400e;
-  --yellow-soft: #fefce8;
-  --yellow-border: #fef08a;
-  --red: #dc2626;
-  --red-hover: #b91c1c;
-  --red-soft: #fef2f2;
-  --red-border: #fecaca;
+  --blue-soft: #e8f0fe;
+  --blue-border: #aecbfa;
+  --green: #1e8e3e;
+  --green-hover: #137333;
+  --green-soft: #e6f4ea;
+  --green-border: #ceead6;
+  --yellow: #f9ab00;
+  --yellow-ink: #b06000;
+  --yellow-soft: #fef7e0;
+  --yellow-border: #feefc3;
+  --red: #d93025;
+  --red-hover: #b31412;
+  --red-soft: #fce8e6;
+  --red-border: #fad2cf;
   --r-s: 6px;
-  --r-m: 10px;
-  --r-l: 16px;
-  --r-xl: 20px;
+  --r-m: 8px;
+  --r-l: 12px;
+  --r-xl: 16px;
   --rail: 256px;
-  --top: 64px;
+  --top: 56px;
   --font: "Google Sans Flex", "Segoe UI", system-ui, -apple-system, sans-serif;
   --code: "Google Sans Code", ui-monospace, Menlo, Consolas, monospace;
-  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.05);
-  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
-  --shadow-md: 0 4px 12px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -2px rgba(15, 23, 42, 0.04);
-  --shadow-lg: 0 12px 28px -4px rgba(15, 23, 42, 0.12), 0 4px 10px -2px rgba(15, 23, 42, 0.06);
-  --shadow-xl: 0 20px 35px -5px rgba(15, 23, 42, 0.15), 0 10px 15px -5px rgba(15, 23, 42, 0.08);
+  --shadow-xs: 0 1px 2px rgba(60, 64, 67, 0.05);
+  --shadow-sm: 0 1px 3px rgba(60, 64, 67, 0.1), 0 1px 2px rgba(60, 64, 67, 0.06);
+  --shadow-md: 0 4px 10px rgba(60, 64, 67, 0.12), 0 1px 3px rgba(60, 64, 67, 0.08);
+  --shadow-lg: 0 8px 24px rgba(60, 64, 67, 0.15), 0 2px 6px rgba(60, 64, 67, 0.08);
+  --shadow-xl: 0 16px 36px rgba(60, 64, 67, 0.18), 0 4px 12px rgba(60, 64, 67, 0.1);
   color-scheme: light;
 }
 
@@ -72,22 +72,23 @@ code {
 
 /* ---------- controls ---------- */
 button, .button {
-  font: 600 13.5px var(--font);
+  font: 500 13px var(--font);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
-  min-height: 38px;
-  padding: 0 16px;
-  border-radius: var(--r-m);
+  gap: 6px;
+  min-height: 36px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: var(--r-s);
   border: 1px solid var(--blue);
   background: var(--blue);
   color: #fff;
   cursor: pointer;
   text-decoration: none;
   white-space: nowrap;
-  box-shadow: 0 1px 2px rgba(26, 115, 232, 0.25);
-  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(26, 115, 232, 0.2);
+  transition: all 0.12s ease;
 }
 button:hover, .button:hover {
   background: var(--blue-hover);
@@ -178,16 +179,17 @@ button.danger.solid:hover { background: var(--red-hover); border-color: var(--re
 .mc-i.small { width: 14px; height: 14px; stroke-width: 2; }
 
 input, select, textarea {
-  font: 400 14px var(--font);
+  font: 400 13.5px var(--font);
   width: 100%;
-  min-height: 42px;
-  padding: 9px 13px;
+  min-height: 36px;
+  height: 36px;
+  padding: 6px 11px;
   border: 1px solid var(--line);
-  border-radius: var(--r-m);
+  border-radius: var(--r-s);
   background: var(--surface);
   color: var(--ink);
-  box-shadow: var(--shadow-xs);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: none;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
 }
 textarea { resize: vertical; line-height: 1.55; }
 input:focus, select:focus, textarea:focus {
@@ -1051,15 +1053,15 @@ kbd {
   top: 0;
   right: 0;
   bottom: 0;
-  width: min(580px, 100%);
+  width: min(540px, 100%);
   display: flex;
   flex-direction: column;
   background: var(--surface);
-  box-shadow: -15px 0 50px rgba(15, 23, 42, 0.18);
+  box-shadow: -8px 0 32px rgba(32, 33, 36, 0.16);
   transform: translateX(102%);
-  transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.mc-drawer.wide { width: min(990px, 100%); }
+.mc-drawer.wide { width: min(720px, 100%); }
 .mc-drawer-wrap.open .mc-drawer { transform: none; }
 .mc-drawer header {
   display: flex;
@@ -1543,30 +1545,30 @@ th { background: var(--sunk); font-weight: 600; color: var(--ink-2); }
    MISSION CONTROL: POLISHED GOOGLE PALETTE
    ========================================================================== */
 html[data-theme="dark"] {
-  --ground: #0f0f10;
-  --surface: #171719;
-  --sunk: #1f1f22;
-  --sunk-2: #28282c;
+  --ground: #0b0c0e;
+  --surface: #141518;
+  --sunk: #1c1d21;
+  --sunk-2: #24252a;
   --ink: #f1f3f4;
-  --ink-2: #bdc1c6;
+  --ink-2: #9aa0a6;
   --ink-3: #80868b;
-  --line: #303134;
-  --line-2: #242528;
+  --line: #2e3036;
+  --line-2: #212328;
   --blue: #8ab4f8;
   --blue-hover: #aecbfa;
-  --blue-soft: rgba(138, 180, 248, 0.12);
+  --blue-soft: rgba(138, 180, 248, 0.14);
   --blue-border: rgba(138, 180, 248, 0.3);
   --green: #81c995;
   --green-hover: #a8dab5;
-  --green-soft: rgba(129, 201, 149, 0.12);
+  --green-soft: rgba(129, 201, 149, 0.14);
   --green-border: rgba(129, 201, 149, 0.3);
   --yellow: #fdd663;
   --yellow-ink: #fde293;
-  --yellow-soft: rgba(253, 214, 99, 0.12);
+  --yellow-soft: rgba(253, 214, 99, 0.14);
   --yellow-border: rgba(253, 214, 99, 0.3);
   --red: #f28b82;
   --red-hover: #f6aea9;
-  --red-soft: rgba(242, 139, 130, 0.12);
+  --red-soft: rgba(242, 139, 130, 0.14);
   --red-border: rgba(242, 139, 130, 0.3);
   --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.2);
