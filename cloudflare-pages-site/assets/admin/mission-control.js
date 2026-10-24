@@ -159,7 +159,7 @@
   const dropCache = (prefix = '') => { for (const k of [...cache.keys()]) if (k.startsWith(prefix)) cache.delete(k); };
 
   function authErrorText(error) {
-    const text = String(error?.message || ''), all = text + ' ' + String(error?.details || '');
+    const text = String(error?.message || ''), all = text + ' ' + String(error?.details || '') + ' ' + String(error?.hint || '');
     const known = [
       [/events_one_pinned_next_session/, 'Another published event is already pinned as Next Session. Unpin it first.'],
       [/events_slug_key/, 'Another event already uses that slug. Choose a different one.'],
@@ -172,11 +172,21 @@
       [/team_departments_(name|slug)_key/, 'A department with that name or slug already exists.'],
       [/(_url_check|image_url|online_url|registration_url)/, 'A link must start with http:// or https://.'],
       [/attendance_records_event_id_fkey|community_points_period_id_fkey/, 'This item still has records attached (attendance or points). Remove those first.'],
-      [/resources_event_id_fkey/, 'The linked event no longer exists.']
+      [/resources_event_id_fkey/, 'The linked event no longer exists.'],
+      [/certificate_configs.*fields|pg_column_size/, 'Certificate data is too large for the database (> 200 KB). Images are automatically compressed, or try resetting the custom logo.'],
+      [/ec_claims_ready/, 'To open public claims on /certificates/, the event must have a date, host chapter name, and curriculum description.'],
+      [/ec_curriculum_len/, 'The curriculum text is too long (maximum 2,000 characters).'],
+      [/ec_title_len/, 'The certificate title must be between 1 and 80 characters.'],
+      [/ec_host_len/, 'The host chapter name cannot exceed 120 characters.'],
+      [/ec_skills_len/, 'Maximum 12 skills allowed on a certificate.'],
+      [/ec_sig_len/, 'Maximum 2 signatories allowed on a certificate.']
     ];
     if (error?.code === '23505' || error?.code === '23514' || error?.code === '23503' || /violates|duplicate key/i.test(text)) for (const [re, m] of known) if (re.test(all)) return m;
     if (error?.code === '23505') return 'An entry with the same unique value (for example the slug or name) already exists.';
-    if (error?.code === '23514') return 'One of the values is not allowed. Check the dates, links and options and try again.';
+    if (error?.code === '23514') {
+      const details = error?.details || error?.message;
+      return 'One of the values is not allowed.' + (details ? ` (${details})` : ' Check the dates, links and options and try again.');
+    }
     if (error?.code === '23503') return 'This item is linked to other records. Remove or change those first.';
     if (/jwt expired|invalid jwt|not authenticated/i.test(text)) return 'Your session has expired. Sign in again.';
     if (error?.code === '42501' || /row-level security|permission denied/i.test(text)) return 'You do not have permission to do that, or your session has expired. Sign in again if this is unexpected.';
@@ -341,7 +351,7 @@
     try { await fn(); } catch (e) { console.error(e); toast(authErrorText(e) || 'Could not save. Please try again.'); }
     finally { if (btn?.isConnected) { btn.disabled = false; btn.textContent = label; } }
   }
-  const MC_BUILD = '20261024-6';
+  const MC_BUILD = '20261024-7';
   const loadScriptOnce = (src) => new Promise((resolve, reject) => { const versioned = src + '?v=' + MC_BUILD; if ([...document.scripts].some((x) => x.src.includes(src.split('/').pop().split('?')[0]) && x.src.includes(MC_BUILD))) return resolve(); const el = document.createElement('script'); el.src = versioned; el.onload = resolve; el.onerror = () => reject(new Error('Could not load ' + versioned)); document.head.appendChild(el); });
 
   function watchSession(main) {

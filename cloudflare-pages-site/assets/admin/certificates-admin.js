@@ -1324,6 +1324,45 @@
 
     /* ------------------------------------------------------------------ Logic & State */
     const uid = () => Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+
+    const compressImageFile = (file, maxWidth = 600, maxHeight = 300, quality = 0.85) => new Promise((resolve) => {
+      if (!file) return resolve({ blob: null, dataUrl: '' });
+      if (typeof Image === 'undefined') {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve({ blob: file, dataUrl: e.target.result });
+        reader.readAsDataURL(file);
+        return;
+      }
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        let { width, height } = img;
+        if (width > maxWidth || height > maxHeight) {
+          const ratio = Math.min(maxWidth / width, maxHeight / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, width);
+        canvas.height = Math.max(1, height);
+        const ctx2d = canvas.getContext('2d');
+        ctx2d.drawImage(img, 0, 0, width, height);
+        const isPng = (file.type && file.type.includes('png')) || !file.type;
+        const mime = isPng ? 'image/png' : 'image/jpeg';
+        canvas.toBlob((blob) => {
+          const dataUrl = canvas.toDataURL(mime, quality);
+          resolve({ blob: blob || file, dataUrl, width, height });
+        }, mime, quality);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        const reader = new FileReader();
+        reader.onload = (e) => resolve({ blob: file, dataUrl: e.target.result });
+        reader.readAsDataURL(file);
+      };
+      img.src = url;
+    });
     let currentEvent = events.find((e) => e.id === selectedEventId) || events[0] || null;
     let currentConfig = (currentEvent ? configs[currentEvent.id] : null) || {};
 
@@ -1518,30 +1557,31 @@
     function initGdgLogoControls() {
       const inp = $('#inpGdgLogoFile');
       if (inp) {
-        inp.onchange = (e) => {
+        inp.onchange = async (e) => {
           const file = e.target.files?.[0];
           if (!file) return;
-          const reader = new FileReader();
-          reader.onload = async (ev) => {
-            currentGdgLogo.dataUrl = ev.target.result;
-            applyGdgLogo();
-            adminMessage('Custom GDG logo loaded! Drag on preview or use sliders to adjust.', true);
+          const { blob, dataUrl } = await compressImageFile(file, 600, 200, 0.85);
+          currentGdgLogo.dataUrl = dataUrl;
+          applyGdgLogo();
+          adminMessage('Custom GDG logo loaded! Drag on preview or use sliders to adjust.', true);
 
-            try {
-              const ext = file.name.split('.').pop() || 'png';
-              const path = `logos/${selectedEventId || 'common'}/gdg_logo_${Date.now()}.${ext}`;
-              if (window.MC?.uploadStorage) {
-                await window.MC.uploadStorage('certificate-logos', path, file, { isPublic: true, contentType: file.type });
-                currentGdgLogo.path = path;
-              } else if (sb?.storage) {
-                await sb.storage.from('certificate-logos').upload(path, file, { upsert: true });
-                currentGdgLogo.path = path;
+          try {
+            const ext = (file.type && file.type.includes('png')) ? 'png' : (file.name.split('.').pop() || 'png');
+            const path = `logos/${selectedEventId || 'common'}/gdg_logo_${Date.now()}.${ext}`;
+            const targetBucket = 'site-assets';
+            if (window.MC?.uploadStorage) {
+              const up = await window.MC.uploadStorage(targetBucket, path, blob || file, { isPublic: true, contentType: blob?.type || file.type || 'image/png' });
+              if (up?.publicUrl) currentGdgLogo.path = up.publicUrl;
+            } else if (sb?.storage) {
+              const up = await sb.storage.from(targetBucket).upload(path, blob || file, { upsert: true });
+              if (up?.data?.path) {
+                const { data } = sb.storage.from(targetBucket).getPublicUrl(up.data.path);
+                if (data?.publicUrl) currentGdgLogo.path = data.publicUrl;
               }
-            } catch (err) {
-              console.warn('Storage background upload notice:', err);
             }
-          };
-          reader.readAsDataURL(file);
+          } catch (err) {
+            console.warn('Storage background upload notice:', err);
+          }
         };
       }
 
@@ -2072,6 +2112,32 @@
       if (!evId) return adminMessage('Choose an event first.');
       const enabled = $('#mc-public-toggle').checked;
 
+      // Clean gdg_logo so we don't store duplicate or oversized dataUrls if path exists
+      const cleanGdgLogo = { ...currentGdgLogo };
+      if (cleanGdgLogo.path && cleanGdgLogo.dataUrl) {
+        cleanGdgLogo.dataUrl = ''; // Omit bulky inline dataUrl from DB if path is available
+      } else if (cleanGdgLogo.dataUrl && cleanGdgLogo.dataUrl.length > 30000 && typeof Image !== 'undefined') {
+        // Compress dataUrl using canvas if it wasn't uploaded to storage
+        try {
+          const cImg = new Image();
+          await new Promise((res) => {
+            cImg.onload = () => {
+              const canvas = document.createElement('canvas');
+              const ratio = Math.min(600 / cImg.width, 200 / cImg.height, 1);
+              canvas.width = Math.max(1, Math.round(cImg.width * ratio));
+              canvas.height = Math.max(1, Math.round(cImg.height * ratio));
+              const cctx = canvas.getContext('2d');
+              cctx.drawImage(cImg, 0, 0, canvas.width, canvas.height);
+              cleanGdgLogo.dataUrl = canvas.toDataURL('image/png', 0.85);
+              res();
+            };
+            cImg.onerror = res;
+            cImg.src = cleanGdgLogo.dataUrl;
+          });
+        } catch {}
+      }
+      const gdgLogoUrl = cleanGdgLogo.path || cleanGdgLogo.dataUrl || '';
+
       const payload = {
         event_name: $('#inpEventName').value.trim(),
         chapter_name: $('#inpChapterName').value.trim(),
@@ -2088,11 +2154,28 @@
         partner_sticker: $('#inpPartnerSticker') ? $('#inpPartnerSticker').value.trim() : '#SRU_ACM // CO-HOST',
         signatories,
         partners,
-        gdg_logo: currentGdgLogo,
-        gdg_custom_logo: currentGdgLogo.dataUrl || currentGdgLogo.path || '',
-        gdg_logo_style: `height:${currentGdgLogo.size || 60}px;max-height:${currentGdgLogo.size || 60}px;max-width:${Math.max(320, Math.round((currentGdgLogo.size || 60) * 5))}px;object-fit:contain;display:block;transform:translate(${currentGdgLogo.x || 0}px,${currentGdgLogo.y || 0}px);`,
-        hide_chapter_text: !!currentGdgLogo.hide_chapter_text
+        gdg_logo: cleanGdgLogo,
+        gdg_custom_logo: gdgLogoUrl,
+        gdg_logo_style: `height:${cleanGdgLogo.size || 60}px;max-height:${cleanGdgLogo.size || 60}px;max-width:${Math.max(320, Math.round((cleanGdgLogo.size || 60) * 5))}px;object-fit:contain;display:block;transform:translate(${cleanGdgLogo.x || 0}px,${cleanGdgLogo.y || 0}px);`,
+        hide_chapter_text: !!cleanGdgLogo.hide_chapter_text
       };
+
+      // Safeguard against column size limit (< 200,000 bytes)
+      if (JSON.stringify(payload).length > 180000) {
+        if (cleanGdgLogo.dataUrl && cleanGdgLogo.dataUrl.length > 5000) {
+          cleanGdgLogo.dataUrl = '';
+          payload.gdg_logo = cleanGdgLogo;
+          if (payload.gdg_custom_logo.startsWith('data:')) payload.gdg_custom_logo = cleanGdgLogo.path || '';
+        }
+        payload.signatories = payload.signatories.map((s) => ({
+          ...s,
+          img: s.img && s.img.startsWith('data:') && s.img.length > 10000 ? '' : s.img
+        }));
+        payload.partners = payload.partners.map((p) => ({
+          ...p,
+          logo: p.logo && p.logo.startsWith('data:') && p.logo.length > 10000 ? '' : p.logo
+        }));
+      }
 
       e.target.disabled = true;
       try {
@@ -2107,6 +2190,7 @@
         adminMessage(`Certificate settings saved to Supabase for ${$('#inpEventName').value}!`, true);
         configs[evId] = { event_id: evId, enabled, fields: payload };
       } catch (err) {
+        console.error('Certificate Studio save error:', err);
         adminMessage(authErrorText(err));
       } finally {
         e.target.disabled = false;
