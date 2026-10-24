@@ -1,5 +1,5 @@
 /* Mission Control → Events, Blog, Resource Hub.
- * One pattern for all three: a searchable list, and a side drawer for creating or editing.
+ * One pattern for all three: a searchable list on the left, live editor on the right (split-pane studio).
  * The URL carries the open item (#/events/<id>, #/events/new) so any record can be linked to. */
 (() => {
   'use strict';
@@ -50,35 +50,151 @@
     const rows = data || [];
     const extra = cfg.load ? await cfg.load(rows) : {};
     let q = '', status = 'all';
+    let activeRow = null;
+
     const list = () => rows.filter((r) => (status === 'all' || r.status === status) && (!q || `${r[cfg.titleKey]} ${r.category || ''} ${r.author || ''}`.toLowerCase().includes(q)));
+
+    // Compact Linear-style field renderer for the studio editor
+    const fieldLinear = (f, v = '') => {
+      const id = `f-${f.key}`, req = f.required ? ' required' : '';
+      const fullClass = f.full ? ' full' : '';
+      const labelHtml = `<span class="mc-fl-label">${esc(f.label)}${f.required ? '<span class="mc-fl-req">*</span>' : ''}</span>`;
+      const helpHtml = f.help ? `<span class="mc-fl-help">${esc(f.help)}</span>` : '';
+
+      if (f.type === 'checkbox') {
+        return `<div class="mc-fl-field full"><label class="mc-fl-check"><input type="checkbox" name="${f.key}"> ${esc(f.label)}</label>${helpHtml}</div>`;
+      }
+
+      let inputHtml;
+      if (f.type === 'select') {
+        inputHtml = `<select name="${f.key}" id="${id}">${(typeof f.options === 'function' ? f.options(v) : f.options).map((o) => `<option value="${esc(o.value)}">${esc(o.label)}</option>`).join('')}</select>`;
+      } else if (f.type === 'textarea') {
+        if (f.preview) {
+          return `<div class="mc-fl-field${fullClass}"><div class="mc-md-editor"><div class="mc-md-head"><label for="${id}">${labelHtml}</label><div class="mc-md-tabs" role="tablist"><button type="button" class="mc-md-tab active" data-tab-for="${id}" data-tab="write">${icon('edit')}Write</button><button type="button" class="mc-md-tab" data-tab-for="${id}" data-tab="preview">${icon('eye')}Preview</button></div></div><textarea name="${f.key}" id="${id}" rows="${f.rows || 5}" class="mc-md-input"${req}></textarea><div id="${id}-preview" class="mc-md-preview" hidden></div></div>${helpHtml}</div>`;
+        }
+        inputHtml = `<textarea name="${f.key}" id="${id}" rows="${f.rows || 4}"${req}></textarea>`;
+      } else {
+        inputHtml = `<input name="${f.key}" id="${id}" type="${f.type || 'text'}"${req}${f.placeholder ? ` placeholder="${esc(f.placeholder)}"` : ''}${f.type === 'number' ? ' step="1"' : ''}>`;
+      }
+
+      return `<div class="mc-fl-field${fullClass}">${labelHtml}${inputHtml}${helpHtml}</div>`;
+    };
+
+    const counts = (s) => s === 'all' ? rows.length : rows.filter((r) => r.status === s).length;
+
     const drawList = () => {
       const l = list();
-      $('#mc-list').innerHTML = l.length ? l.map((r) => cfg.row(r, extra)).join('') : `<li class="mc-empty"><b>${rows.length ? 'Nothing matches those filters.' : cfg.empty}</b>${rows.length ? '' : `<button type="button" data-new>${icon('plus')}${esc(cfg.newLabel)}</button>`}</li>`;
-      $('#mc-total').textContent = `${l.length} of ${rows.length}`;
+      const countEl = $('#mc-studio-count');
+      if (countEl) countEl.textContent = `${l.length} of ${rows.length}`;
+      const listEl = $('#mc-studio-items');
+      if (!listEl) return;
+      if (!l.length) {
+        listEl.innerHTML = `<li class="mc-sitem-empty"><b>${rows.length ? 'Nothing matches.' : cfg.empty}</b>${!rows.length ? `<button type="button" data-new>${icon('plus')}${esc(cfg.newLabel)}</button>` : ''}</li>`;
+        return;
+      }
+      listEl.innerHTML = l.map((r) => {
+        const tier = r.event_tier === 'flagship' ? `<span class="tag" style="background:#4285f4;color:#fff;font-size:10px;padding:2px 6px">★</span>` : (r.event_tier === 'program' ? `<span class="tag" style="background:#fbbc04;color:#111;font-size:10px;padding:2px 6px">◷</span>` : '');
+        const statusBadge = `<span class="status s-${esc(r.status)}" style="font-size:10px">${esc(r.status)}</span>`;
+        const subtitle = r.start_at ? when(r.start_at) : (r.author || r.category || r.kind || '');
+        return `<li class="mc-sitem${activeRow?.id === r.id ? ' active' : ''}" data-edit="${esc(r.id)}">
+          <div class="mc-sitem-title">${esc(r[cfg.titleKey] || '(Untitled)')}</div>
+          <div class="mc-sitem-meta">${esc(subtitle)}</div>
+          <div class="mc-sitem-tags">${tier}${statusBadge}${r.pinned_next_session ? '<span class="tag blue" style="font-size:10px;padding:2px 5px">📌</span>' : ''}</div>
+        </li>`;
+      }).join('');
     };
-    const counts = (s) => s === 'all' ? rows.length : rows.filter((r) => r.status === s).length;
-    const summaryHTML = `<div class="mc-summary-bar"><div class="mc-sum-item"><span class="mc-sum-val">${rows.length}</span><span class="mc-sum-label">Total</span></div><div class="mc-sum-item ok"><span class="mc-sum-dot green"></span><span class="mc-sum-val">${counts('published')}</span><span class="mc-sum-label">Published</span></div><div class="mc-sum-item warn"><span class="mc-sum-dot yellow"></span><span class="mc-sum-val">${counts('draft')}</span><span class="mc-sum-label">Drafts</span></div>${cfg.statuses.includes('archived') ? `<div class="mc-sum-item"><span class="mc-sum-dot gray"></span><span class="mc-sum-val">${counts('archived')}</span><span class="mc-sum-label">Archived</span></div>` : ''}</div>`;
-    MC.setWorkspace(cfg.title, `<p class="mc-lead">${esc(cfg.lead)}</p>${summaryHTML}<div class="mc-toolbar"><div class="mc-find">${icon('search')}<input type="search" id="mc-q" placeholder="Search ${esc(cfg.title.toLowerCase())}…" aria-label="Search ${esc(cfg.title)}"><button type="button" class="mc-find-clear" id="mc-q-clear" aria-label="Clear search" hidden>×</button></div><div class="mc-chips" role="group" aria-label="Filter by status">${['all', ...cfg.statuses].map((s) => `<button type="button" data-status="${s}" aria-pressed="${s === 'all'}" class="mc-chip-btn ${s}">${s === 'all' ? 'All' : s[0].toUpperCase() + s.slice(1)} <span class="mc-chip-count">${counts(s)}</span></button>`).join('')}</div><span class="muted small" id="mc-total"></span></div><ul class="mc-list" id="mc-list"></ul>`,
-      `<button type="button" data-new>${icon('plus')}${esc(cfg.newLabel)}</button>`);
+
+    const renderEmptyEditor = () => {
+      const ed = $('#mc-studio-editor');
+      if (!ed) return;
+      ed.innerHTML = `
+        <div class="mc-studio-editor-head">
+          <div class="mc-studio-editor-title">
+            <h2>${esc(cfg.title)}</h2>
+            <small>Select an item to edit, or create a new one.</small>
+          </div>
+          <div class="mc-studio-editor-actions">
+            <button type="button" class="mc-btn-save mc-studio-new-btn" data-new>${icon('plus')}${esc(cfg.newLabel)}</button>
+          </div>
+        </div>
+        <div class="mc-studio-empty">
+          ${icon('doc', '')}
+          <p>Select an item from the list to edit it, or click <strong>${esc(cfg.newLabel)}</strong> to create one.</p>
+        </div>`;
+    };
+
+    // Build the full studio workspace HTML
+    const studioHtml = `
+      <div class="mc-studio">
+        <div class="mc-studio-list">
+          <div class="mc-studio-list-head">
+            <div class="mc-studio-list-meta">
+              <div class="mc-studio-chips" role="group" aria-label="Filter by status">
+                ${['all', ...cfg.statuses].map((s) => `<button type="button" class="mc-studio-chip" data-status="${s}" aria-pressed="${s === 'all'}">${s === 'all' ? 'All' : s[0].toUpperCase() + s.slice(1)} <span>${counts(s)}</span></button>`).join('')}
+              </div>
+              <span class="mc-studio-item-count" id="mc-studio-count">${rows.length} of ${rows.length}</span>
+            </div>
+            <div class="mc-studio-search">
+              ${icon('search')}
+              <input type="search" id="mc-q" placeholder="Search ${esc(cfg.title.toLowerCase())}…" aria-label="Search ${esc(cfg.title)}">
+            </div>
+          </div>
+          <ul class="mc-studio-items" id="mc-studio-items"></ul>
+        </div>
+        <div class="mc-studio-editor" id="mc-studio-editor"></div>
+      </div>`;
+
+    MC.setWorkspace(cfg.title, studioHtml, `<button type="button" data-new>${icon('plus')}${esc(cfg.newLabel)}</button>`);
     drawList();
+    renderEmptyEditor();
 
     const open = (row) => {
       const isNew = !row;
-      const d = drawer.open({
-        title: isNew ? cfg.newLabel : `Edit: ${row[cfg.titleKey]}`, subtitle: cfg.drawerNote || '', wide: true,
-        onClose: () => { if (!MC.rendering && MC.route().sub) history.replaceState(null, '', `#/${cfg.key}`); },
-        body: `<form id="entity-form" class="mc-form">${cfg.fields.map((f) => field(f)).join('')}<input type="hidden" name="id">${cfg.drawerExtra ? cfg.drawerExtra(row) : ''}</form>`,
-        footer: `${isNew ? '' : `<button type="button" class="danger" id="entity-del">${icon('trash')}Delete</button>`}<span class="grow"></span><button type="button" class="button-outline" data-close>Cancel</button><button type="submit" form="entity-form" class="mc-btn-primary">${icon('check')}Save changes <kbd class="mc-key-hint">Ctrl S</kbd></button>`
-      });
-      const form = $('#entity-form', d.el);
+      activeRow = row || null;
+      drawList(); // re-render list to show active state
+
+      const titleText = isNew ? cfg.newLabel : `${row[cfg.titleKey]}`;
+      const formHtml = `<form id="entity-form" class="mc-form-linear">${cfg.fields.map((f) => fieldLinear(f)).join('')}<input type="hidden" name="id">${cfg.drawerExtra ? cfg.drawerExtra(row) : ''}</form>`;
+
+      const ed = $('#mc-studio-editor');
+      if (!ed) return;
+      ed.innerHTML = `
+        <div class="mc-studio-editor-head">
+          <div class="mc-studio-editor-title">
+            <h2>${esc(titleText)}</h2>
+            <small>${isNew ? 'New entry — fill in the fields and save.' : (cfg.drawerNote || 'Edit this entry below.')}</small>
+          </div>
+          <div class="mc-studio-editor-actions">
+            ${!isNew ? `<button type="button" class="mc-btn-delete" id="entity-del">${icon('trash')}Delete</button>` : ''}
+            <button type="button" class="button-outline mc-btn-save" style="height:32px;padding:0 12px;font-size:12.5px;border-radius:6px" data-cancel>Cancel</button>
+            <button type="submit" form="entity-form" class="mc-btn-save">${icon('check')}Save <kbd>Ctrl S</kbd></button>
+          </div>
+        </div>
+        <div class="mc-studio-editor-body">
+          ${formHtml}
+        </div>`;
+
+      const form = $('#entity-form', ed);
       fill(form, row || {}, cfg.fields);
       if (isNew) cfg.fields.forEach((f) => { if (f.default !== undefined && form.elements[f.key] && f.type !== 'checkbox') form.elements[f.key].value = f.default; });
-      d.el.addEventListener('keydown', (e) => {
+
+      // Ctrl+S to save
+      ed.addEventListener('keydown', (e) => {
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
           e.preventDefault();
           form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
         }
       });
+
+      // Cancel
+      ed.querySelector('[data-cancel]')?.addEventListener('click', () => {
+        activeRow = null;
+        drawList();
+        renderEmptyEditor();
+        if (!MC.rendering && MC.route().sub) history.replaceState(null, '', `#/${cfg.key}`);
+      });
+
+      // Markdown tabs
       form.addEventListener('click', (e) => {
         const btn = e.target.closest('.mc-md-tab');
         if (!btn) return;
@@ -100,18 +216,17 @@
           ta.focus();
         }
       });
+
       const debouncedMd = (MC.debounce || ((fn) => fn))((el) => {
         const prev = $(`#${el.id}-preview`, form);
-        if (prev && !prev.hidden) {
-          prev.innerHTML = MC.renderMarkdown(el.value);
-        }
+        if (prev && !prev.hidden) prev.innerHTML = MC.renderMarkdown(el.value);
       }, 100);
       form.addEventListener('input', (e) => {
-        if (e.target.matches('.mc-md-input')) {
-          debouncedMd(e.target);
-        }
+        if (e.target.matches('.mc-md-input')) debouncedMd(e.target);
       });
-      cfg.wire?.(form, row, d, extra);
+
+      cfg.wire?.(form, row, { el: ed, markDirty: () => {}, clean: () => {}, isDirty: false }, extra);
+
       form.addEventListener('submit', (e) => { e.preventDefault(); withSaving(form, async () => {
         const f = formObject(form), id = f.id; delete f.id;
         cfg.fields.forEach((x) => { if (x.type === 'checkbox') f[x.key] = form.elements[x.key].checked; if (x.type === 'datetime') f[x.key] = istToIso(f[x.key]); if (x.nullable && f[x.key] === '') f[x.key] = null; if (x.type === 'number') { f[x.key] = Number(f[x.key] || 0); if (!Number.isFinite(f[x.key])) f[x.key] = 0; } });
@@ -121,41 +236,62 @@
         if (r.error) return toast(authErrorText(r.error));
         if (id && Array.isArray(r.data) && !r.data.length) return toast('Nothing was saved: this item no longer exists or you do not have permission. Reload and try again.');
         await audit(id ? 'update' : 'create', cfg.table, id || f[cfg.titleKey]); MC.dropCache();
-        toast(f.status && f.status !== 'published' && cfg.table !== 'events' ? `Saved as ${f.status}. Not visible to the public until it is Published.` : f.status === 'published' || !f.status ? 'Saved.' : `Saved as ${f.status}. Not visible to the public until Status is Published.`, true);
-        d.clean(); await d.close(true); history.replaceState(null, '', `#/${cfg.key}`); MC.render();
+        toast(f.status && f.status !== 'published' && cfg.table !== 'events' ? `Saved as ${f.status}.` : 'Saved.', true);
+        activeRow = null; history.replaceState(null, '', `#/${cfg.key}`); MC.render();
       }); });
-      $('#entity-del', d.el)?.addEventListener('click', async () => {
+
+      $('#entity-del', ed)?.addEventListener('click', async () => {
         if (!(await confirmDialog({ title: `Delete ${row[cfg.titleKey]}?`, body: 'This cannot be undone.', confirm: 'Delete', danger: true }))) return;
         const r = await sb().from(cfg.table).delete().eq('id', row.id); if (r.error) return toast(authErrorText(r.error));
-        await audit('delete', cfg.table, row.id); MC.dropCache(); toast('Deleted.', true); d.clean(); await d.close(true); history.replaceState(null, '', `#/${cfg.key}`); MC.render();
+        await audit('delete', cfg.table, row.id); MC.dropCache(); toast('Deleted.', true);
+        activeRow = null; history.replaceState(null, '', `#/${cfg.key}`); MC.render();
       });
+
+      // Scroll editor to top
+      const edBody = ed.querySelector('.mc-studio-editor-body');
+      if (edBody) edBody.scrollTop = 0;
     };
 
-    const ws = $('#admin-workspace'), top = $('#mc-page-actions');
-    const qIn = $('#mc-q'), qClear = $('#mc-q-clear');
-    const debouncedSearch = (MC.debounce || ((fn) => fn))(() => {
-      q = qIn.value.trim().toLowerCase();
-      if (qClear) qClear.hidden = !q;
-      drawList();
-    }, 80);
-    qIn.addEventListener('input', debouncedSearch);
-    qClear?.addEventListener('click', () => {
-      qIn.value = '';
-      q = '';
-      qClear.hidden = true;
-      qIn.focus();
-      drawList();
-    });
+    // Event delegation on the studio list
+    const ws = $('#admin-workspace');
     ws.onclick = (e) => {
-      const s = e.target.closest('[data-status]'); if (s) { status = s.dataset.status; $$('[data-status]', ws).forEach((b) => b.setAttribute('aria-pressed', String(b === s))); drawList(); return; }
-      const ed = e.target.closest('[data-edit]'); if (ed) return go(cfg.key, {}, ed.dataset.edit);
       if (e.target.closest('[data-new]')) return go(cfg.key, {}, 'new');
-      const dup = e.target.closest('[data-dup]'); if (dup && cfg.duplicate) cfg.duplicate(rows.find((r) => r.id === dup.dataset.dup)).then(() => { MC.dropCache(); MC.render(); });
+      const sitem = e.target.closest('.mc-sitem[data-edit]');
+      if (sitem) return go(cfg.key, {}, sitem.dataset.edit);
+      const s = e.target.closest('[data-status]');
+      if (s) {
+        status = s.dataset.status;
+        $$('[data-status]', ws).forEach((b) => b.setAttribute('aria-pressed', String(b === s)));
+        drawList();
+        return;
+      }
+      const dup = e.target.closest('[data-dup]');
+      if (dup && cfg.duplicate) cfg.duplicate(rows.find((r) => r.id === dup.dataset.dup)).then(() => { MC.dropCache(); MC.render(); });
     };
-    top.onclick = (e) => { if (e.target.closest('[data-new]')) go(cfg.key, {}, 'new'); };
+
+    // Top "+ New" button
+    const top = $('#mc-page-actions');
+    if (top) top.onclick = (e) => { if (e.target.closest('[data-new]')) go(cfg.key, {}, 'new'); };
+
+    // Search
+    const qIn = $('#mc-q');
+    if (qIn) {
+      const debouncedSearch = (MC.debounce || ((fn) => fn))(() => {
+        q = qIn.value.trim().toLowerCase();
+        drawList();
+      }, 80);
+      qIn.addEventListener('input', debouncedSearch);
+    }
+
     MC.bindDeleteButtons(ws);
+
+    // Route: open correct item or new form
     if (route.sub === 'new') open(null);
-    else if (route.sub) { const r = rows.find((x) => x.id === route.sub); if (r) open(r); else toast('That item no longer exists.'); }
+    else if (route.sub) {
+      const r = rows.find((x) => x.id === route.sub);
+      if (r) open(r);
+      else toast('That item no longer exists.');
+    }
   }
 
   /* ---------------- Events ---------------- */
