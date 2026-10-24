@@ -214,6 +214,7 @@ create table if not exists public.community_points (
   note text not null default '',
   recorded_by uuid references auth.users(id) on delete set null,
   created_at timestamptz not null default now(),
+  verified boolean not null default true,
   unique(period_id, email_hash, activity_type, source_ref)
 );
 create index if not exists community_points_period_lookup on public.community_points(period_id, email_hash);
