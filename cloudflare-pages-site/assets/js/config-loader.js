@@ -415,7 +415,7 @@
 
   function applyAnnouncementBar(settings) {
     try {
-      const raw = getSetting(settings, 'announcement_bar');
+      const raw = getSetting(settings, 'announcement_bar') || siteDefaults().announcementBar;
       if (!raw) return;
       const cfg = typeof raw === 'string' ? JSON.parse(raw) : raw;
       sessionStorage.setItem('gdg_announcement_cache', JSON.stringify(cfg));
@@ -480,45 +480,83 @@
       if (!countdownCell.hidden) countdownCell.hidden = true;
       setText(countdown, '');
     };
-    // Filter to future pinned events at the query, so a stale/past pinned event cannot hide
-    // the next upcoming session. Read the public view; its RLS only exposes published events.
+
+    const nowIso = new Date().toISOString();
+    // 1. First attempt: Pinned event
     client.from('public_event_list')
       .select('id,title,summary,start_at,end_at,timezone,venue,speaker,online_url,registration_url,pinned_next_session')
       .eq('pinned_next_session', true)
-      .gt('start_at', new Date().toISOString())
-      .order('start_at', { ascending: true })
       .limit(1)
       .maybeSingle()
-      .then(({ data, error }) => {
+      .then(async ({ data, error }) => {
+        let ev = data;
+        const now = Date.now();
+        // If pinned event does not exist or has already ended, look for nearest upcoming published event
+        if (!ev || (ev.end_at && new Date(ev.end_at).getTime() < now) || (!ev.end_at && new Date(ev.start_at).getTime() < now)) {
+          const up = await client.from('public_event_list')
+            .select('id,title,summary,start_at,end_at,timezone,venue,speaker,online_url,registration_url,pinned_next_session')
+            .gt('start_at', nowIso)
+            .order('start_at', { ascending: true })
+            .limit(1)
+            .maybeSingle();
+          ev = up.data;
+        }
+
         if (requestId !== nextSessionRequest) return;
-        if (error) { console.warn('[GDG SRU] Could not load Next Session from public_event_list:', error.message); neutral(); return; }
-        if (!data || !data.start_at || new Date(data.start_at).getTime() <= Date.now()) { neutral(); return; }
-        const startMs = new Date(data.start_at).getTime();
-        const timezone = data.timezone || 'Asia/Kolkata';
-        const dateText = (() => { try { return new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: timezone }).format(new Date(startMs)); } catch { return new Date(startMs).toLocaleString(); } })();
-        setText(titleEl, `${data.title} · ${dateText}`);
-        // The second tile is labelled “Updates”. Prefer the actual venue/session state,
-        // then useful event copy, rather than always leaving the generic chapter-page text.
-        const summary = String(data.summary || '').trim();
-        const hasDistinctSummary = summary && summary.toLocaleLowerCase() !== String(data.title || '').trim().toLocaleLowerCase();
-        const updateText = data.venue || (data.online_url ? 'Online session' : data.registration_url ? 'Registration available' : hasDistinctSummary ? summary : 'Details to be announced');
+        if (!ev || !ev.start_at) { neutral(); return; }
+
+        const startMs = new Date(ev.start_at).getTime();
+        const endMs = ev.end_at ? new Date(ev.end_at).getTime() : startMs;
+
+        // If the event is in the past and has ended, show neutral coming soon
+        if (endMs < now) { neutral(); return; }
+
+        const timezone = ev.timezone || 'Asia/Kolkata';
+        const isLiveNow = startMs <= now && endMs >= now;
+        const targetMs = isLiveNow ? endMs : startMs;
+
+        const dateText = (() => {
+          try {
+            return new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: timezone }).format(new Date(startMs));
+          } catch {
+            return new Date(startMs).toLocaleString();
+          }
+        })();
+
+        setText(titleEl, isLiveNow ? `${ev.title} · Live Now` : `${ev.title} · ${dateText}`);
+
+        const summary = String(ev.summary || '').trim();
+        const hasDistinctSummary = summary && summary.toLowerCase() !== String(ev.title || '').trim().toLowerCase();
+        const updateText = ev.venue || (ev.online_url ? 'Online session' : ev.registration_url ? 'Registration available' : hasDistinctSummary ? summary : 'Details to be announced');
         setText(updateEl, updateText);
+
+        const capEl = countdownCell.querySelector('.cap');
+        if (capEl) capEl.textContent = isLiveNow ? 'Ends in' : 'Countdown';
         if (countdownCell.hidden) countdownCell.hidden = false;
+
         const tick = () => {
           if (requestId !== nextSessionRequest) return;
-          const diff = Math.max(0, startMs - Date.now());
+          const diff = Math.max(0, targetMs - Date.now());
           if (diff <= 0) {
             if (window.__gdgNextSessionTimer) clearInterval(window.__gdgNextSessionTimer);
             window.__gdgNextSessionTimer = null;
-            neutral();
+            updateNextSession(client);
             return;
           }
-          const days = Math.floor(diff / 86400000), hours = Math.floor(diff / 3600000) % 24, minutes = Math.floor(diff / 60000) % 60, seconds = Math.floor(diff / 1000) % 60;
+          const days = Math.floor(diff / 86400000);
+          const hours = Math.floor(diff / 3600000) % 24;
+          const minutes = Math.floor(diff / 60000) % 60;
+          const seconds = Math.floor(diff / 1000) % 60;
           setText(countdown, days ? `${days}d ${String(hours).padStart(2,'0')}h ${String(minutes).padStart(2,'0')}m` : `${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`);
         };
-        tick(); window.__gdgNextSessionTimer = setInterval(() => { if (!document.hidden) tick(); }, 1000);
+
+        tick();
+        window.__gdgNextSessionTimer = setInterval(() => { if (!document.hidden) tick(); }, 1000);
       })
-      .catch(error => { console.warn('[GDG SRU] Next Session request failed.', error); neutral(); });
+      .catch((error) => {
+        console.warn('[GDG SRU] Next Session request failed.', error);
+        neutral();
+      });
   }
   function renderLeaderboard(client) {
     if (!client) return;
