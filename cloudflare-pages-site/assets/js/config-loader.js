@@ -972,9 +972,22 @@
     const contact=String(email||siteDefaults().contactEmail||'');
     card.innerHTML=`<h2>Information we handle</h2><p>Depending on the event, GDG SRU may process the student name, university roll number, email address, and department supplied during registration and verified at event check-in. The source registration platforms maintain their own independent privacy notices.</p><h3>Certificates & on-demand issuing</h3><p>To check eligibility, the certificate portal compares the student name and identifier (roll number or email) entered against the confirmed attendance roster uploaded by authorized chapter leads. Certificate artwork is rendered on demand inside the attendee’s browser using client-side canvas and vector rendering. The website does not store pre-rendered certificate image files.</p><p>To prevent automated enumeration and rate-limit abuse, the certificate verification endpoint uses a salted one-way hash of the requester’s network address and event ID. Personal attendee names are never recorded in rate-limiting counters, and counters expire automatically within 15 minutes.</p><h3>Data retention & automatic purge</h3><p>Attendance records and certificate verification records are kept for one year after the event date and then deleted automatically by scheduled maintenance jobs.</p><h3>Leaderboard & community points</h3><p>Public leaderboards display only the student’s registered name, points, and community rank. Email addresses, phone numbers, and private academic details are never exposed publicly.</p><h3>Cookies & local storage</h3><p>This website uses essential browser storage (such as localStorage for dark/light theme preference) strictly necessary for site functionality. No third-party advertising cookies or trackers are used.</p><h3>Your questions</h3><p>For privacy questions or applicable correction or deletion requests, contact <a href="mailto:${esc(contact)}">${esc(contact)}</a>.</p>`;
   }
-  const loadCertEngine = () => window.GDGCert ? Promise.resolve() : new Promise((resolve, reject) => {
-    const s = document.createElement('script'); s.src = '/assets/js/cert-engine.js'; s.onload = resolve; s.onerror = () => reject(new Error('Certificate tools are unavailable right now. Please try again later.')); document.head.appendChild(s);
-  });
+  const loadCertEngine = () => {
+    if (!document.getElementById('gdg-cert-fonts')) {
+      const link = document.createElement('link');
+      link.id = 'gdg-cert-fonts';
+      link.rel = 'stylesheet';
+      link.href = 'https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700;800;900&family=JetBrains+Mono:wght@400;600;700;800&family=Kalam:wght@400;700&display=swap';
+      document.head.appendChild(link);
+    }
+    return window.GDGCert ? Promise.resolve() : new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = '/assets/js/cert-engine.js?v=20261024-fonts3';
+      s.onload = resolve;
+      s.onerror = () => reject(new Error('Certificate tools are unavailable right now. Please try again later.'));
+      document.head.appendChild(s);
+    });
+  };
   async function decorateCertificates(client, root) {
     const form=$('#cf',root), result=$('#res',root); if(!form||!result)return;
 

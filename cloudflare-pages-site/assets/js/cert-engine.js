@@ -113,7 +113,7 @@
     return { html: '<!doctype html>\n' + doc.documentElement.outerHTML, removed: [...removed] };
   }
 
-  const FRAME_CSP = "default-src 'none'; img-src 'self' data: blob:; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com data:";
+  const FRAME_CSP = "default-src 'none'; img-src 'self' data: blob: https:; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com data:; connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com data: blob:;";
   const withFrameCsp = (html) => html.replace(/<head>/i, `<head><meta http-equiv="Content-Security-Policy" content="${FRAME_CSP}">`);
 
   /* ---------- Fields ---------- */
@@ -238,47 +238,49 @@
   async function mount(container, html) {
     container.textContent = '';
     const wrap = document.createElement('div');
-    wrap.style.cssText = 'position:relative;width:100%;overflow:hidden;background:#fff;border-radius:8px;box-shadow:0 8px 30px rgba(0,0,0,.18);aspect-ratio:1123/794;';
+    wrap.className = 'gdg-cert-preview-card';
+    wrap.style.cssText = 'position:relative;width:100%;overflow:hidden;background:#f8f9fa;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.15);border:1px solid var(--ln,#e2e8f0);aspect-ratio:1123/794;';
 
-    const frame = document.createElement('iframe');
-    frame.setAttribute('sandbox', 'allow-same-origin');
-    frame.setAttribute('title', 'Certificate preview');
-    frame.setAttribute('scrolling', 'no');
-    frame.style.cssText = 'width:1123px!important;min-width:1123px!important;max-width:1123px!important;height:794px!important;min-height:794px!important;max-height:794px!important;border:0;display:block;background:#fff;transform-origin:0 0;position:absolute;left:0;top:0;';
-    wrap.appendChild(frame);
+    const skeleton = document.createElement('div');
+    skeleton.style.cssText = 'width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--mut,#64748b);font-size:14px;gap:8px;';
+    skeleton.innerHTML = '<div style="font-size:24px">📜</div><span>Rendering certificate preview…</span>';
+    wrap.appendChild(skeleton);
     container.appendChild(wrap);
 
-    const rescale = () => {
-      const w = wrap.clientWidth || container.clientWidth || 360;
-      const s = Math.min(1, w / 1123) || 1;
-      frame.style.transform = `scale(${s})`;
-      wrap.style.height = Math.round(794 * s) + 'px';
-    };
-    rescale();
-    if (window.ResizeObserver) new ResizeObserver(rescale).observe(wrap);
-    else addEventListener('resize', rescale);
+    // Off-screen rendering iframe with fixed 1123x794 coordinates attached to body so mobile viewport cannot clamp it
+    const frame = document.createElement('iframe');
+    frame.setAttribute('sandbox', 'allow-same-origin');
+    frame.setAttribute('title', 'Certificate preview renderer');
+    frame.setAttribute('scrolling', 'no');
+    frame.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:1123px!important;height:794px!important;min-width:1123px!important;max-width:1123px!important;min-height:794px!important;max-height:794px!important;border:0;visibility:hidden;pointer-events:none;z-index:-999;';
+    document.body.appendChild(frame);
 
     await new Promise((res) => { frame.onload = res; frame.srcdoc = html; });
     const doc = frame.contentDocument;
-    try { await Promise.race([doc.fonts.ready, new Promise((r) => setTimeout(r, 4000))]); } catch { /* fonts are best effort */ }
+
+    // Ensure all font faces are loaded before capturing canvas
+    try {
+      if (document.fonts) await Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 2500))]);
+      if (doc?.fonts) await Promise.race([doc.fonts.ready, new Promise((r) => setTimeout(r, 2500))]);
+    } catch (_) {}
+
     fitName(doc);
 
-    // On mobile screens and desktop, create an image overlay from canvas so mobile browsers never reflow or clip the iframe!
+    // Capture to canvas and render as a responsive image overlay
     try {
       const canvas = await toCanvas(frame);
       const img = document.createElement('img');
       img.src = canvas.toDataURL('image/png');
       img.alt = 'Certificate preview';
-      img.style.cssText = 'width:100%;height:auto;display:block;border-radius:8px;position:relative;z-index:2;pointer-events:auto;';
-      wrap.style.height = 'auto';
+      img.style.cssText = 'width:100%;height:auto;display:block;border-radius:10px;';
+      wrap.textContent = '';
       wrap.style.aspectRatio = 'auto';
-      frame.style.opacity = '0';
-      frame.style.pointerEvents = 'none';
-      frame.style.zIndex = '1';
       wrap.appendChild(img);
-    } catch (e) {
-      console.warn('Canvas preview notice:', e);
-      rescale();
+    } catch (err) {
+      console.warn('Canvas render notice, falling back to visible frame:', err);
+      wrap.textContent = '';
+      frame.style.cssText = 'position:relative;left:auto;top:auto;width:100%;height:auto;aspect-ratio:1123/794;border:0;visibility:visible;pointer-events:auto;z-index:auto;';
+      wrap.appendChild(frame);
     }
 
     return frame;
@@ -313,13 +315,25 @@
 
   async function toCanvas(frame) {
     try {
-      if (frame.contentDocument?.fonts?.ready) {
-        await Promise.race([frame.contentDocument.fonts.ready, new Promise((r) => setTimeout(r, 2000))]);
-      }
+      if (document.fonts?.ready) await Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 2500))]);
+      if (frame.contentDocument?.fonts?.ready) await Promise.race([frame.contentDocument.fonts.ready, new Promise((r) => setTimeout(r, 2500))]);
     } catch (_) {}
     await loadScript('html2canvas');
     const doc = frame.contentDocument, el = doc.getElementById('certificate') || doc.body.firstElementChild;
-    return window.html2canvas(el, { scale: 2, width: 1123, height: 794, backgroundColor: '#F8F9FA', useCORS: true, logging: false, windowWidth: 1123, windowHeight: 794 });
+    return window.html2canvas(el, {
+      scale: 2,
+      width: 1123,
+      height: 794,
+      backgroundColor: '#F8F9FA',
+      useCORS: true,
+      logging: false,
+      windowWidth: 1123,
+      windowHeight: 794,
+      scrollX: 0,
+      scrollY: 0,
+      x: 0,
+      y: 0
+    });
   }
   async function downloadPdf(frame, name) {
     const canvas = await toCanvas(frame); await loadScript('jspdf');
