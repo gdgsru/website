@@ -62,8 +62,10 @@ Deno.serve(async (req: Request) => {
   let keyMap: unknown = {};
   try { keyMap = JSON.parse(Deno.env.get("SUPABASE_PUBLISHABLE_KEYS") || "{}"); } catch { keyMap = {}; }
   const publicKeys = [Deno.env.get("SUPABASE_ANON_KEY"), Deno.env.get("SUPABASE_PUBLISHABLE_KEY"), ...collectStringValues(keyMap)].filter(Boolean) as string[];
-  const suppliedKey = req.headers.get("apikey") || "";
-  if (!supabaseUrl || !serviceKey || !suppliedKey || !publicKeys.includes(suppliedKey)) {
+  const authHeader = req.headers.get("authorization") || "";
+  const suppliedKey = req.headers.get("apikey") || (authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "");
+  const isAuthorized = publicKeys.length === 0 || (suppliedKey && publicKeys.includes(suppliedKey));
+  if (!supabaseUrl || !serviceKey || !isAuthorized) {
     return json(req, { error: "not_authorized" }, 401);
   }
 

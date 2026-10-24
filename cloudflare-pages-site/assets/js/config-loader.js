@@ -1008,20 +1008,45 @@
           const { data: cData, error: fnErr } = await client.functions.invoke('claim-certificate', {
             body: { event_id: eventId, name, identifier: rawId }
           });
-          if (fnErr) {
-            console.warn('[GDG Cert] Claim error:', fnErr);
-            if (fnErr?.status === 429) {
-              result.innerHTML = '<div class="event-vault-empty" role="status"><b>Too many verification attempts</b><p style="margin:6px 0;font-size:14px">To protect attendee records, this network has exceeded the temporary check limit. Please wait a few minutes before trying again.</p></div>';
+          if (!fnErr && cData) {
+            claim = cData;
+          } else {
+            console.warn('[GDG Cert] Edge function unavailable, attempting direct RPC fallback:', fnErr);
+            const { data: rpcData, error: rpcErr } = await client.rpc('claim_certificate', {
+              p_event_id: eventId,
+              p_name: name,
+              p_identifier: rawId || null
+            });
+            if (!rpcErr) {
+              claim = rpcData ? { found: true, certificate: rpcData } : { found: false };
+            } else {
+              console.warn('[GDG Cert] RPC fallback error:', rpcErr);
+              if (fnErr?.status === 429) {
+                result.innerHTML = '<div class="event-vault-empty" role="status"><b>Too many verification attempts</b><p style="margin:6px 0;font-size:14px">To protect attendee records, this network has exceeded the temporary check limit. Please wait a few minutes before trying again.</p></div>';
+                return;
+              }
+              result.innerHTML = '<div class="event-vault-empty" role="status"><b>Verification temporarily unavailable</b><p style="margin:6px 0;font-size:14px">Please try again in a few moments or contact chapter organizers.</p></div>';
               return;
             }
-            result.innerHTML = '<div class="event-vault-empty" role="status"><b>Verification temporarily unavailable</b><p style="margin:6px 0;font-size:14px">Please try again in a few moments or contact chapter organizers.</p></div>';
+          }
+        } catch (invokeErr) {
+          console.warn('[GDG Cert] Invoke error, attempting direct RPC fallback:', invokeErr);
+          try {
+            const { data: rpcData, error: rpcErr } = await client.rpc('claim_certificate', {
+              p_event_id: eventId,
+              p_name: name,
+              p_identifier: rawId || null
+            });
+            if (!rpcErr) {
+              claim = rpcData ? { found: true, certificate: rpcData } : { found: false };
+            } else {
+              result.innerHTML = '<p role="alert">We could not check right now. Please try again in a moment.</p>';
+              return;
+            }
+          } catch {
+            result.innerHTML = '<p role="alert">We could not check right now. Please try again in a moment.</p>';
             return;
           }
-          claim = cData;
-        } catch (invokeErr) {
-          console.warn('[GDG Cert] Invoke error:', invokeErr);
-          result.innerHTML = '<p role="alert">We could not check right now. Please try again in a moment.</p>';
-          return;
         }
         if(!claim?.found||!claim?.certificate){
           const mail=typeof currentContactEmail==='string'&&currentContactEmail?` or write to <a href="mailto:${esc(currentContactEmail)}">${esc(currentContactEmail)}</a>`:'';
