@@ -1354,6 +1354,28 @@
         installHomepageRefresh(client);
       };
       apply();
+
+      // Real-time synchronization when admin saves in Mission Control (across tabs)
+      window.addEventListener('storage', (e) => {
+        if (e.key === 'gdg_site_synced') {
+          console.log('[GDG SRU] Real-time content sync triggered from Mission Control.');
+          try { sessionStorage.removeItem('gdg_announcement_cache'); } catch (_) {}
+          _queryCache.clear();
+          apply();
+        }
+      });
+
+      // Automatically revalidate content when user switches back to this tab
+      let lastVisibleSync = Date.now();
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && Date.now() - lastVisibleSync > 25000) {
+          lastVisibleSync = Date.now();
+          _queryCache.delete('site_settings');
+          _queryCache.delete('events');
+          _queryCache.delete('blogs');
+          apply();
+        }
+      });
     });
   }
   function normaliseUnsupportedHash() {

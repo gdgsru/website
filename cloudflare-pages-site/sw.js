@@ -1,7 +1,7 @@
 /* GDG SRU · Campus Service Worker (Offline Resilience & PWA)
    Caches core shells and assets for seamless offline browsing on campus Wi-Fi.
 */
-const CACHE_NAME = 'gdg-sru-v19';
+const CACHE_NAME = 'gdg-sru-v21';
 const CORE_SHELLS = [
   '/',
   '/index.html',
@@ -84,7 +84,28 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Stale-While-Revalidate for campus shell & static assets
+  // 1. Network-First for HTML navigations & config files
+  // Guarantees all code deployments and CMS updates appear immediately without requiring hard refresh
+  if (req.mode === 'navigate' || req.headers.get('accept')?.includes('text/html') || url.pathname.endsWith('/config.js')) {
+    event.respondWith(
+      fetch(req)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(req, clone));
+          }
+          return networkResponse;
+        })
+        .catch(async () => {
+          // Seamless offline fallback when Wi-Fi drops
+          const cached = await caches.match(req);
+          return cached || (await caches.match('/')) || (await caches.match('/index.html'));
+        })
+    );
+    return;
+  }
+
+  // 2. Stale-While-Revalidate for static sub-assets (fonts, images, media)
   event.respondWith(
     caches.open(CACHE_NAME).then(async (cache) => {
       const cachedResponse = await cache.match(req);
@@ -97,7 +118,6 @@ self.addEventListener('fetch', (event) => {
           return networkResponse;
         })
         .catch(async () => {
-          // If network failed and nothing cached, fallback to index for navigations
           if (req.mode === 'navigate') {
             return (await cache.match('/')) || new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/plain' } });
           }

@@ -4,12 +4,32 @@
 (() => {
   'use strict';
 
-  // 1. Service Worker Registration
+  // 1. Service Worker Registration with Auto-Update Detection
   if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js').catch((err) => {
+      navigator.serviceWorker.register('/sw.js').then((reg) => {
+        // Proactively check for service worker updates
+        if (reg) {
+          reg.update().catch(() => {});
+          // Check for updates when user returns to tab
+          document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+              reg.update().catch(() => {});
+            }
+          });
+        }
+      }).catch((err) => {
         console.warn('[PWA] Service worker registration failed:', err);
       });
+    });
+
+    // When new service worker activates and claims clients, reload once to show fresh assets
+    let isReloading = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!isReloading) {
+        isReloading = true;
+        window.location.reload();
+      }
     });
   }
 

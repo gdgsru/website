@@ -156,7 +156,10 @@
   const IDLE_MS = 60 * 60 * 1000;
   const cache = new Map();
   const cached = async (key, fn, ttl = 45000) => { const hit = cache.get(key); if (hit && Date.now() - hit.t < ttl) return hit.v; const v = await fn(); cache.set(key, { t: Date.now(), v }); return v; };
-  const dropCache = (prefix = '') => { for (const k of [...cache.keys()]) if (k.startsWith(prefix)) cache.delete(k); };
+  const dropCache = (prefix = '') => {
+    for (const k of [...cache.keys()]) if (k.startsWith(prefix)) cache.delete(k);
+    try { localStorage.setItem('gdg_site_synced', Date.now().toString()); } catch (_) {}
+  };
 
   function authErrorText(error) {
     const text = String(error?.message || ''), all = text + ' ' + String(error?.details || '') + ' ' + String(error?.hint || '');
