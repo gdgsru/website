@@ -1,7 +1,7 @@
 /* GDG SRU · Campus Service Worker (Offline Resilience & PWA)
    Caches core shells and assets for seamless offline browsing on campus Wi-Fi.
 */
-const CACHE_NAME = 'gdg-sru-v21';
+const CACHE_NAME = 'gdg-sru-v22';
 const CORE_SHELLS = [
   '/',
   '/index.html',
@@ -84,9 +84,14 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 1. Network-First for HTML navigations & config files
+  // 1. Network-First for HTML navigations, config files, and JS/CSS assets
   // Guarantees all code deployments and CMS updates appear immediately without requiring hard refresh
-  if (req.mode === 'navigate' || req.headers.get('accept')?.includes('text/html') || url.pathname.endsWith('/config.js')) {
+  const isNetworkFirst = req.mode === 'navigate' 
+    || req.headers.get('accept')?.includes('text/html') 
+    || url.pathname.endsWith('/config.js')
+    || (url.pathname.startsWith('/assets/js/') && url.pathname.endsWith('.js'))
+    || (url.pathname.startsWith('/assets/css/') && url.pathname.endsWith('.css'));
+  if (isNetworkFirst) {
     event.respondWith(
       fetch(req)
         .then((networkResponse) => {

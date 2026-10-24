@@ -423,14 +423,17 @@
     const badgeText = String(cfg.badge || 'ANNOUNCEMENT').trim();
     const msgText = String(cfg.text || '').trim();
     const btnLabel = String(cfg.button_label || '').trim();
-    const btnUrl = String(cfg.button_url || '').trim();
-    const isSafeHttps = btnUrl.startsWith('https://');
+    const rawBtnUrl = String(cfg.button_url || '').trim();
+    // Fallback: if admin left button_url empty but provided a label, link to the chapter page
+    const defaultChapterUrl = 'https://gdg.community.dev/gdg-on-campus-sr-university-warangal-india/';
+    const btnUrl = (rawBtnUrl && rawBtnUrl.startsWith('https://')) ? rawBtnUrl : (btnLabel ? defaultChapterUrl : '');
+    const showBtn = !!(btnLabel && btnUrl);
 
     bar.innerHTML = `
       <div class="gdg-announcement-wrap">
         ${badgeText ? `<span class="gdg-announcement-badge"><span class="gdg-announcement-dot" aria-hidden="true"></span>${esc(badgeText)}</span>` : ''}
         <span class="gdg-announcement-text">${esc(msgText)}</span>
-        ${(btnLabel && isSafeHttps) ? `<a class="gdg-announcement-btn" href="${esc(btnUrl)}" target="_blank" rel="noopener noreferrer">${esc(btnLabel)}</a>` : ''}
+        ${showBtn ? `<a class="gdg-announcement-btn" href="${esc(btnUrl)}" target="_blank" rel="noopener noreferrer">${esc(btnLabel)}</a>` : ''}
         <button type="button" class="gdg-announcement-close" aria-label="Dismiss announcement">✕</button>
       </div>
     `;
