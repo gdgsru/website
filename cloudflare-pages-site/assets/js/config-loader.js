@@ -977,12 +977,13 @@
       const link = document.createElement('link');
       link.id = 'gdg-cert-fonts';
       link.rel = 'stylesheet';
-      link.href = 'https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700;800;900&family=JetBrains+Mono:wght@400;600;700;800&family=Kalam:wght@400;700&display=swap';
+      // Self-hosted cert fonts — also loaded inside iframe by cert-engine via base64 data URIs
+      link.href = '/assets/fonts/cert-fonts.css?v=20261025';
       document.head.appendChild(link);
     }
     return window.GDGCert ? Promise.resolve() : new Promise((resolve, reject) => {
       const s = document.createElement('script');
-      s.src = '/assets/js/cert-engine.js?v=20261024-fonts3';
+      s.src = '/assets/js/cert-engine.js?v=20261025-selfhost';
       s.onload = resolve;
       s.onerror = () => reject(new Error('Certificate tools are unavailable right now. Please try again later.'));
       document.head.appendChild(s);

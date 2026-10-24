@@ -113,7 +113,7 @@
     return { html: '<!doctype html>\n' + doc.documentElement.outerHTML, removed: [...removed] };
   }
 
-  const FRAME_CSP = "default-src 'none'; img-src 'self' data: blob: https:; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com data:; connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com data: blob:;";
+  const FRAME_CSP = "default-src 'none'; img-src 'self' data: blob: https:; style-src 'unsafe-inline'; font-src data:; connect-src 'none';";
   const withFrameCsp = (html) => html.replace(/<head>/i, `<head><meta http-equiv="Content-Security-Policy" content="${FRAME_CSP}">`);
 
   /* ---------- Fields ---------- */
@@ -218,6 +218,36 @@
     return { html: withFrameCsp(clean.html), removed: clean.removed };
   }
 
+  /* ---------- Self-hosted font CSS loader ---------- */
+  // Fetches the base64-embedded font CSS once and caches it so html2canvas
+  // can capture fonts without any cross-origin restrictions.
+  let _fontCssCache = null;
+  let _fontCssPromise = null;
+  const FONT_CSS_URL = '/assets/fonts/cert-fonts-inline.css?v=20261025';
+
+  function loadFontCss() {
+    if (_fontCssCache) return Promise.resolve(_fontCssCache);
+    if (_fontCssPromise) return _fontCssPromise;
+    _fontCssPromise = fetch(FONT_CSS_URL)
+      .then((r) => r.ok ? r.text() : '')
+      .then((css) => { _fontCssCache = css || ''; return _fontCssCache; })
+      .catch(() => { _fontCssCache = ''; return ''; });
+    return _fontCssPromise;
+  }
+
+  /** Injects self-hosted font @font-face rules into the HTML after sanitization. */
+  function injectFonts(html, fontCss) {
+    if (!fontCss) return html;
+    const style = `<style id="gdg-cert-fonts">\n${fontCss}\n</style>`;
+    // Inject right before </head> so it loads before body renders
+    const idx = html.indexOf('</head>');
+    if (idx !== -1) return html.slice(0, idx) + style + html.slice(idx);
+    // fallback: inject after <head>
+    const idx2 = html.indexOf('<head>');
+    if (idx2 !== -1) return html.slice(0, idx2 + 6) + style + html.slice(idx2 + 6);
+    return style + html;
+  }
+
   /* ---------- Browser side: preview + export ---------- */
   function fitName(doc) {
     const el = doc.querySelector('[data-fit-name]'); if (!el || !el.parentElement) return;
@@ -247,6 +277,11 @@
     wrap.appendChild(skeleton);
     container.appendChild(wrap);
 
+    // Load self-hosted font CSS (base64 data URIs) — cached after first call
+    const fontCss = await loadFontCss();
+    // Inject font CSS into the HTML post-sanitization so cssSafe() doesn't strip data: URIs
+    const htmlWithFonts = injectFonts(html, fontCss);
+
     // Off-screen rendering iframe with fixed 1123x794 coordinates attached to body so mobile viewport cannot clamp it
     const frame = document.createElement('iframe');
     frame.setAttribute('sandbox', 'allow-same-origin');
@@ -255,13 +290,12 @@
     frame.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:1123px!important;height:794px!important;min-width:1123px!important;max-width:1123px!important;min-height:794px!important;max-height:794px!important;border:0;visibility:hidden;pointer-events:none;z-index:-999;';
     document.body.appendChild(frame);
 
-    await new Promise((res) => { frame.onload = res; frame.srcdoc = html; });
+    await new Promise((res) => { frame.onload = res; frame.srcdoc = htmlWithFonts; });
     const doc = frame.contentDocument;
 
     // Ensure all font faces are loaded before capturing canvas
     try {
-      if (document.fonts) await Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 2500))]);
-      if (doc?.fonts) await Promise.race([doc.fonts.ready, new Promise((r) => setTimeout(r, 2500))]);
+      if (doc?.fonts) await Promise.race([doc.fonts.ready, new Promise((r) => setTimeout(r, 3000))]);
     } catch (_) {}
 
     fitName(doc);
