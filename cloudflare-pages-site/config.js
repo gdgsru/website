@@ -35,11 +35,11 @@ window.GDG_SITE_DEFAULTS = {
   },
   announcementBar: {
     enabled: true,
-    badge: "REGISTRATIONS OPEN",
-    text: "Grand Chapter Launch & Orientation registrations are live on Google Community Platform.",
-    button_label: "RSVP on Chapter Page ↗",
+    badge: "ONGOING",
+    text: "Google Cloud Learn with Communities — join the cohort and build real-world cloud skills.",
+    button_label: "RSVP ↗",
     button_url: "https://gdg.community.dev/gdg-on-campus-sr-university-warangal-india/",
-    announcement_id: 2
+    announcement_id: 3
   },
   socials: [
     { key: 'gdg', label: 'Google Developer Group SR University', url: 'https://gdg.community.dev/gdg-on-campus-sr-university-warangal-india/', description: 'The official chapter page for community updates and event registration.', icon: '✦', enabled: true, sort_order: 1 },
