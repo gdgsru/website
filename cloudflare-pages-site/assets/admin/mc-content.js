@@ -428,7 +428,7 @@
   function attachImageUpload(inputEl, options = {}) {
     if (!inputEl) return;
     const { folder = 'site-assets', prefix = 'asset', label = 'Upload image', d } = options;
-    const parentLabel = inputEl.closest('label');
+    const parentLabel = inputEl.closest('label') || inputEl.closest('.mc-fl-field');
     if (!parentLabel || parentLabel.nextElementSibling?.classList.contains('mc-img-upload-bar')) return;
     
     const wrapper = document.createElement('div');

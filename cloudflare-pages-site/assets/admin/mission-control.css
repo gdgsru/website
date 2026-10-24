@@ -1751,17 +1751,26 @@ html[data-theme="dark"] .mc-subtabs a[aria-current="page"] {
    SPLIT-PANE STUDIO (Linear / Vercel aesthetic)
    ===================================================== */
 
-/* Studio grid — replaces the full-content list+drawer combo */
+/* Studio grid — replaces the full-content list+drawer combo.
+   Breaks out of .mc-content's max-width and padding so it fills
+   the full remaining viewport height correctly. */
+.mc-content:has(.mc-studio) {
+  padding: 0;
+  max-width: none;
+  margin: 0;
+}
+
 .mc-studio {
   display: grid;
   grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
   gap: 0;
   height: calc(100vh - var(--top));
   overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: var(--r-l);
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
   background: var(--surface);
-  box-shadow: var(--shadow-sm);
+  box-shadow: none;
 }
 
 /* Left pane: list directory */
@@ -2340,6 +2349,10 @@ html[data-theme="dark"] .mc-studio-chip[aria-pressed="true"] {
 
 /* Mobile: stack the studio panes vertically on small screens */
 @media (max-width: 860px) {
+  .mc-content:has(.mc-studio) {
+    padding: 0;
+  }
+
   .mc-studio {
     grid-template-columns: 1fr;
     height: auto;
@@ -2359,11 +2372,6 @@ html[data-theme="dark"] .mc-studio-chip[aria-pressed="true"] {
   }
 
   .mc-studio-editor-body {
-    overflow: visible;
-  }
-
-  .mc-studio {
-    height: auto;
     overflow: visible;
   }
 }
