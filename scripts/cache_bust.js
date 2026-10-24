@@ -1,8 +1,8 @@
 // Cache-bust all script tags in HTML pages
 const fs = require('fs');
 const path = require('path');
-const VER = '20261025';
-const MESH_VER = '20261025-mesh';
+const VER = '20261025-v23';
+const MESH_VER = '20261025-v23';
 
 const root = path.join(__dirname, '..', 'cloudflare-pages-site');
 

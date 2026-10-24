@@ -412,9 +412,12 @@
       if (el) el.hidden = true;
       return;
     }
-    const currentDismissed = localStorage.getItem('gdg_announcement_dismissed_id');
+    // Content-aware dismissal signature: combines announcement_id with text preview
+    // If text or ID changes in Mission Control, old dismissals are automatically invalidated!
     const aid = String(cfg.announcement_id || 1);
-    if (currentDismissed === aid) {
+    const contentSignature = `${aid}_${String(cfg.text || '').slice(0, 20)}`;
+    const dismissedSig = localStorage.getItem('gdg_announcement_dismissed_sig');
+    if (dismissedSig === contentSignature) {
       const el = document.getElementById('gdg-announcement-bar');
       if (el) el.hidden = true;
       return;
@@ -441,7 +444,7 @@
     const closeBtn = bar.querySelector('.gdg-announcement-close');
     if (closeBtn) {
       closeBtn.onclick = () => {
-        localStorage.setItem('gdg_announcement_dismissed_id', aid);
+        localStorage.setItem('gdg_announcement_dismissed_sig', contentSignature);
         bar.hidden = true;
       };
     }
