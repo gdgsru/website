@@ -168,6 +168,7 @@
     { key: 'start_at', label: 'Starts (IST)', type: 'datetime' },
     { key: 'end_at', label: 'Ends (IST)', type: 'datetime' },
     { key: 'venue', label: 'Venue', nullable: true },
+    { key: 'speaker', label: 'Speaker(s)', nullable: true, placeholder: 'e.g. Jane Doe, Google' },
     { key: 'online_url', label: 'Online session link', type: 'url', nullable: true, placeholder: 'https://' },
     { key: 'registration_url', label: 'Registration link', type: 'url', nullable: true, placeholder: 'https://' },
     { key: 'image_url', label: 'Banner image link', type: 'url', nullable: true, placeholder: 'https://' },

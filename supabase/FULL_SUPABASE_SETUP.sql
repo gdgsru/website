@@ -35,6 +35,7 @@ create table if not exists public.events (
   end_at timestamptz,
   timezone text not null default 'Asia/Kolkata',
   venue text,
+  speaker text,
   online_url text,
   registration_url text,
   status text not null default 'draft' check (status in ('draft','published','cancelled','archived')),
@@ -235,7 +236,7 @@ create table if not exists public.audit_logs (
 
 -- Public projections intentionally exclude emails, activity breakdowns, internal notes and claim metadata.
 create or replace view public.public_event_list with (security_invoker = false) as
-  select id, title, slug, category, summary, description, image_url, start_at, end_at, timezone, venue, online_url, registration_url, featured, pinned_next_session
+  select id, title, slug, category, summary, description, image_url, start_at, end_at, timezone, venue, speaker, online_url, registration_url, featured, pinned_next_session
   from public.events where status = 'published';
 grant select on public.public_event_list to anon, authenticated;
 
@@ -546,7 +547,7 @@ create policy resource_files_admin_update on storage.objects for update to authe
 create policy resource_files_admin_delete on storage.objects for delete to authenticated using (bucket_id='resource-files' and private.is_admin());
 
 create or replace view public.public_event_list with (security_invoker = true) as
- select id,title,slug,category,summary,description,image_url,start_at,end_at,timezone,venue,online_url,registration_url,featured,pinned_next_session from public.events where status='published';
+ select id,title,slug,category,summary,description,image_url,start_at,end_at,timezone,venue,speaker,online_url,registration_url,featured,pinned_next_session from public.events where status='published';
 create or replace view public.public_team_list with (security_invoker = true) as
  select id,name,role,department,leadership_order,bio,photo_url,social_links,sort_order from public.team_members where status='published';
 create or replace view public.public_blog_list with (security_invoker = true) as

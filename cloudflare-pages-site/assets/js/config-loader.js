@@ -47,7 +47,7 @@
   function fetchEvents(client) {
     return fetchCached('events', () =>
       client.from('public_event_list')
-        .select('id,title,slug,category,summary,description,image_url,start_at,end_at,timezone,venue,online_url,registration_url,featured,pinned_next_session')
+        .select('id,title,slug,category,summary,description,image_url,start_at,end_at,timezone,venue,speaker,online_url,registration_url,featured,pinned_next_session')
         .order('start_at', { ascending: true })
     );
   }
@@ -302,7 +302,7 @@
     const set = (i, label, value) => { const small = cells[i].querySelector('small'), b = cells[i].querySelector('b'); if (small && small.lastChild && small.lastChild.nodeType === 3) small.lastChild.nodeValue = label; if (b) b.textContent = value; };
     set(0, 'Date & time', when);
     set(1, 'Venue', e.venue || (e.online_url ? 'Online session' : 'To be announced'));
-    set(2, 'Category', e.category || 'Community');
+    set(2, 'Speaker', e.speaker || 'To be announced');
     set(3, 'Registration', e.registration_url ? 'Open — register below' : 'Details on event page');
     const side = f.querySelector('.event-feature-side');
     if (side) { const b = side.querySelector('b'), p = side.querySelector('p'); if (b) b.textContent = e.title; if (p) p.textContent = e.summary || 'Open the event page for full details.'; }
@@ -325,7 +325,7 @@
     // Filter to future pinned events at the query, so a stale/past pinned event cannot hide
     // the next upcoming session. Read the public view; its RLS only exposes published events.
     client.from('public_event_list')
-      .select('id,title,summary,start_at,end_at,timezone,venue,online_url,registration_url,pinned_next_session')
+      .select('id,title,summary,start_at,end_at,timezone,venue,speaker,online_url,registration_url,pinned_next_session')
       .eq('pinned_next_session', true)
       .gt('start_at', new Date().toISOString())
       .order('start_at', { ascending: true })
