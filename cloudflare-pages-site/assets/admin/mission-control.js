@@ -338,7 +338,8 @@
     try { await fn(); } catch (e) { console.error(e); toast(authErrorText(e) || 'Could not save. Please try again.'); }
     finally { if (btn?.isConnected) { btn.disabled = false; btn.textContent = label; } }
   }
-  const loadScriptOnce = (src) => new Promise((resolve, reject) => { if ([...document.scripts].some((x) => x.src.endsWith(src))) return resolve(); const el = document.createElement('script'); el.src = src; el.onload = resolve; el.onerror = () => reject(new Error('Could not load ' + src)); document.head.appendChild(el); });
+  const MC_BUILD = '20261024c';
+  const loadScriptOnce = (src) => new Promise((resolve, reject) => { const versioned = src + '?v=' + MC_BUILD; if ([...document.scripts].some((x) => x.src.includes(src.split('/').pop().split('?')[0]) && x.src.includes(MC_BUILD))) return resolve(); const el = document.createElement('script'); el.src = versioned; el.onload = resolve; el.onerror = () => reject(new Error('Could not load ' + versioned)); document.head.appendChild(el); });
 
   function watchSession(main) {
     if (authWatched || !sb) return; authWatched = true;
