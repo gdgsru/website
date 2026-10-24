@@ -292,7 +292,33 @@
     const intro=textValue(values.community_intro||'').replace(/^"|"$/g,'');
     const homeCopy=textValue(values.homepage_copy||'').replace(/^"|"$/g,'');
     const logo=textValue(values.brand_logo_url||'').replace(/^"|"$/g,'');
+    let ann = { enabled: false, badge: 'UPCOMING', text: '', button_label: 'RSVP ↗', button_url: '', announcement_id: 1 };
+    try {
+      if (values.announcement_bar) {
+        const parsed = typeof values.announcement_bar === 'string' ? JSON.parse(values.announcement_bar) : values.announcement_bar;
+        ann = Object.assign(ann, parsed);
+      }
+    } catch {}
     setWorkspace('Settings',`<p class="admin-lead">Content and links only. Design tokens, layout, typography, and animations are protected from Settings changes.</p>
+      <section class="admin-panel"><h2>Announcement Bar</h2><p class="muted">Global notification bar displayed above the header on every page. Saving edits auto-increments the announcement version so dismissed visitors see the update.</p>
+        <div style="margin:16px 0;padding:14px;border:1px dashed var(--ln);border-radius:12px;background:var(--cd)">
+          <small class="muted" style="display:block;margin-bottom:8px;font-weight:600">Live Preview:</small>
+          <div id="ann-preview-bar" style="background:#111317;color:#fff;padding:8px 16px;border-radius:8px;display:flex;align-items:center;justify-content:center;gap:12px;font-size:13px;flex-wrap:wrap">
+            <span id="ann-prev-badge" style="background:#4285f4;color:#fff;padding:2px 8px;border-radius:99px;font-weight:700;font-size:10px">${esc(ann.badge || 'UPCOMING')}</span>
+            <span id="ann-prev-text" style="font-weight:500">${esc(ann.text || 'Your announcement will appear here.')}</span>
+            <span id="ann-prev-btn" style="background:#fff;color:#111;padding:3px 12px;border-radius:99px;font-weight:600;font-size:11px">${esc(ann.button_label || 'Action ↗')}</span>
+          </div>
+        </div>
+        <form id="announcement-form" class="admin-form">
+          <label class="check full"><input type="checkbox" name="enabled" ${ann.enabled ? 'checked' : ''}> <b>Enable Announcement Bar on website</b></label>
+          <label>Badge text<input name="badge" value="${esc(ann.badge || 'UPCOMING')}" placeholder="UPCOMING, REGISTRATIONS OPEN, LIVE" required></label>
+          <label class="full">Announcement message (plain text only)<textarea name="text" rows="2" placeholder="e.g. Grand Chapter Launch registrations are live on Google Community Platform." required>${esc(ann.text || '')}</textarea></label>
+          <label>Button label<input name="button_label" value="${esc(ann.button_label || '')}" placeholder="e.g. RSVP on Chapter Page ↗"></label>
+          <label>Button URL (must start with https://)<input name="button_url" type="url" value="${esc(ann.button_url || '')}" placeholder="https://gdg.community.dev/..."></label>
+          <input type="hidden" name="announcement_id" value="${ann.announcement_id || 1}">
+          <button type="submit">Save Announcement Bar</button>
+        </form>
+      </section>
       <section class="admin-panel"><h2>Brand logo</h2><p class="muted">Optional logo override. Upload PNG, JPEG, or WebP up to 5 MB. When no override is set, the original Google-colour mark stays in place.</p>${logo&&safeUrl(logo)?`<p><img src="${esc(safeUrl(logo))}" alt="Current GDG SRU logo" style="max-width:180px;max-height:100px;object-fit:contain"></p>`:''}<form id="logo-form" class="admin-form"><label>Logo file<input type="file" name="logo" accept="image/png,image/jpeg,image/webp" required></label><button type="submit">Upload logo</button></form>${logo?'<button type="button" class="button-outline" id="clear-logo">Remove logo override</button>':''}</section>
       <section class="admin-panel"><h2>Official contact</h2><form id="contact-form" class="admin-form"><label>Primary contact email<input name="email" type="email" value="${esc(email)}" required></label><label>Additional contact email<input name="secondary_email" type="email" value="${esc(secondaryEmail)}" required></label><button type="submit">Save contact emails</button></form><p class="muted">The primary address is used for privacy enquiries. Both addresses appear in the community contact section.</p></section>
       <section class="admin-panel"><h2>Social links</h2><p class="muted">Manage the six standard destinations and any additional platforms. Empty URLs are not displayed publicly.</p><form id="social-form" class="admin-form">${merged.map((s,i)=>`<div class="social-edit-row" data-social-row="${i}"><input type="hidden" name="key_${i}" value="${esc(s.key||slugify(s.label))}"><label>Platform<input name="label_${i}" value="${esc(s.label||'')}" required></label><label>URL<input name="url_${i}" type="url" value="${esc(s.url||'')}" placeholder="https://…"></label><label>Icon / short mark<input name="icon_${i}" value="${esc(s.icon||'')}" maxlength="40" placeholder="e.g. in, ✦, brand icon"></label><label>Description<input name="description_${i}" value="${esc(s.description||'')}" maxlength="180"></label><label class="inline-check"><input type="checkbox" name="enabled_${i}" ${s.enabled!==false?'checked':''}> Visible on site</label><label>Display order<input name="order_${i}" type="number" value="${Number(s.sort_order)||i+1}"></label><button type="button" class="button-outline remove-social" data-remove-social="${i}">Remove platform</button></div>`).join('')}<button type="button" class="button-outline" id="add-social">Add platform</button><button type="submit">Save social links</button></form></section>
@@ -311,6 +337,47 @@
       if(!confirm('Remove this platform from the website?'))return;
       remove.closest('[data-social-row]').remove();
     });
+    // Announcement bar live preview & save
+    const annForm = $('#announcement-form');
+    if (annForm) {
+      const updateAnnPreview = () => {
+        const badgeEl = $('#ann-prev-badge');
+        const textEl = $('#ann-prev-text');
+        const btnEl = $('#ann-prev-btn');
+        if (badgeEl) badgeEl.textContent = annForm.elements.badge?.value || 'UPCOMING';
+        if (textEl) textEl.textContent = annForm.elements.text?.value || 'Your announcement will appear here.';
+        if (btnEl) {
+          const l = annForm.elements.button_label?.value;
+          btnEl.textContent = l || 'Action ↗';
+          btnEl.style.display = l ? '' : 'none';
+        }
+      };
+      annForm.addEventListener('input', updateAnnPreview);
+
+      annForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const fd = formObject(e.target);
+        const btnUrl = String(fd.button_url || '').trim();
+        if (btnUrl && !btnUrl.startsWith('https://')) {
+          return adminMessage('Button URL must begin with https://');
+        }
+        const currentId = Number(fd.announcement_id) || 1;
+        const newRecord = {
+          enabled: !!e.target.elements.enabled.checked,
+          badge: String(fd.badge || 'UPCOMING').trim(),
+          text: String(fd.text || '').trim(),
+          button_label: String(fd.button_label || '').trim(),
+          button_url: btnUrl,
+          announcement_id: currentId + 1 // version bump invalidates old dismissals
+        };
+        const r = await upsertSetting('announcement_bar', newRecord);
+        if (r.error) return adminMessage(authErrorText(r.error));
+        await audit('update', 'site_settings', 'announcement_bar');
+        adminMessage('Announcement Bar saved & version updated.', true);
+        await adminSettings();
+      };
+    }
+
     $('#tracks-form').onsubmit=async e=>{e.preventDefault();const lines=String(formObject(e.target).tracks||'').split('\n').map(x=>x.trim()).filter(Boolean);const list=lines.map((ln,i)=>{const parts=ln.split('|').map(x=>(x||'').trim());const color=['b','r','y','g'].includes(parts[2])?parts[2]:['b','r','y','g'][i%4];return {label:parts[0]||'',description:parts[1]||'',color};}).filter(t=>t.label);if(!list.length)return adminMessage('Add at least one track card.');if(list.length>8)return adminMessage('Keep the home page to 8 track cards or fewer.');const r=await upsertSetting('home_tracks',list);if(r.error)return adminMessage(authErrorText(r.error));await audit('update','site_settings','home_tracks');adminMessage('Track cards saved.',true);};
     $('#categories-form').onsubmit=async e=>{e.preventDefault();const fd=new FormData(e.target);const on=fd.getAll('on');const fresh=String(fd.get('new')||'').split('\n').map(x=>x.trim()).filter(Boolean);const list=(window.GDG_SITE_DEFAULTS||{}).normalizeCategories([...eventCats.map(c=>({name:c.name,active:on.includes(c.name)})),...fresh.map(name=>({name,active:false}))]);if(!list.length)return adminMessage('Add at least one category.');const r=await upsertSetting('event_categories',list);if(r.error)return adminMessage(authErrorText(r.error));await audit('update','site_settings','event_categories');adminMessage('Categories saved.',true);};
     $('#contact-form').onsubmit=async e=>{e.preventDefault();const fields=formObject(e.target);const primary=String(fields.email||'').trim();const secondary=String(fields.secondary_email||'').trim();if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(primary)||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(secondary))return adminMessage('Enter valid addresses for both contact email fields.');const a=await upsertSetting('contact_email',primary);if(a.error)return adminMessage(authErrorText(a.error));const b=await upsertSetting('secondary_contact_email',secondary);if(b.error)return adminMessage(authErrorText(b.error));await audit('update','site_settings','contact_email, secondary_contact_email');adminMessage('Contact emails saved.',true);};
@@ -566,6 +633,7 @@
   MC.pages.badges = () => adminBadges();
   MC.pages.leaderboard = () => adminLeaderboard();
   const SETTINGS_SECTIONS = [
+    ['announcements', 'Announcement Bar', ['Announcement Bar']],
     ['home', 'Home page', ['Home track cards', 'Homepage text', 'Community introduction']],
     ['contact', 'Contact & links', ['Official contact', 'Social links']],
     ['brand', 'Brand', ['Brand logo']],

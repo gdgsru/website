@@ -160,38 +160,123 @@
 
   /* ---------------- Events ---------------- */
   const eventFields = [
-    { key: 'title', label: 'Title', required: true, full: true },
+    { key: 'event_tier', label: 'Event Tier', type: 'select', default: 'standard', options: [
+      { value: 'flagship', label: '★ Flagship Event (Hero Showcase Banner)' },
+      { value: 'program', label: '◷ Month-Long Program (Cohort, Study Jam)' },
+      { value: 'standard', label: '🎟 Standard Event (Workshop, Tech Talk)' }
+    ], full: true, help: 'Changes layout and fields automatically.' },
+    { key: 'title', label: 'Event Title', required: true, full: true },
     { key: 'slug', label: 'Web address', required: true, help: 'Becomes /events/your-slug' },
     { key: 'category', label: 'Category', type: 'select', default: 'Other', options: (current) => eventCategoryOptions(current) },
     { key: 'summary', label: 'One-line summary', full: true },
-    { key: 'description', label: 'Description', type: 'textarea', rows: 6, full: true, preview: true },
+    { key: 'description', label: 'Full Description', type: 'textarea', rows: 5, full: true, preview: true },
     { key: 'start_at', label: 'Starts (IST)', type: 'datetime' },
-    { key: 'end_at', label: 'Ends (IST)', type: 'datetime' },
-    { key: 'venue', label: 'Venue', nullable: true },
-    { key: 'speaker', label: 'Speaker(s)', nullable: true, placeholder: 'e.g. Jane Doe, Google' },
-    { key: 'online_url', label: 'Online session link', type: 'url', nullable: true, placeholder: 'https://' },
-    { key: 'registration_url', label: 'Registration link', type: 'url', nullable: true, placeholder: 'https://' },
-    { key: 'image_url', label: 'Banner image link', type: 'url', nullable: true, placeholder: 'https://' },
-    { key: 'status', label: 'Status', type: 'select', default: 'draft', options: [{ value: 'draft', label: 'Draft (hidden)' }, { value: 'published', label: 'Published' }, { value: 'cancelled', label: 'Cancelled' }, { value: 'archived', label: 'Archived' }] },
-    { key: 'featured', label: 'Feature as flagship banner on the Events page (the big card)', type: 'checkbox' },
-    { key: 'pinned_next_session', label: 'Pin as the Next Session countdown (home widget + date/venue/speaker fields)', type: 'checkbox' }
+    { key: 'end_at', label: 'Ends (IST)', type: 'datetime', help: 'Event transitions to Past after this time.' },
+    { key: 'event_mode', label: 'Event Format', type: 'select', default: 'in_person', options: [
+      { value: 'in_person', label: 'In-Person (Campus)' },
+      { value: 'virtual', label: 'Virtual (Online / Google Meet)' },
+      { value: 'hybrid', label: 'Hybrid (Campus + Online)' }
+    ]},
+    { key: 'venue', label: 'Venue / Hall (Campus)', nullable: true, placeholder: 'e.g. Block C, Seminar Hall 2' },
+    { key: 'join_link', label: 'Join link (Virtual / Meet)', type: 'url', nullable: true, placeholder: 'https://meet.google.com/...' },
+    { key: 'speakers', label: 'Speaker(s)', nullable: true, placeholder: 'e.g. Jane Doe (Google), John Smith' },
+    { key: 'rsvp_url', label: 'Official RSVP Link (gdg.community.dev)', type: 'url', nullable: true, full: true, placeholder: 'https://gdg.community.dev/events/details/...' },
+    { key: 'banner_url', label: '16:9 Poster Banner URL (Flagship & Cards)', type: 'url', nullable: true, full: true, placeholder: 'Upload below or enter URL' },
+    { key: 'accent_color', label: 'Showcase Accent Color', type: 'select', default: 'blue', options: [
+      { value: 'blue', label: 'Google Blue (#4285f4)' },
+      { value: 'red', label: 'Google Red (#ea4335)' },
+      { value: 'yellow', label: 'Google Yellow (#fbbc04)' },
+      { value: 'green', label: 'Google Green (#34a853)' }
+    ]},
+    { key: 'syllabus_url', label: 'Curriculum / Syllabus Link (Programs)', type: 'url', nullable: true, placeholder: 'https://docs.google.com/...' },
+    { key: 'discord_channel_url', label: 'Discord Track Channel Link (Programs)', type: 'url', nullable: true, placeholder: 'https://discord.com/channels/...' },
+    { key: 'program_milestones_text', label: 'Weekly Milestones (Programs — 1 per line)', type: 'textarea', rows: 3, full: true, placeholder: 'Week 1: Orientation & Git basics\nWeek 2: Cloud IAM & Foundations\nWeek 3: Final Demo Day' },
+    { key: 'resource_url', label: 'Post-Event Slides / GitHub / Code Link', type: 'url', nullable: true, placeholder: 'https://github.com/gdgsru/...' },
+    { key: 'calendar_enabled', label: 'Show "+ Add to Google Calendar" button', type: 'checkbox', default: true },
+    { key: 'certificates_ready', label: 'Certificates issued — show "Claim Certificate" button', type: 'checkbox', default: false },
+    { key: 'pinned_next_session', label: 'Pin as Next Session countdown widget on Home Page', type: 'checkbox' },
+    { key: 'status', label: 'Publishing Status', type: 'select', default: 'draft', options: [
+      { value: 'draft', label: 'Draft (hidden from public)' },
+      { value: 'published', label: 'Published (live on site)' },
+      { value: 'cancelled', label: 'Cancelled' },
+      { value: 'archived', label: 'Archived' }
+    ]}
   ];
   const eventCfg = {
     key: 'events', title: 'Events', table: 'events', titleKey: 'title', order: { col: 'start_at', asc: false }, statuses: ['published', 'draft', 'archived', 'cancelled'],
-    lead: 'Each event moves from draft to published, then attendance, then certificates. The dots show where it is. Click one to jump to that step.',
-    newLabel: 'New event', empty: 'No events yet. Create one and it will be tracked from draft to certificates.', fields: eventFields,
+    lead: 'Flagship events, month-long cohorts, and hands-on workshops. Pinned events show on the home page; flagship events get the top showcase banner.',
+    newLabel: 'New event', empty: 'No events yet. Create one to publish it to the chapter calendar.', fields: eventFields,
     load: async (rows) => ({ facts: await MC.eventFacts(rows) }),
-    row: (r, x) => `<li class="mc-item"><div class="mc-item-main"><b>${esc(r.title)}</b><small>${esc(r.category || '')} · ${esc(when(r.start_at))}${r.start_at ? ` · ${esc(until(r.start_at))}` : ''}</small><span class="mc-tags">${r.pinned_next_session ? '<span class="tag blue">Next session</span>' : ''}${r.featured ? '<span class="tag">Featured</span>' : ''}<span class="status s-${esc(r.status)}">${esc(r.status)}</span></span></div>${MC.pipeline(r, x.facts[r.id])}<div class="mc-item-actions"><button type="button" class="button-outline" data-edit="${esc(r.id)}">${icon('edit')}Edit</button><button type="button" class="mc-icon-btn" data-dup="${esc(r.id)}" aria-label="Duplicate ${esc(r.title)}" title="Duplicate">${icon('copy')}</button>${r.status === 'published' ? `<a class="mc-icon-btn" href="/event.html?slug=${encodeURIComponent(r.slug)}" target="_blank" rel="noopener" aria-label="View ${esc(r.title)} on the site" title="View on site">${icon('ext')}</a>` : ''}</div></li>`,
+    row: (r, x) => {
+      const tierBadge = r.event_tier === 'flagship' ? '<span class="tag" style="background:#4285f4;color:#fff">★ Flagship</span>' : (r.event_tier === 'program' ? '<span class="tag" style="background:#fbbc04;color:#111">◷ Program</span>' : '');
+      const modeBadge = `<span class="tag">${r.event_mode === 'virtual' ? 'Online' : (r.event_mode === 'hybrid' ? 'Hybrid' : 'In-Person')}</span>`;
+      return `<li class="mc-item"><div class="mc-item-main"><b>${esc(r.title)}</b><small>${esc(r.category || '')} · ${esc(when(r.start_at))}${r.start_at ? ` · ${esc(until(r.start_at))}` : ''}</small><span class="mc-tags">${tierBadge}${modeBadge}${r.pinned_next_session ? '<span class="tag blue">Next session</span>' : ''}<span class="status s-${esc(r.status)}">${esc(r.status)}</span></span></div>${MC.pipeline(r, x.facts[r.id])}<div class="mc-item-actions"><button type="button" class="button-outline" data-edit="${esc(r.id)}">${icon('edit')}Edit</button><button type="button" class="mc-icon-btn" data-dup="${esc(r.id)}" aria-label="Duplicate ${esc(r.title)}" title="Duplicate">${icon('copy')}</button>${r.status === 'published' ? `<a class="mc-icon-btn" href="/events/" target="_blank" rel="noopener" aria-label="View on site" title="View on site">${icon('ext')}</a>` : ''}</div></li>`;
+    },
     wire: (form, row, d) => {
-      form.addEventListener('input', (e) => { if (e.target.name === 'title' && !form.elements.slug.dataset.manual && !form.elements.id.value) form.elements.slug.value = slugify(e.target.value); if (e.target.name === 'slug') form.elements.slug.dataset.manual = '1'; });
+      form.addEventListener('input', (e) => {
+        if (e.target.name === 'title' && !form.elements.slug.dataset.manual && !form.elements.id.value) form.elements.slug.value = slugify(e.target.value);
+        if (e.target.name === 'slug') form.elements.slug.dataset.manual = '1';
+      });
       form.elements.slug.addEventListener('change', () => { form.elements.slug.value = slugify(form.elements.slug.value); });
       if (form.elements.id.value) form.elements.slug.dataset.manual = '1';
-      attachImageUpload(form.elements.image_url, { folder: 'events', prefix: form.elements.title?.value || 'event', label: 'Upload banner image', d });
+
+      // Backward compatibility mapping for old speaker/registration_url columns
+      if (row) {
+        if (!form.elements.speakers.value && row.speaker) form.elements.speakers.value = row.speaker;
+        if (!form.elements.rsvp_url.value && row.registration_url) form.elements.rsvp_url.value = row.registration_url;
+        if (!form.elements.join_link.value && row.online_url) form.elements.join_link.value = row.online_url;
+        if (Array.isArray(row.program_milestones) && row.program_milestones.length) {
+          form.elements.program_milestones_text.value = row.program_milestones.map(m => (m.title ? `Week ${m.week || 1}: ${m.title}` : m)).join('\n');
+        }
+      }
+
+      // Attach direct poster banner upload
+      attachImageUpload(form.elements.banner_url, { folder: 'event-banners', prefix: form.elements.title?.value || 'banner', label: 'Upload 16:9 poster banner', d });
+
+      // Dynamic field visibility according to selected Tier
+      const updateTierVisibility = () => {
+        const tier = form.elements.event_tier?.value || 'standard';
+        const isFlagship = tier === 'flagship';
+        const isProgram = tier === 'program';
+
+        const toggle = (el, show) => {
+          const container = el?.closest('label') || el?.closest('.mc-field');
+          if (container) container.style.display = show ? '' : 'none';
+        };
+
+        // Flagship-only fields
+        toggle(form.elements.accent_color, isFlagship);
+
+        // Program-only fields
+        toggle(form.elements.syllabus_url, isProgram);
+        toggle(form.elements.discord_channel_url, isProgram);
+        toggle(form.elements.program_milestones_text, isProgram);
+      };
+
+      form.elements.event_tier?.addEventListener('change', updateTierVisibility);
+      updateTierVisibility();
     },
     before: async (f, id) => {
+      // Keep legacy columns populated so any third-party script stays functional
+      if (f.speakers) f.speaker = f.speakers;
+      if (f.rsvp_url) f.registration_url = f.rsvp_url;
+      if (f.join_link) f.online_url = f.join_link;
+
+      // Parse program milestones text into JSON
+      if (f.program_milestones_text !== undefined) {
+        const lines = String(f.program_milestones_text || '').split('\n').map(l => l.trim()).filter(Boolean);
+        f.program_milestones = lines.map((line, idx) => ({ week: idx + 1, title: line.replace(/^Week\s*\d+\s*:\s*/i, '') }));
+        delete f.program_milestones_text;
+      }
+
+      if (f.event_tier === 'flagship') f.featured = true;
+      else f.featured = false;
+
       if (f.pinned_next_session && f.status === 'published') {
-        let un = sb().from('events').update({ pinned_next_session: false }).eq('pinned_next_session', true).eq('status', 'published'); if (id) un = un.neq('id', id);
-        const ur = await un; if (ur.error) return authErrorText(ur.error);
+        let un = sb().from('events').update({ pinned_next_session: false }).eq('pinned_next_session', true).eq('status', 'published');
+        if (id) un = un.neq('id', id);
+        const ur = await un;
+        if (ur.error) return authErrorText(ur.error);
       }
       if (f.status !== 'published') f.pinned_next_session = false;
     },

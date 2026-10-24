@@ -47,7 +47,7 @@
   function fetchEvents(client) {
     return fetchCached('events', () =>
       client.from('public_event_list')
-        .select('id,title,slug,category,summary,description,image_url,start_at,end_at,timezone,venue,speaker,online_url,registration_url,featured,pinned_next_session')
+        .select('id,title,slug,category,summary,description,image_url,banner_url,start_at,end_at,timezone,event_tier,event_mode,accent_color,venue,join_link,online_url,speakers,speaker,rsvp_url,registration_url,syllabus_url,discord_channel_url,resource_url,calendar_enabled,certificates_ready,program_milestones,featured,pinned_next_session')
         .order('start_at', { ascending: true })
     );
   }
@@ -267,6 +267,164 @@
       esc(String(t.label).trim()), esc(String(t.description || '').trim())
     ]));
   }
+  /* ── Global Announcement Bar Studio (Zero Layout Jump & Versioned Dismissal) ── */
+  function ensureAnnouncementStyles() {
+    if (document.getElementById('gdg-announcement-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'gdg-announcement-styles';
+    style.textContent = `
+      :root { --announcement-h: 0px; }
+      .gdg-announcement-bar {
+        background: #111317;
+        color: #f1f3f4;
+        border-bottom: 1px solid rgba(255,255,255,0.12);
+        font: 500 13px/1.35 var(--f-body, system-ui, sans-serif);
+        padding: 8px 16px;
+        position: relative;
+        z-index: 100;
+        box-sizing: border-box;
+      }
+      html[data-theme="light"] .gdg-announcement-bar {
+        background: #f8f9fa;
+        color: #202124;
+        border-bottom: 1px solid #dadce0;
+      }
+      .gdg-announcement-bar[hidden] { display: none !important; }
+      .gdg-announcement-wrap {
+        max-width: 1180px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        text-align: center;
+      }
+      .gdg-announcement-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2.5px 8.5px;
+        border-radius: 99px;
+        background: #4285f4;
+        color: #fff;
+        font: 700 10.5px/1 var(--f-mono, monospace);
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        flex-shrink: 0;
+      }
+      .gdg-announcement-text {
+        font-weight: 500;
+        color: inherit;
+        letter-spacing: -0.01em;
+      }
+      .gdg-announcement-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 13px;
+        border-radius: 99px;
+        background: #fff;
+        color: #111;
+        font: 600 12px/1 var(--f-body, system-ui);
+        text-decoration: none;
+        white-space: nowrap;
+        transition: transform .15s ease;
+      }
+      html[data-theme="light"] .gdg-announcement-btn {
+        background: #202124;
+        color: #fff;
+      }
+      .gdg-announcement-btn:hover { transform: translateY(-1px); }
+      .gdg-announcement-close {
+        background: none;
+        border: 0;
+        color: inherit;
+        opacity: .6;
+        font-size: 19px;
+        line-height: 1;
+        padding: 2px 6px;
+        cursor: pointer;
+        margin-left: 6px;
+        border-radius: 4px;
+      }
+      .gdg-announcement-close:hover { opacity: 1; }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function getAnnouncementElement() {
+    let el = document.getElementById('gdg-announcement-bar');
+    if (!el) {
+      ensureAnnouncementStyles();
+      el = document.createElement('aside');
+      el.id = 'gdg-announcement-bar';
+      el.className = 'gdg-announcement-bar';
+      el.setAttribute('role', 'region');
+      el.setAttribute('aria-label', 'Announcement');
+      el.hidden = true;
+      const header = document.getElementById('hd') || document.querySelector('header');
+      if (header && header.parentNode) header.parentNode.insertBefore(el, header);
+      else document.body.prepend(el);
+    }
+    return el;
+  }
+
+  function renderAnnouncementBar(cfg) {
+    if (!cfg || !cfg.enabled) {
+      const el = document.getElementById('gdg-announcement-bar');
+      if (el) el.hidden = true;
+      return;
+    }
+    const currentDismissed = localStorage.getItem('gdg_announcement_dismissed_id');
+    const aid = String(cfg.announcement_id || 1);
+    if (currentDismissed === aid) {
+      const el = document.getElementById('gdg-announcement-bar');
+      if (el) el.hidden = true;
+      return;
+    }
+    const bar = getAnnouncementElement();
+    const badgeText = String(cfg.badge || 'ANNOUNCEMENT').trim();
+    const msgText = String(cfg.text || '').trim();
+    const btnLabel = String(cfg.button_label || '').trim();
+    const btnUrl = String(cfg.button_url || '').trim();
+    const isSafeHttps = btnUrl.startsWith('https://');
+
+    bar.innerHTML = `
+      <div class="gdg-announcement-wrap">
+        ${badgeText ? `<span class="gdg-announcement-badge">${esc(badgeText)}</span>` : ''}
+        <span class="gdg-announcement-text">${esc(msgText)}</span>
+        ${(btnLabel && isSafeHttps) ? `<a class="gdg-announcement-btn" href="${esc(btnUrl)}" target="_blank" rel="noopener noreferrer">${esc(btnLabel)}</a>` : ''}
+        <button type="button" class="gdg-announcement-close" aria-label="Dismiss announcement">×</button>
+      </div>
+    `;
+    bar.hidden = false;
+    const closeBtn = bar.querySelector('.gdg-announcement-close');
+    if (closeBtn) {
+      closeBtn.onclick = () => {
+        localStorage.setItem('gdg_announcement_dismissed_id', aid);
+        bar.hidden = true;
+      };
+    }
+  }
+
+  // Pre-render announcement immediately from sessionStorage to eliminate layout jump
+  try {
+    const cached = sessionStorage.getItem('gdg_announcement_cache');
+    if (cached) renderAnnouncementBar(JSON.parse(cached));
+  } catch {}
+
+  function applyAnnouncementBar(settings) {
+    try {
+      const raw = getSetting(settings, 'announcement_bar');
+      if (!raw) return;
+      const cfg = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      sessionStorage.setItem('gdg_announcement_cache', JSON.stringify(cfg));
+      renderAnnouncementBar(cfg);
+    } catch (err) {
+      console.warn('[GDG SRU] Announcement bar render skipped:', err);
+    }
+  }
+
   function applyHomepageText(settings) {
     renderHomeTracks(settings);
     const homeCopy = String(getSetting(settings, 'homepage_copy') || '').trim();
@@ -474,46 +632,137 @@
     if (window.__GDG_INVALID_EVENT_ROUTE) { renderEventDetail(null); return; }
     if (routeSlug) { renderEventDetail(rows.find(e => e.slug === routeSlug) || null); return; }
 
-    // ── Featured event → drives the big banner card (title, description, CTA buttons) ──
-    // Admin: tick "Feature this event on the home page" on the flagship event.
-    // Any event with featured=true (most recent by start_at) controls the banner.
-    const featured = rows.find(e => e.featured) || null;
-    if (featured) {
-      const setT = (id, val) => { const el = document.getElementById(id); if (el && val != null) el.textContent = val; };
-      setT('ef-title', featured.title);
-      setT('ef-summary', featured.summary || featured.description || '');
-      setT('ef-meta-label', String(featured.category || 'FEATURED EVENT').toUpperCase());
-      setT('ef-meta-sub', featured.start_at ? whenText(featured.start_at, featured.timezone || 'Asia/Kolkata') : 'UPCOMING');
-      setT('ef-side-title', featured.title);
-      setT('ef-side-body', featured.summary || 'Open the event page for full details.');
-      const efActions = document.getElementById('ef-actions');
-      if (efActions) efActions.innerHTML =
-        `${featured.registration_url ? `<a class="btn" href="${esc(safeUrl(featured.registration_url))}" target="_blank" rel="noopener noreferrer">RSVP ↗</a>` : ''}` +
-        `<a class="btn o" href="/event.html?slug=${encodeURIComponent(featured.slug)}">Event details ↗</a>`;
+    function makeGoogleCalendarUrl(e) {
+      if (!e.start_at) return '';
+      try {
+        const start = new Date(e.start_at);
+        const end = e.end_at ? new Date(e.end_at) : new Date(start.getTime() + 2 * 3600000);
+        const formatUtc = d => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+        const dates = `${formatUtc(start)}/${formatUtc(end)}`;
+        const title = encodeURIComponent(e.title || 'GDG SRU Event');
+        const details = encodeURIComponent((e.summary || e.description || '') + '\n\nOfficial RSVP: ' + (e.rsvp_url || e.registration_url || 'https://gdg.community.dev/gdg-on-campus-sr-university-warangal-india/'));
+        const location = encodeURIComponent(e.venue || e.join_link || (e.event_mode === 'virtual' ? 'Online Session' : 'SR University, Warangal'));
+        return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&details=${details}&location=${location}`;
+      } catch { return ''; }
     }
 
-    // ── Pinned next session → drives home countdown + ef-fields "Announced soon" cells ──
-    // Admin: tick "Pin as the Next Session countdown" on the ongoing/upcoming session.
+    const now = Date.now();
+    // ── Tier 1: Single Flagship Showcase Banner (Nearest Upcoming Flagship) ──
+    const upcomingFlagships = rows.filter(e => e.event_tier === 'flagship' && (e.end_at ? new Date(e.end_at).getTime() >= now : e.start_at ? new Date(e.start_at).getTime() >= now : true));
+    const flagship = upcomingFlagships.sort((a,b) => new Date(a.start_at||0) - new Date(b.start_at||0))[0] || rows.find(e => e.featured);
+
+    const featureEl = $('.event-feature', root);
+    if (flagship && featureEl) {
+      const bannerImg = safeUrl(flagship.banner_url || flagship.image_url);
+      const tz = flagship.timezone || 'Asia/Kolkata';
+      const whenStr = flagship.start_at ? whenText(flagship.start_at, tz) : 'Date announced soon';
+      const speakersText = String(flagship.speakers || flagship.speaker || '').trim();
+      const modeText = flagship.event_mode === 'virtual' ? 'Online (Google Meet)' : flagship.event_mode === 'hybrid' ? 'Hybrid Session' : 'In-Person (Campus)';
+      const venueText = flagship.venue || (flagship.join_link ? 'Online' : modeText);
+      const rsvpTarget = flagship.rsvp_url || flagship.registration_url || 'https://gdg.community.dev/gdg-on-campus-sr-university-warangal-india/';
+      const isFallback = !flagship.rsvp_url && !flagship.registration_url;
+      const calUrl = flagship.calendar_enabled ? makeGoogleCalendarUrl(flagship) : '';
+      const accent = ['blue','red','yellow','green'].includes(flagship.accent_color) ? flagship.accent_color : 'blue';
+      const accentHex = { blue: '#4285f4', red: '#ea4335', yellow: '#fbbc04', green: '#34a853' }[accent];
+
+      featureEl.className = `event-feature flagship-showcase-tier accent-${accent}`;
+      featureEl.style.setProperty('--accent-col', accentHex);
+      featureEl.innerHTML = `
+        <div class="event-feature-main">
+          <div class="event-feature-meta">
+            <span class="event-live-dot" style="background:${accentHex}"></span>
+            ${esc(String(flagship.category || 'FLAGSHIP EVENT').toUpperCase())} <span class="event-meta-divider">/</span> ${esc(modeText.toUpperCase())}
+          </div>
+          <h2>${esc(flagship.title)}</h2>
+          <p>${esc(flagship.summary || flagship.description || 'Join Google Developer Group on Campus SR University for this flagship session.')}</p>
+          <div class="ef-fields">
+            <div><small><i style="background:#4285f4"></i>Date & time (IST)</small><b>${esc(whenStr)}</b></div>
+            <div><small><i style="background:#ea4335"></i>Venue / Mode</small><b>${esc(venueText)}</b></div>
+            <div><small><i style="background:#fbbc04"></i>Speaker</small><b>${esc(speakersText || 'To be announced')}</b></div>
+            <div><small><i style="background:#34a853"></i>Platform</small><b>Official GDG Bevy Portal</b></div>
+          </div>
+          <div class="event-feature-actions">
+            ${isFallback
+              ? `<a class="btn" href="${esc(rsvpTarget)}" target="_blank" rel="noopener noreferrer">View Chapter Page ↗</a>`
+              : `<a class="btn" href="${esc(rsvpTarget)}" target="_blank" rel="noopener noreferrer">RSVP on Official Portal ↗</a>`
+            }
+            ${calUrl ? `<a class="btn o" href="${esc(calUrl)}" target="_blank" rel="noopener noreferrer">+ Add to Google Calendar</a>` : ''}
+          </div>
+        </div>
+        <div class="event-feature-side flagship-poster-side">
+          ${bannerImg
+            ? `<div class="flagship-poster-frame"><img src="${esc(bannerImg)}" alt="${esc(flagship.title)} poster" loading="lazy"></div>`
+            : `<div class="flagship-poster-fallback"><span class="cap">FLAGSHIP SHOWCASE</span><b>${esc(flagship.title)}</b><p>Season 2026</p></div>`
+          }
+        </div>
+      `;
+    } else if (!flagship && featureEl) {
+      // If no upcoming flagship event exists, gracefully hide the static placeholder
+      featureEl.style.display = 'none';
+    }
+
+    // Pinned next session countdown timer for Home Page
     const pinned = rows.find(e => e.pinned_next_session && e.start_at && new Date(e.start_at) > new Date());
     window.__GDG_PINNED_EVENT = pinned || null;
-    if (pinned && window.__gdgFillFeature) window.__gdgFillFeature();
+
     const formats = $('.event-formats', root);
     if (!formats) return;
     const section = document.createElement('section'); section.className = 'editorial-collections runtime-events';
-    section.innerHTML = `<div class="editorial-collections-head"><div><span class="cap">CHAPTER CALENDAR</span><h2>Upcoming & past events.</h2></div><p>Browse published events and open a dedicated page for dates, venue details, and registration links.</p></div><div class="filter-bar" style="margin:18px 0"><div class="segmented" role="group" aria-label="Event time"><button type="button" data-runtime-time="upcoming" aria-pressed="true">Upcoming</button><button type="button" data-runtime-time="past" aria-pressed="false">Past</button></div><label>Category <select data-runtime-category><option value="all">All events</option>${[...new Set(['Cloud','AI/ML','Web & Mobile','Open Source',...rows.map(e => e.category).filter(Boolean)])].map(c => `<option>${esc(c)}</option>`).join('')}</select></label></div><div class="editorial-grid g16-row g16-tickets" data-runtime-events></div>`;
+    section.innerHTML = `
+      <div class="editorial-collections-head">
+        <div><span class="cap">CHAPTER CALENDAR</span><h2>Workshops, Talks & Programs.</h2></div>
+        <p>Explore hands-on tech sessions, multi-week study jams, and bootcamps at SR University. All tickets and RSVPs are managed through Google's official community platform.</p>
+      </div>
+      <div class="filter-bar" style="margin:18px 0">
+        <div class="segmented" role="group" aria-label="Event time">
+          <button type="button" data-runtime-time="upcoming" aria-pressed="true">Upcoming</button>
+          <button type="button" data-runtime-time="past" aria-pressed="false">Past Events</button>
+        </div>
+        <label>Category <select data-runtime-category><option value="all">All categories</option>${[...new Set(['Cloud','AI/ML','Web & Mobile','Open Source',...rows.map(e => e.category).filter(Boolean)])].map(c => `<option>${esc(c)}</option>`).join('')}</select></label>
+      </div>
+      <div class="editorial-grid g16-row g16-tickets" data-runtime-events></div>
+    `;
     formats.parentNode.insertBefore(section, formats);
     const out = $('[data-runtime-events]', section);
+
     const render = () => {
       const time = $('[data-runtime-time="past"]', section).getAttribute('aria-pressed') === 'true' ? 'past' : 'upcoming';
-      const cat = $('[data-runtime-category]', section).value; const now = Date.now();
+      const cat = $('[data-runtime-category]', section).value;
+      const currentNow = Date.now();
       const filtered = rows.filter(e => {
-        const past = e.end_at ? new Date(e.end_at).getTime() < now : e.start_at ? new Date(e.start_at).getTime() < now : false;
-        return (time === 'past' ? past : !past) && (cat === 'all' || e.category === cat);
+        // Event counts as past when current time is later than end_at in IST
+        const endTs = e.end_at ? new Date(e.end_at).getTime() : (e.start_at ? new Date(e.start_at).getTime() : 0);
+        const isPast = endTs < currentNow;
+        return (time === 'past' ? isPast : !isPast) && (cat === 'all' || e.category === cat);
+      }).sort((a,b) => {
+        const tA = new Date(a.start_at||0).getTime();
+        const tB = new Date(b.start_at||0).getTime();
+        return time === 'past' ? (tB - tA) : (tA - tB);
       });
-      out.innerHTML = filtered.length ? filtered.map(e => eventCard(Object.assign({}, e, { no: rows.indexOf(e) + 1 }), rows.indexOf(e))).join('') : `<div class="event-vault-empty"><b>No ${time} events in this category yet.</b><p>Check back for updates from GDG SRU.</p></div>`;
+
+      if (!filtered.length) {
+        out.innerHTML = `<div class="event-vault-empty" style="grid-column:1/-1;width:100%;text-align:center;padding:48px 24px">
+          <b style="font-size:20px;display:block;margin-bottom:8px">No ${time} events scheduled in this category.</b>
+          <p class="muted" style="max-width:440px;margin:0 auto 20px">Check back for updates or join our community Discord to be the first to know about new sessions.</p>
+          <a class="btn" href="https://discord.gg/htSJMNcdZs" target="_blank" rel="noopener noreferrer">Join Community Discord ↗</a>
+        </div>`;
+        return;
+      }
+
+      out.innerHTML = filtered.map((e, idx) => {
+        if (e.event_tier === 'program' && window.GDG16?.program) {
+          return window.GDG16.program(e, idx);
+        }
+        return window.GDG16 ? window.GDG16.ticket(Object.assign({}, e, { no: idx + 1 }), idx) : '';
+      }).join('');
     };
-    $$('[data-runtime-time]', section).forEach(b => b.addEventListener('click', () => { $$('[data-runtime-time]', section).forEach(x => x.setAttribute('aria-pressed',String(x===b))); render(); }));
-    $('[data-runtime-category]',section).addEventListener('change',render); render();
+
+    $$('[data-runtime-time]', section).forEach(b => b.addEventListener('click', () => {
+      $$('[data-runtime-time]', section).forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+      render();
+    }));
+    $('[data-runtime-category]', section).addEventListener('change', render);
+    render();
   }
   async function renderBlogSeries(client) {
     const box = $('#blog-series');
@@ -880,6 +1129,7 @@
         applySecondaryContactEmail(secondaryContactEmail);
         applyHomepageText(settings);
         applyBrandLogo(settings);
+        applyAnnouncementBar(settings);
         updateMainMenuSocials(contactEmail);
         rewriteNavigation();
         updateHome(client);

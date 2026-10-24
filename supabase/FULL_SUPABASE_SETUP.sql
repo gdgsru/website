@@ -36,8 +36,21 @@ create table if not exists public.events (
   timezone text not null default 'Asia/Kolkata',
   venue text,
   speaker text,
+  speakers text,
   online_url text,
+  join_link text,
   registration_url text,
+  rsvp_url text,
+  event_tier text not null default 'standard' check (event_tier in ('flagship','program','standard')),
+  event_mode text not null default 'in_person' check (event_mode in ('in_person','virtual','hybrid')),
+  banner_url text,
+  accent_color text not null default 'blue' check (accent_color in ('blue','red','yellow','green')),
+  syllabus_url text,
+  discord_channel_url text,
+  resource_url text,
+  calendar_enabled boolean not null default true,
+  certificates_ready boolean not null default false,
+  program_milestones jsonb not null default '[]'::jsonb,
   status text not null default 'draft' check (status in ('draft','published','cancelled','archived')),
   featured boolean not null default false,
   pinned_next_session boolean not null default false,
@@ -236,7 +249,11 @@ create table if not exists public.audit_logs (
 
 -- Public projections intentionally exclude emails, activity breakdowns, internal notes and claim metadata.
 create or replace view public.public_event_list with (security_invoker = false) as
-  select id, title, slug, category, summary, description, image_url, start_at, end_at, timezone, venue, speaker, online_url, registration_url, featured, pinned_next_session
+  select id, title, slug, category, summary, description, image_url, banner_url, start_at, end_at, timezone,
+         event_tier, event_mode, accent_color, venue, join_link, online_url,
+         speakers, speaker, rsvp_url, registration_url,
+         syllabus_url, discord_channel_url, resource_url, calendar_enabled, certificates_ready, program_milestones,
+         featured, pinned_next_session, status, created_at, updated_at
   from public.events where status = 'published';
 grant select on public.public_event_list to anon, authenticated;
 
@@ -277,7 +294,7 @@ grant select on public.public_sponsored_leaderboards to anon, authenticated;
 
 -- Public site settings allowlist. Never expose all settings through an unrestricted table query.
 create or replace view public.public_site_settings with (security_invoker = false) as
-  select key, value from public.site_settings where key in ('social_links','contact_email','secondary_contact_email','community_intro','homepage_copy','brand_logo_url');
+  select key, value from public.site_settings where key in ('social_links','contact_email','secondary_contact_email','community_intro','homepage_copy','brand_logo_url','announcement_bar','event_categories');
 grant select on public.public_site_settings to anon, authenticated;
 
 create or replace view public.public_point_rules with (security_invoker = false) as
@@ -435,6 +452,15 @@ create policy resource_files_admin_insert on storage.objects for insert to authe
 create policy resource_files_admin_update on storage.objects for update to authenticated using (bucket_id='resource-files' and public.is_admin()) with check (bucket_id='resource-files' and public.is_admin());
 create policy resource_files_admin_delete on storage.objects for delete to authenticated using (bucket_id='resource-files' and public.is_admin());
 
+-- Public event banners (16:9 posters up to 2 MB)
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('event-banners','event-banners',true,2097152,array['image/png','image/jpeg','image/webp'])
+on conflict (id) do update set public=true, file_size_limit=2097152, allowed_mime_types=array['image/png','image/jpeg','image/webp'];
+create policy event_banners_public_read on storage.objects for select to anon, authenticated using (bucket_id='event-banners');
+create policy event_banners_admin_insert on storage.objects for insert to authenticated with check (bucket_id='event-banners' and public.is_admin());
+create policy event_banners_admin_update on storage.objects for update to authenticated using (bucket_id='event-banners' and public.is_admin()) with check (bucket_id='event-banners' and public.is_admin());
+create policy event_banners_admin_delete on storage.objects for delete to authenticated using (bucket_id='event-banners' and public.is_admin());
+
 -- Seed predefined point rules consistent with the existing public site's scoring guide.
 -- Admin records eligible activities; points come from these fixed rules, never arbitrary per-student input.
 insert into public.point_rules(activity_type,label,points,max_per_period,sort_order) values
@@ -547,7 +573,11 @@ create policy resource_files_admin_update on storage.objects for update to authe
 create policy resource_files_admin_delete on storage.objects for delete to authenticated using (bucket_id='resource-files' and private.is_admin());
 
 create or replace view public.public_event_list with (security_invoker = true) as
- select id,title,slug,category,summary,description,image_url,start_at,end_at,timezone,venue,speaker,online_url,registration_url,featured,pinned_next_session from public.events where status='published';
+ select id,title,slug,category,summary,description,image_url,banner_url,start_at,end_at,timezone,
+        event_tier,event_mode,accent_color,venue,join_link,online_url,
+        speakers,speaker,rsvp_url,registration_url,
+        syllabus_url,discord_channel_url,resource_url,calendar_enabled,certificates_ready,program_milestones,
+        featured,pinned_next_session,status,created_at,updated_at from public.events where status='published';
 create or replace view public.public_team_list with (security_invoker = true) as
  select id,name,role,department,leadership_order,bio,photo_url,social_links,sort_order from public.team_members where status='published';
 create or replace view public.public_blog_list with (security_invoker = true) as

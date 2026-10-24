@@ -69,30 +69,81 @@ function info(o){
       return{dd:o.day,mm:MON[(+o.month||1)-1],time:(o.hour||"")+":"+(o.minute||"00")+" "+String(o.dayPeriod||"").toLowerCase()};
     }catch(e){return{dd:("0"+d.getDate()).slice(-2),mm:MON[d.getMonth()],time:""}}
   }
-  /* e: {title,slug,category,summary,start_at,end_at,timezone,venue,online_url,registration_url,left,total} */
+  /* e: {title,slug,category,summary,start_at,end_at,timezone,venue,join_link,online_url,registration_url,rsvp_url,speakers,speaker,event_mode,event_tier,certificates_ready,resource_url,calendar_enabled,left,total} */
   function ticket(e,i){
     i=i||0;
     var cat=String(e.category||"Community"),ck=CATCOL[cat.toLowerCase()]||KEYS[i%4];
     var p=e.start_at?parts(e.start_at,e.timezone):null,t0=e.start_at?new Date(e.start_at).getTime():NaN;
     var endT=e.end_at?new Date(e.end_at).getTime():t0;
     var past=!isNaN(endT)&&endT<Date.now();
-    var where=[p&&p.time,e.venue||(e.online_url?"Online":"")].filter(Boolean).join(", ")||"Details to be announced";
-    var detail="/event.html?slug="+encodeURIComponent(e.slug||"");
-    var reg=e.registration_url&&!past?e.registration_url:"";
+    var speakerName=e.speakers||e.speaker||"";
+    var modeName=e.event_mode==='virtual'?'Online Session':(e.event_mode==='hybrid'?'Hybrid':'In-Person');
+    var where=[p&&p.time,e.venue||(e.join_link||e.online_url?"Online":modeName)].filter(Boolean).join(", ")||"Details announced soon";
+    var rsvpLink=e.rsvp_url||e.registration_url||"https://gdg.community.dev/gdg-on-campus-sr-university-warangal-india/";
+    var isFallback=!e.rsvp_url&&!e.registration_url;
     var seat="";
     if(e.total&&e.left!=null)seat='<div class="g16-tk-seat">'+esc(e.left)+' of '+esc(e.total)+' seats left<i><b style="--p:'+(100-e.left/e.total*100).toFixed(0)+'%"></b></i></div>';
-    var cd=past?'<div class="g16-tk-over">This session has ended</div>':(isNaN(t0)?'<div class="g16-tk-over">Date to be announced</div>':'<div class="g16-tk-cd" data-at="'+t0+'"></div>');
-    var img=e.image_url?'<img class="g16-tk-img" src="'+esc(e.image_url)+'" alt="" loading="lazy">':"";
+    var cd=past?'<div class="g16-tk-over">Session completed</div>':(isNaN(t0)?'<div class="g16-tk-over">Date announced soon</div>':'<div class="g16-tk-cd" data-at="'+t0+'"></div>');
+    var img=(e.banner_url||e.image_url)?'<img class="g16-tk-img" src="'+esc(e.banner_url||e.image_url)+'" alt="" loading="lazy">':"";
     var no=e.no!=null?"No. "+("0000"+e.no).slice(-4):"GDG SRU"+(p?" \u00b7 "+new Date(e.start_at).getFullYear():"");
-    var btn=reg?'<a class="g16-tk-btn" href="'+esc(reg)+'" target="_blank" rel="noopener noreferrer" data-g16-reg>Register</a>'
-                :'<a class="g16-tk-btn" href="'+esc(detail)+'">'+(past?"Recap":"Details")+'</a>';
+
+    var actionBtn="";
+    if(past){
+      if(e.certificates_ready){
+        actionBtn='<a class="g16-tk-btn" href="/certificates/" style="background:#34a853;color:#fff">Claim Certificate ↗</a>';
+      }else if(e.resource_url){
+        actionBtn='<a class="g16-tk-btn" href="'+esc(e.resource_url)+'" target="_blank" rel="noopener noreferrer">Slides / Code ↗</a>';
+      }else{
+        actionBtn='<span class="g16-tk-btn g16-tk-off">Completed</span>';
+      }
+    }else{
+      if(isFallback){
+        actionBtn='<a class="g16-tk-btn g16-tk-fallback" href="'+esc(rsvpLink)+'" target="_blank" rel="noopener noreferrer" title="Official RSVP link coming soon. View chapter landing page.">Chapter RSVP ↗</a>';
+      }else{
+        actionBtn='<a class="g16-tk-btn" href="'+esc(rsvpLink)+'" target="_blank" rel="noopener noreferrer" data-g16-reg>RSVP on GDG ↗</a>';
+      }
+    }
+
+    var modeBadge='<span class="g16-tk-badge '+esc(e.event_mode||'in_person')+'">'+esc(modeName)+'</span>';
+    var speakerHTML=speakerName?'<div class="g16-tk-speaker"><small>Speaker</small><b>'+esc(speakerName)+'</b></div>':"";
+
     return '<article class="g16-tk" style="--a:'+COL[ck]+'"><div class="g16-tk-card"><div class="g16-tk-main">'+
-      '<span class="g16-tk-kind">'+esc(cat)+(past?" · Past":"")+'</span><span class="g16-tk-done">Opening registration…</span>'+
-      '<h3><a href="'+esc(detail)+'">'+esc(e.title)+'</a></h3><p>'+esc(where)+'</p>'+
+      '<div class="g16-tk-meta"><span class="g16-tk-kind">'+esc(cat)+(past?" · Past":"")+'</span>'+modeBadge+'</div>'+
+      '<h3><a href="'+esc(rsvpLink)+'" target="_blank" rel="noopener noreferrer">'+esc(e.title)+'</a></h3><p>'+esc(where)+'</p>'+
+      speakerHTML+
       (e.summary?'<p class="g16-tk-sum">'+esc(e.summary)+'</p>':"")+img+cd+seat+'</div>'+
-      '<div class="g16-tk-stub"><span class="g16-tk-d">'+(p?esc(p.dd):"--")+'</span><span class="g16-tk-m">'+(p?p.mm:"TBA")+'</span>'+btn+'<span class="g16-tk-no">'+esc(no)+'</span></div></div></article>';
+      '<div class="g16-tk-stub"><span class="g16-tk-d">'+(p?esc(p.dd):"--")+'</span><span class="g16-tk-m">'+(p?p.mm:"TBA")+'</span>'+actionBtn+'<span class="g16-tk-no">'+esc(no)+'</span></div></div></article>';
   }
+
+  /* Program card for Tier 2 month-long study jams & cohorts */
+  function program(e,i){
+    i=i||0;
+    var cat=String(e.category||"Program"),ck=CATCOL[cat.toLowerCase()]||KEYS[(i+1)%4];
+    var pStart=e.start_at?parts(e.start_at,e.timezone):null,pEnd=e.end_at?parts(e.end_at,e.timezone):null;
+    var past=e.end_at&&new Date(e.end_at).getTime()<Date.now();
+    var dateRange=(pStart&&pEnd)?(pStart.dd+" "+pStart.mm+" — "+pEnd.dd+" "+pEnd.mm+(new Date(e.end_at).getFullYear()!==new Date(e.start_at).getFullYear()?" "+new Date(e.end_at).getFullYear():"")):(pStart?("Starts "+pStart.dd+" "+pStart.mm):"Cohort dates TBA");
+    var rsvpLink=e.rsvp_url||e.registration_url||"https://gdg.community.dev/gdg-on-campus-sr-university-warangal-india/";
+    var milestones=Array.isArray(e.program_milestones)?e.program_milestones:[];
+
+    var timelineHTML=milestones.length?'<div class="g16-pgm-timeline"><h4>Weekly Milestones</h4><ol class="g16-pgm-steps">'+
+      milestones.map(function(m,idx){return '<li><b>W'+(m.week||idx+1)+'</b><span>'+esc(m.title||m)+'</span></li>'}).join("")+'</ol></div>':"";
+
+    var actionsHTML='<div class="g16-pgm-actions">'+
+      (e.rsvp_url?'<a class="btn" href="'+esc(rsvpLink)+'" target="_blank" rel="noopener noreferrer">Enroll on GDG Portal ↗</a>':'<a class="btn o" href="'+esc(rsvpLink)+'" target="_blank" rel="noopener noreferrer">Chapter Page ↗</a>')+
+      (e.discord_channel_url?'<a class="btn o" href="'+esc(e.discord_channel_url)+'" target="_blank" rel="noopener noreferrer">Join Discord Track ↗</a>':'')+
+      (e.syllabus_url?'<a class="btn o" href="'+esc(e.syllabus_url)+'" target="_blank" rel="noopener noreferrer">View Syllabus ↗</a>':'')+
+      '</div>';
+
+    return '<article class="g16-pgm-card" style="--a:'+COL[ck]+'"><div class="g16-pgm-head"><span class="cap">'+esc(cat)+' · MONTH-LONG COHORT</span>'+
+      (past?'<span class="status s-archived">Cohort Finished</span>':'<span class="status s-published">Active Program</span>')+'</div>'+
+      '<h3>'+esc(e.title)+'</h3>'+
+      '<p class="g16-pgm-dates">🗓 '+esc(dateRange)+' · Mentorship & Hands-on Projects</p>'+
+      (e.summary?'<p class="g16-pgm-desc">'+esc(e.summary)+'</p>':"")+
+      timelineHTML+actionsHTML+'</article>';
+  }
+
   function ticketItems(list){return list.map(ticket).join("")}
+  function programItems(list){return list.map(program).join("")}
   function tick(){
     if(document.hidden)return;
     var now=Date.now(),p=function(n){return("0"+n).slice(-2)};
@@ -226,5 +277,5 @@ function info(o){
   }
   if(document.body)boot();else document.addEventListener("DOMContentLoaded",boot);
 
-  window.GDG16={info:info,infoItems:infoItems,track:track,trackRow:trackRow,ticket:ticket,ticketItems:ticketItems,blog:blog,blogItems:blogItems,perk:perk,perkItems:perkItems,esc:esc};
+  window.GDG16={info:info,infoItems:infoItems,track:track,trackRow:trackRow,ticket:ticket,ticketItems:ticketItems,program:program,programItems:programItems,blog:blog,blogItems:blogItems,perk:perk,perkItems:perkItems,esc:esc};
 })();
