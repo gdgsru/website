@@ -117,11 +117,29 @@
         cfg.fields.forEach((x) => { if (x.type === 'checkbox') f[x.key] = form.elements[x.key].checked; if (x.type === 'datetime') f[x.key] = istToIso(f[x.key]); if (x.nullable && f[x.key] === '') f[x.key] = null; if (x.type === 'number') { f[x.key] = Number(f[x.key] || 0); if (!Number.isFinite(f[x.key])) f[x.key] = 0; } });
         const bad = cfg.validate?.(f); if (bad) return toast(bad);
         if (cfg.before) { const stop = await cfg.before(f, id); if (stop) return toast(stop); }
-        const r = id ? await sb().from(cfg.table).update(f).eq('id', id).select('id') : await sb().from(cfg.table).insert(f).select('id');
+        let r = id ? await sb().from(cfg.table).update(f).eq('id', id).select('id') : await sb().from(cfg.table).insert(f).select('id');
+        let usedLegacyFallback = false;
+        if (r.error && (r.error.code === '42703' || /column .* does not exist|schema cache/i.test(r.error.message || ''))) {
+          // If a new column hasn't been added to the database yet via migration,
+          // safely strip new event columns and fallback to legacy columns so save succeeds!
+          const legacyPayload = { ...f };
+          const newCols = ['event_tier', 'event_mode', 'accent_color', 'banner_url', 'speakers', 'rsvp_url', 'join_link', 'syllabus_url', 'discord_channel_url', 'program_milestones', 'resource_url', 'calendar_enabled', 'certificates_ready'];
+          newCols.forEach((k) => delete legacyPayload[k]);
+          if (f.speakers) legacyPayload.speaker = f.speakers;
+          if (f.rsvp_url) legacyPayload.registration_url = f.rsvp_url;
+          if (f.join_link) legacyPayload.online_url = f.join_link;
+          if (f.event_tier === 'flagship') legacyPayload.featured = true;
+          
+          r = id ? await sb().from(cfg.table).update(legacyPayload).eq('id', id).select('id') : await sb().from(cfg.table).insert(legacyPayload).select('id');
+          usedLegacyFallback = !r.error;
+        }
         if (r.error) return toast(authErrorText(r.error));
         if (id && Array.isArray(r.data) && !r.data.length) return toast('Nothing was saved: this item no longer exists or you do not have permission. Reload and try again.');
         await audit(id ? 'update' : 'create', cfg.table, id || f[cfg.titleKey]); MC.dropCache();
-        toast(f.status && f.status !== 'published' && cfg.table !== 'events' ? `Saved as ${f.status}. Not visible to the public until it is Published.` : f.status === 'published' || !f.status ? 'Saved.' : `Saved as ${f.status}. Not visible to the public until Status is Published.`, true);
+        const saveMsg = usedLegacyFallback 
+          ? 'Saved! (Note: Run the SQL migration in Supabase to enable custom poster banners and tier accents).'
+          : (f.status && f.status !== 'published' && cfg.table !== 'events' ? `Saved as ${f.status}. Not visible to the public until it is Published.` : f.status === 'published' || !f.status ? 'Saved.' : `Saved as ${f.status}. Not visible to the public until Status is Published.`);
+        toast(saveMsg, true);
         d.clean(); await d.close(true); history.replaceState(null, '', `#/${cfg.key}`); MC.render();
       }); });
       $('#entity-del', d.el)?.addEventListener('click', async () => {
@@ -293,7 +311,7 @@
     if (!inputEl) return;
     const { folder = 'site-assets', prefix = 'asset', label = 'Upload image', d } = options;
     const parentLabel = inputEl.closest('label');
-    if (!parentLabel || parentLabel.nextElementSibling?.classList.contains('mc-img-upload-bar')) return;
+    if (!parentLabel || parentLabel.querySelector('.mc-img-upload-bar')) return;
     
     const wrapper = document.createElement('div');
     wrapper.className = 'mc-img-upload-bar';
@@ -304,7 +322,7 @@
         ${inputEl.value && safeUrl(inputEl.value) ? `<img src="${esc(safeUrl(inputEl.value))}" alt="preview">` : ''}
       </div>
     `;
-    parentLabel.insertAdjacentElement('afterend', wrapper);
+    parentLabel.appendChild(wrapper);
     
     const fileInp = wrapper.querySelector('input[type="file"]');
     const uploadBtn = wrapper.querySelector('.mc-btn-upload');
