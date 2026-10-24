@@ -636,6 +636,21 @@
   function eventCard(e, i) {
     return window.GDG16 ? GDG16.ticket(e, i) : '';
   }
+
+  function makeGoogleCalendarUrl(e) {
+    if (!e || !e.start_at) return '';
+    try {
+      const start = new Date(e.start_at);
+      const end = e.end_at ? new Date(e.end_at) : new Date(start.getTime() + 2 * 3600000);
+      const formatUtc = d => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+      const dates = `${formatUtc(start)}/${formatUtc(end)}`;
+      const title = encodeURIComponent(e.title || 'GDG SRU Event');
+      const details = encodeURIComponent((e.summary || e.description || '') + '\n\nOfficial RSVP: ' + (e.rsvp_url || e.registration_url || 'https://gdg.community.dev/gdg-on-campus-sr-university-warangal-india/'));
+      const location = encodeURIComponent(e.venue || e.join_link || (e.event_mode === 'virtual' ? 'Online Session' : 'SR University, Warangal'));
+      return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&details=${details}&location=${location}`;
+    } catch { return ''; }
+  }
+
   async function decorateEvents(client, root) {
     const routeSlug = window.__GDG_EVENT_SLUG || '';
     const renderEventDetail = (event) => {
@@ -644,21 +659,88 @@
       const heading = intro && $('h1', intro);
       const lead = intro && [...intro.querySelectorAll('p')].find(p => !p.classList.contains('eyebrow'));
       const detail = document.createElement('section'); detail.className = 'card pp runtime-event-detail';
-      detail.style.cssText = 'max-width:900px;margin:20px 0 54px';
+      detail.style.cssText = 'max-width:960px;margin:20px 0 54px';
       if (!event) {
         if (eyebrow) eyebrow.textContent = 'EVENT DETAILS';
         if (heading) heading.textContent = window.__GDG_INVALID_EVENT_ROUTE ? 'Event Not Found' : 'Upcoming Session';
         if (lead) lead.textContent = window.__GDG_INVALID_EVENT_ROUTE ? 'This event link could not be found or has moved.' : 'Registration and session schedule details will be announced shortly.';
         detail.innerHTML = `<p class="cap">GDG SRU · EVENTS</p><h2>Explore Chapter Activities</h2><p>Visit the full chapter calendar to discover tech bootcamps, speaker sessions, and workshops at SR University.</p><a class="btn" href="/events/">Browse All Events ↗</a>`;
       } else {
+        document.title = `${event.title} · GDG SRU`;
         const category = esc(event.category || 'Community event');
-        const date = whenText(event.start_at, event.timezone || 'Asia/Kolkata');
-        const past = event.end_at ? new Date(event.end_at).getTime() < Date.now() : event.start_at ? new Date(event.start_at).getTime() < Date.now() : false;
-        if (eyebrow) eyebrow.textContent = `${event.category || 'COMMUNITY EVENT'} · EVENT DETAILS`;
+        const tz = event.timezone || 'Asia/Kolkata';
+        const date = whenText(event.start_at, tz);
+        const now = Date.now();
+        const startTs = event.start_at ? new Date(event.start_at).getTime() : NaN;
+        const endTs = event.end_at ? new Date(event.end_at).getTime() : startTs;
+        const past = !isNaN(endTs) && endTs < now;
+        const isLiveNow = !isNaN(startTs) && !isNaN(endTs) && startTs <= now && endTs >= now;
+
+        const speakerName = event.speakers || event.speaker || '';
+        const modeName = event.event_mode === 'virtual' ? 'Online Session' : (event.event_mode === 'hybrid' ? 'Hybrid Session' : 'In-Person (Campus)');
+        const venueText = event.venue || (event.join_link || event.online_url ? 'Online' : modeName);
+        const rsvpTarget = event.rsvp_url || event.registration_url || 'https://gdg.community.dev/gdg-on-campus-sr-university-warangal-india/';
+        const isFallback = !event.rsvp_url && !event.registration_url;
+        const calUrl = event.calendar_enabled !== false ? makeGoogleCalendarUrl(event) : '';
+        const banner = safeUrl(event.banner_url || event.image_url);
+
+        if (eyebrow) eyebrow.textContent = `${esc(String(event.category || 'COMMUNITY EVENT').toUpperCase())} · EVENT DETAILS`;
         if (heading) heading.textContent = event.title;
-        if (lead) lead.textContent = `${date}${event.venue ? ` · ${event.venue}` : event.online_url ? ' · Online' : ''}`;
-        const image = safeUrl(event.image_url);
-        detail.innerHTML = `${image ? `<img src="${esc(image)}" alt="" loading="lazy" style="display:block;width:100%;max-height:380px;object-fit:cover;border-radius:18px;margin:0 0 22px">` : ''}<p class="cap">${category}${past ? ' · PAST EVENT' : ' · EVENT'}</p>${event.description ? `<div class="prose">${esc(event.description).replace(/\n/g,'<br>')}</div>` : `<p>${esc(event.summary || 'Event details will be announced soon.')}</p>`}${event.venue ? `<p><b>Venue:</b> ${esc(event.venue)}</p>` : ''}${event.online_url ? `<p><b>Online session:</b> <a class="text-link" href="${esc(safeUrl(event.online_url))}" target="_blank" rel="noopener noreferrer">Open session link ↗</a></p>` : ''}${event.registration_url && !past ? `<p><a class="btn" href="${esc(safeUrl(event.registration_url))}" target="_blank" rel="noopener noreferrer">Register externally ↗</a></p>` : `<p class="muted">${past ? 'This event has ended. Registration is no longer available.' : 'Registration details will be announced soon.'}</p>`}<a class="btn o" href="/events/">← All events</a>`;
+        if (lead) lead.textContent = `${date} · ${venueText}`;
+
+        const tierLabel = event.event_tier === 'flagship' ? '★ Flagship Event' : (event.event_tier === 'program' ? '◷ Month-long Cohort' : 'Technical Session');
+        const liveBadge = isLiveNow ? '<span class="status s-published" style="background:#ea4335;color:#fff;display:inline-flex;align-items:center;gap:6px"><span style="width:7px;height:7px;border-radius:50%;background:#fff;display:inline-block"></span> LIVE NOW</span>' : (past ? '<span class="status s-archived">Completed</span>' : '<span class="status s-published">Upcoming</span>');
+
+        let actionsHtml = '';
+        if (past) {
+          if (event.certificates_ready) {
+            actionsHtml += '<a class="btn" href="/certificates/" style="background:#34a853;color:#fff">Claim Certificate ↗</a>';
+          }
+          if (event.resource_url) {
+            actionsHtml += `<a class="btn o" href="${esc(safeUrl(event.resource_url))}" target="_blank" rel="noopener noreferrer">Slides &amp; Code ↗</a>`;
+          }
+          actionsHtml += '<span class="muted" style="margin-left:8px;font-size:13px">This event has completed.</span>';
+        } else {
+          actionsHtml += `<a class="btn" href="${esc(rsvpTarget)}" target="_blank" rel="noopener noreferrer">${isLiveNow ? 'Join Live Session ↗' : (isFallback ? 'Chapter RSVP ↗' : 'RSVP on GDG Portal ↗')}</a>`;
+          if (calUrl) actionsHtml += `<a class="btn o" href="${esc(calUrl)}" target="_blank" rel="noopener noreferrer">+ Add to Google Calendar</a>`;
+          if (event.discord_channel_url) actionsHtml += `<a class="btn o" href="${esc(safeUrl(event.discord_channel_url))}" target="_blank" rel="noopener noreferrer">Discord Channel ↗</a>`;
+          if (event.syllabus_url) actionsHtml += `<a class="btn o" href="${esc(safeUrl(event.syllabus_url))}" target="_blank" rel="noopener noreferrer">View Syllabus ↗</a>`;
+        }
+
+        let milestonesHtml = '';
+        if (Array.isArray(event.program_milestones) && event.program_milestones.length) {
+          milestonesHtml = `<div style="margin:24px 0;padding:18px;border:1px solid var(--ln);border-radius:14px;background:var(--cd)">
+            <h4 style="margin:0 0 12px;font:700 13px/1 var(--f-mono,monospace);letter-spacing:.08em;text-transform:uppercase;color:var(--mut)">Weekly Program Milestones</h4>
+            <ol style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:8px">
+              ${event.program_milestones.map((m, idx) => `<li><b>Week ${m.week || idx + 1}:</b> <span>${esc(m.title || m)}</span></li>`).join('')}
+            </ol>
+          </div>`;
+        }
+
+        detail.innerHTML = `
+          ${banner ? `<img src="${esc(banner)}" alt="${esc(event.title)}" loading="lazy" style="display:block;width:100%;max-height:420px;object-fit:cover;border-radius:18px;margin:0 0 24px">` : ''}
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
+            <span class="cap" style="color:var(--b)">${esc(tierLabel)}</span>
+            <span class="event-meta-divider">/</span>
+            <span class="cap">${esc(modeName.toUpperCase())}</span>
+            ${liveBadge}
+          </div>
+          <h2 style="font-size:clamp(28px,4vw,44px);margin:0 0 16px;letter-spacing:-.04em">${esc(event.title)}</h2>
+          <div class="ef-fields" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;padding:16px 0;margin:16px 0 24px;border-top:1px solid var(--ln);border-bottom:1px solid var(--ln)">
+            <div><small style="display:block;color:var(--mut);font-size:12px">Date &amp; time (IST)</small><b>${esc(date)}</b></div>
+            <div><small style="display:block;color:var(--mut);font-size:12px">Venue / Mode</small><b>${esc(venueText)}</b></div>
+            ${speakerName ? `<div><small style="display:block;color:var(--mut);font-size:12px">Speaker</small><b>${esc(speakerName)}</b></div>` : ''}
+            <div><small style="display:block;color:var(--mut);font-size:12px">Platform</small><b>Official Google Community</b></div>
+          </div>
+          ${event.description ? `<div class="prose" style="font-size:16px;line-height:1.65;margin-bottom:24px">${esc(event.description).replace(/\n/g, '<br>')}</div>` : `<p style="font-size:16px;line-height:1.6;margin-bottom:24px">${esc(event.summary || 'Details for this session will be announced shortly.')}</p>`}
+          ${milestonesHtml}
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:28px 0 16px">
+            ${actionsHtml}
+          </div>
+          <div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--ln)">
+            <a class="btn o" href="/events/">← Back to All Events</a>
+          </div>
+        `;
       }
       [...root.children].forEach(child => { if (child !== intro && child !== detail) { child.hidden = true; child.style.setProperty('display', 'none', 'important'); } });
       if (!detail.isConnected) root.appendChild(detail);

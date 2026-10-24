@@ -11,6 +11,14 @@
   var COL={b:"#4285f4",r:"#ea4335",y:"#fbbc04",g:"#34a853"},KEYS=["b","r","y","g"];
   var uid=0;
 
+  // Inject live event styles
+  if (!document.getElementById("g16-live-css")) {
+    var st = document.createElement("style");
+    st.id = "g16-live-css";
+    st.textContent = ".g16-tk-badge.live{background:#ea4335!important;color:#fff!important;display:inline-flex;align-items:center;gap:5px;font-weight:700}.g16-live-dot{width:6px;height:6px;border-radius:50%;background:#fff;display:inline-block;animation:g16LivePulse 1.4s ease-in-out infinite}@keyframes g16LivePulse{0%,100%{transform:scale(0.85);opacity:1}50%{transform:scale(1.35);opacity:0.4}}.g16-tk-btn.g16-tk-live{background:#ea4335!important;color:#fff!important;border-color:#ea4335!important;animation:g16BtnPulse 2.5s infinite}@keyframes g16BtnPulse{0%,100%{box-shadow:0 0 0 0 rgba(234,67,53,0.4)}50%{box-shadow:0 0 0 6px rgba(234,67,53,0)}}.g16-tk-live-bar{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:12px;font-weight:600;color:#ea4335}.g16-tk-live-bar small{font:700 9.5px/1 var(--f-mono,monospace);text-transform:uppercase;color:var(--mut)}";
+    document.head.appendChild(st);
+  }
+
   /* ---------- icons (24px line icons / filled glyphs) ---------- */
   var SV=function(p){return '<svg viewBox="0 0 24 24" aria-hidden="true">'+p+'</svg>'};
   var CLOUD='<path d="M7 18a4.5 4.5 0 0 1-.5-9A6 6 0 0 1 18 9.5 4 4 0 0 1 17.5 18z"/>',
@@ -75,7 +83,9 @@ function info(o){
     var cat=String(e.category||"Community"),ck=CATCOL[cat.toLowerCase()]||KEYS[i%4];
     var p=e.start_at?parts(e.start_at,e.timezone):null,t0=e.start_at?new Date(e.start_at).getTime():NaN;
     var endT=e.end_at?new Date(e.end_at).getTime():t0;
-    var past=!isNaN(endT)&&endT<Date.now();
+    var nowMs=Date.now();
+    var past=!isNaN(endT)&&endT<nowMs;
+    var isLiveNow=!isNaN(t0)&&!isNaN(endT)&&t0<=nowMs&&endT>=nowMs;
     var speakerName=e.speakers||e.speaker||"";
     var modeName=e.event_mode==='virtual'?'Online Session':(e.event_mode==='hybrid'?'Hybrid':'In-Person');
     var where=[p&&p.time,e.venue||(e.join_link||e.online_url?"Online":modeName)].filter(Boolean).join(", ")||"Details announced soon";
@@ -83,7 +93,18 @@ function info(o){
     var isFallback=!e.rsvp_url&&!e.registration_url;
     var seat="";
     if(e.total&&e.left!=null)seat='<div class="g16-tk-seat">'+esc(e.left)+' of '+esc(e.total)+' seats left<i><b style="--p:'+(100-e.left/e.total*100).toFixed(0)+'%"></b></i></div>';
-    var cd=past?'<div class="g16-tk-over">Session completed</div>':(isNaN(t0)?'<div class="g16-tk-over">Date announced soon</div>':'<div class="g16-tk-cd" data-at="'+t0+'"></div>');
+
+    var cd="";
+    if(past){
+      cd='<div class="g16-tk-over">Session completed</div>';
+    }else if(isLiveNow){
+      cd='<div class="g16-tk-live-bar"><small>Ends in</small><div class="g16-tk-cd" data-at="'+endT+'"></div></div>';
+    }else if(isNaN(t0)){
+      cd='<div class="g16-tk-over">Date announced soon</div>';
+    }else{
+      cd='<div class="g16-tk-cd" data-at="'+t0+'"></div>';
+    }
+
     var img=(e.banner_url||e.image_url)?'<img class="g16-tk-img" src="'+esc(e.banner_url||e.image_url)+'" alt="" loading="lazy">':"";
     var no=e.no!=null?"No. "+("0000"+e.no).slice(-4):"GDG SRU"+(p?" \u00b7 "+new Date(e.start_at).getFullYear():"");
 
@@ -96,6 +117,8 @@ function info(o){
       }else{
         actionBtn='<span class="g16-tk-btn g16-tk-off">Completed</span>';
       }
+    }else if(isLiveNow){
+      actionBtn='<a class="g16-tk-btn g16-tk-live" href="'+esc(rsvpLink)+'" target="_blank" rel="noopener noreferrer">Join Live ↗</a>';
     }else{
       if(isFallback){
         actionBtn='<a class="g16-tk-btn g16-tk-fallback" href="'+esc(rsvpLink)+'" target="_blank" rel="noopener noreferrer" title="Official RSVP link coming soon. View chapter landing page.">Chapter RSVP ↗</a>';
@@ -104,11 +127,11 @@ function info(o){
       }
     }
 
-    var modeBadge='<span class="g16-tk-badge '+esc(e.event_mode||'in_person')+'">'+esc(modeName)+'</span>';
+    var modeBadge=isLiveNow?'<span class="g16-tk-badge live"><span class="g16-live-dot"></span> LIVE NOW</span>':'<span class="g16-tk-badge '+esc(e.event_mode||'in_person')+'">'+esc(modeName)+'</span>';
     var speakerHTML=speakerName?'<div class="g16-tk-speaker"><small>Speaker</small><b>'+esc(speakerName)+'</b></div>':"";
 
     return '<article class="g16-tk" style="--a:'+COL[ck]+'"><div class="g16-tk-card"><div class="g16-tk-main">'+
-      '<div class="g16-tk-meta"><span class="g16-tk-kind">'+esc(cat)+(past?" · Past":"")+'</span>'+modeBadge+'</div>'+
+      '<div class="g16-tk-meta"><span class="g16-tk-kind">'+esc(cat)+(past?" · Past":(isLiveNow?" · Live Now":""))+'</span>'+modeBadge+'</div>'+
       '<h3><a href="'+esc(rsvpLink)+'" target="_blank" rel="noopener noreferrer">'+esc(e.title)+'</a></h3><p>'+esc(where)+'</p>'+
       speakerHTML+
       (e.summary?'<p class="g16-tk-sum">'+esc(e.summary)+'</p>':"")+img+cd+seat+'</div>'+
@@ -120,7 +143,9 @@ function info(o){
     i=i||0;
     var cat=String(e.category||"Program"),ck=CATCOL[cat.toLowerCase()]||KEYS[(i+1)%4];
     var pStart=e.start_at?parts(e.start_at,e.timezone):null,pEnd=e.end_at?parts(e.end_at,e.timezone):null;
-    var past=e.end_at&&new Date(e.end_at).getTime()<Date.now();
+    var nowMs=Date.now();
+    var past=e.end_at&&new Date(e.end_at).getTime()<nowMs;
+    var isLiveNow=pStart&&pEnd&&new Date(e.start_at).getTime()<=nowMs&&new Date(e.end_at).getTime()>=nowMs;
     var dateRange=(pStart&&pEnd)?(pStart.dd+" "+pStart.mm+" — "+pEnd.dd+" "+pEnd.mm+(new Date(e.end_at).getFullYear()!==new Date(e.start_at).getFullYear()?" "+new Date(e.end_at).getFullYear():"")):(pStart?("Starts "+pStart.dd+" "+pStart.mm):"Cohort dates TBA");
     var rsvpLink=e.rsvp_url||e.registration_url||"https://gdg.community.dev/gdg-on-campus-sr-university-warangal-india/";
     var milestones=Array.isArray(e.program_milestones)?e.program_milestones:[];
@@ -134,8 +159,10 @@ function info(o){
       (e.syllabus_url?'<a class="btn o" href="'+esc(e.syllabus_url)+'" target="_blank" rel="noopener noreferrer">View Syllabus ↗</a>':'')+
       '</div>';
 
+    var statusBadge=past?'<span class="status s-archived">Cohort Finished</span>':(isLiveNow?'<span class="status s-published" style="background:#ea4335;color:#fff"><span class="g16-live-dot"></span> Live Cohort</span>':'<span class="status s-published">Active Program</span>');
+
     return '<article class="g16-pgm-card" style="--a:'+COL[ck]+'"><div class="g16-pgm-head"><span class="cap">'+esc(cat)+' · MONTH-LONG COHORT</span>'+
-      (past?'<span class="status s-archived">Cohort Finished</span>':'<span class="status s-published">Active Program</span>')+'</div>'+
+      statusBadge+'</div>'+
       '<h3>'+esc(e.title)+'</h3>'+
       '<p class="g16-pgm-dates">🗓 '+esc(dateRange)+' · Mentorship & Hands-on Projects</p>'+
       (e.summary?'<p class="g16-pgm-desc">'+esc(e.summary)+'</p>':"")+
