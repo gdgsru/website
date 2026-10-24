@@ -21,5 +21,5 @@
 
 # A single segment after these paths is a detail identifier; the bare directory
 # path continues to serve its HTML entry point above.
-/events/:slug /event.html?slug=:slug 200
+/events/:slug /event?slug=:slug 200
 /verify/:code /verify/?code=:code 200
