@@ -29,6 +29,10 @@
     --bg-page: #eef1fb;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
   body {
     font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: var(--bg-page);
@@ -45,6 +49,7 @@
     max-width: 1180px;
     margin: 0 auto 36px;
     padding: 18px 24px;
+    gap: 12px;
   }
   .brand-logo {
     display: flex;
@@ -54,6 +59,12 @@
     color: #111;
     font: 800 17px/1.1 Inter, sans-serif;
     letter-spacing: -0.02em;
+    min-width: 0;
+    flex-shrink: 1;
+  }
+  .brand-logo-text {
+    min-width: 0;
+    overflow: hidden;
   }
   .brand-logo small {
     display: block;
@@ -61,25 +72,34 @@
     color: #5f6368;
     letter-spacing: 0.5px;
     margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .brand-logo-mark {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
   }
   .nav-actions {
     display: flex;
     align-items: center;
     gap: 10px;
+    flex-shrink: 0;
   }
   .btn-nav {
     display: inline-flex;
     align-items: center;
-    padding: 8px 18px;
+    justify-content: center;
+    height: 36px;
+    padding: 0 16px;
     border-radius: 99px;
-    font: 600 13.5px Inter, sans-serif;
+    font: 600 13px Inter, sans-serif;
     text-decoration: none;
+    white-space: nowrap;
     transition: all 0.15s ease;
+    flex-shrink: 0;
   }
   .btn-nav.primary {
     background: var(--blue);
@@ -93,6 +113,43 @@
     border: 1px solid #d5daee;
   }
   .btn-nav.outline:hover { background: #f8f9fa; }
+  .btn-text-mobile { display: none; }
+
+  @media (max-width: 680px) {
+    .top-nav {
+      margin-bottom: 16px;
+      padding: 12px 16px;
+      gap: 8px;
+    }
+    .brand-logo {
+      gap: 8px;
+    }
+    .brand-name-full {
+      display: none;
+    }
+    .brand-name-short {
+      display: block;
+      font: 800 15px/1.1 Inter, sans-serif;
+      letter-spacing: -0.02em;
+    }
+    .brand-logo small {
+      font-size: 10px;
+    }
+    .nav-actions {
+      gap: 6px;
+    }
+    .btn-nav {
+      height: 32px;
+      padding: 0 11px;
+      font-size: 11.5px;
+      font-weight: 600;
+    }
+    .btn-text-full { display: none; }
+    .btn-text-mobile { display: inline; }
+  }
+  @media (min-width: 681px) {
+    .brand-name-short { display: none; }
+  }
 
   /* ---- Layout ---- */
   .layout {
@@ -846,31 +903,91 @@
   .btn-modal-secondary:hover {
     background: #e4e8f3;
   }
+
+  /* ---- Mobile Header & Layout Polish ---- */
+  @media (max-width: 680px) {
+    .top-nav {
+      margin-bottom: 16px !important;
+      padding: 12px 14px !important;
+      gap: 8px !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+    }
+    .brand-logo {
+      gap: 8px !important;
+      flex-shrink: 1 !important;
+      min-width: 0 !important;
+    }
+    .brand-name-full {
+      display: none !important;
+    }
+    .brand-name-short {
+      display: block !important;
+      font: 800 15px/1.1 Inter, sans-serif !important;
+      letter-spacing: -0.02em !important;
+      white-space: nowrap !important;
+    }
+    .brand-logo small {
+      font-size: 10px !important;
+      white-space: nowrap !important;
+      letter-spacing: 0.2px !important;
+    }
+    .nav-actions {
+      gap: 6px !important;
+      flex-shrink: 0 !important;
+    }
+    .btn-nav {
+      height: 32px !important;
+      padding: 0 10px !important;
+      font-size: 11.5px !important;
+      font-weight: 600 !important;
+      border-radius: 99px !important;
+      white-space: nowrap !important;
+      flex-shrink: 0 !important;
+    }
+    .btn-text-full { display: none !important; }
+    .btn-text-mobile { display: inline !important; }
+    .layout {
+      padding: 0 14px !important;
+      gap: 28px !important;
+    }
+    .form-card {
+      padding: 20px 16px !important;
+      border-radius: 20px !important;
+    }
+  }
+
 </style>
     <script src="/config.js" defer></script>
-    <script src="/assets/js/vendor/supabase.js?v=20261025-bento2" defer></script>
+    <script src="/assets/js/vendor/supabase.js?v=20261025-bento3" defer></script>
 </head>
 <body>
 
 <header class="top-nav">
   <a href="/" class="brand-logo" aria-label="GDG SR University Home">
     <span class="brand-logo-mark" aria-hidden="true">
-      <svg viewBox="185 345 710 390" width="34" height="19" role="img" aria-label="Google Developer Group logo">
+      <svg viewBox="185 345 710 390" width="32" height="18" role="img" aria-label="Google Developer Group logo">
         <line x1="279" y1="540" x2="432" y2="430" stroke="#EA4335" stroke-width="128" stroke-linecap="round"/>
         <line x1="279" y1="540" x2="432" y2="650" stroke="#4285F4" stroke-width="128" stroke-linecap="round"/>
         <line x1="648" y1="650" x2="801" y2="540" stroke="#FBBC04" stroke-width="128" stroke-linecap="round"/>
         <line x1="648" y1="430" x2="801" y2="540" stroke="#34A853" stroke-width="128" stroke-linecap="round"/>
       </svg>
     </span>
-    <span>Google Developer Group <small>SR University · Member Pass Studio</small></span>
+    <span class="brand-logo-text">
+      <span class="brand-name-full">Google Developer Group</span>
+      <span class="brand-name-short">GDG SRU</span>
+      <small>Member Pass Studio</small>
+    </span>
   </a>
 
   <div class="nav-actions">
-    <a href="https://gdg.community.dev/gdg-on-campus-sr-university-warangal-india/" target="_blank" rel="noopener" class="btn-nav primary">
-      Join Chapter ↗
-    </a>
     <a href="/join/" class="btn-nav outline">
-      ← Back to Site
+      <span class="btn-text-full">← Back to Site</span>
+      <span class="btn-text-mobile">← Back</span>
+    </a>
+    <a href="https://gdg.community.dev/gdg-on-campus-sr-university-warangal-india/" target="_blank" rel="noopener" class="btn-nav primary">
+      <span class="btn-text-full">Join Chapter ↗</span>
+      <span class="btn-text-mobile">Join ↗</span>
     </a>
   </div>
 </header>
