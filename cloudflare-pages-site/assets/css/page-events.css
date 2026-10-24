@@ -493,3 +493,30 @@ html[data-theme="dark"] .g16-tk-badge.virtual {
     display: none !important;
   }
 }
+
+/* Easter egg hunt page (/easter-eggs/, rendered by app.js) */
+.egg-panel{margin-top:24px;max-width:850px}
+.egg-count{font-size:clamp(28px,8vw,44px);font-weight:700;font-variant-numeric:tabular-nums;margin:6px 0 0;color:var(--ink)}
+.egg-rules{white-space:pre-line;margin:8px 0 0;line-height:1.6;color:var(--ink)}
+.egg-grid{list-style:none;margin:14px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.egg{border:1px dashed var(--ln);border-radius:14px;padding:12px;min-height:92px;display:flex;flex-direction:column;gap:4px;background:var(--cd)}
+.egg-num{font-size:12px;color:var(--mut);font-variant-numeric:tabular-nums}
+.egg strong{font-size:15px;color:var(--ink)}
+.egg small{color:var(--mut);font-size:12px}
+.egg.is-found{border:1px solid var(--g);background:color-mix(in srgb,var(--g) 12%,var(--cd))}
+.egg.is-found .egg-num{color:var(--g)}
+.egg-toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:999px;font-weight:600;box-shadow:0 10px 30px rgba(0,0,0,.25);z-index:50;max-width:calc(100% - 32px);text-align:center;transition:opacity .4s ease}
+.egg-toast.out{opacity:0}
+@media (prefers-reduced-motion: reduce){.egg-toast{transition:none}}
+
+/* Prize wheel page (/wheel/, rendered by app.js) */
+.wheel-panel{text-align:center}
+.wheel-reel{font-size:clamp(56px,16vw,120px);font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.04em;margin:10px 0 4px;color:var(--ink)}
+.wheel-stage{position:relative;width:min(340px,80vw);aspect-ratio:1;margin:18px auto 0}
+.wheel-stage svg{width:100%;height:100%;display:block;border-radius:50%;box-shadow:0 14px 40px rgba(0,0,0,.18)}
+.wheel-pointer{position:absolute;left:50%;top:-6px;transform:translateX(-50%);width:0;height:0;border-left:12px solid transparent;border-right:12px solid transparent;border-top:20px solid var(--ink)}
+.wheel-result{display:flex;flex-direction:column;align-items:center;gap:4px;margin:18px 0 0}
+.wheel-result[hidden]{display:none}
+.wheel-result-number{font-size:clamp(34px,9vw,56px);font-weight:700;font-variant-numeric:tabular-nums;color:var(--g)}
+.wheel-result-prize{font-size:18px;font-weight:600;color:var(--ink)}
+.wheel-meta{margin:14px 0 0;color:var(--mut);font-size:14px}

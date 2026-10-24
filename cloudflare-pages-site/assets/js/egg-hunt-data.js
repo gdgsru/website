@@ -1,0 +1,35 @@
+/* Easter egg hunt: the 30 eggs. Names and hints are shown on /easter-eggs/.
+ * Hints say where to look, never how to trigger the egg. Edit names here only;
+ * rules text and countdown are set in Mission Control. */
+window.GDG_EGGS = [
+  { id: 1,  name: 'Android Shake',       hint: 'Home page' },
+  { id: 2,  name: 'Inspect Element',     hint: 'Logo' },
+  { id: 3,  name: 'Gemini Thinking',     hint: 'Home hero' },
+  { id: 4,  name: 'Pull to Refresh',     hint: 'Home page' },
+  { id: 5,  name: 'Cloud Bottom',        hint: 'Home page' },
+  { id: 6,  name: 'Landscape Mode',      hint: 'Home page' },
+  { id: 7,  name: 'Four Colours',        hint: 'Footer' },
+  { id: 8,  name: 'Flashcard Flip',      hint: 'Team page' },
+  { id: 9,  name: 'Swipe Sprint',        hint: 'Events page' },
+  { id: 10, name: 'Docs Reader',         hint: 'Blog' },
+  { id: 11, name: 'Offline Dino',        hint: 'Lost page' },
+  { id: 12, name: 'Sign-In',             hint: 'Home page' },
+  { id: 13, name: 'Dark Mode Toggle',    hint: 'Anywhere' },
+  { id: 14, name: 'Hello World',         hint: 'Team page' },
+  { id: 15, name: 'Share Sheet',         hint: 'Chapter page' },
+  { id: 16, name: 'Calendar Reminder',   hint: 'Anywhere' },
+  { id: 17, name: 'Launch Hour',         hint: 'Launch time only' },
+  { id: 18, name: 'Gemini Sparkle',      hint: 'Home hero' },
+  { id: 19, name: 'Compile',             hint: 'Home hero' },
+  { id: 20, name: 'Version Tap',         hint: 'Footer' },
+  { id: 21, name: 'Loading Bar',         hint: 'Anywhere' },
+  { id: 22, name: 'Route Found',         hint: 'Hidden page' },
+  { id: 23, name: 'Stack Trace',         hint: 'Home hero' },
+  { id: 24, name: 'Late Night Coding',   hint: 'Night time' },
+  { id: 25, name: 'Learn Loop',          hint: 'Home hero' },
+  { id: 26, name: 'Page Speed',          hint: 'Home page' },
+  { id: 27, name: 'Google Starburst',    hint: 'Team page' },
+  { id: 28, name: 'Context Switch',      hint: 'Discord' },
+  { id: 29, name: 'Google Search',       hint: 'Team page' },
+  { id: 30, name: 'Fine Print',          hint: 'Privacy page' }
+];

@@ -429,6 +429,7 @@
     ]],
     ['System & Settings', [
       ['leaderboard', 'Leaderboard & Scoring', 'trophy'],
+      ['easter-eggs', 'Easter Egg Hunt', 'trophy'],
       ['settings', 'Platform Settings', 'settings']
     ]]
   ];
@@ -445,7 +446,8 @@
     leaderboard: 'mc-extra.js',
     announcement: 'mc-extra.js',
     settings: 'mc-extra.js',
-    audit: 'mc-extra.js'
+    audit: 'mc-extra.js',
+    'easter-eggs': 'mc-easter.js'
   };
 
   function renderShell(main) {

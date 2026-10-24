@@ -98,6 +98,8 @@ function rewriteGdgMultiPageLinks(e = document) {
     perks: "/resources/",
     resources: "/resources/",
     privacy: "/privacy/",
+    "easter-eggs": "/easter-eggs/",
+    wheel: "/wheel/",
     about: "/",
     gallery: "/events/",
     404: "/404.html",
@@ -424,6 +426,26 @@ const esc = (e) =>
           },
         ],
       )}</div><p>Students at every experience level are welcome. Start by joining the community and attending a session.</p></section>\n<section class="card pp gdg-pass-teaser" id="gdg-pass-teaser" style="margin-top:24px"><div class="gdg-pass-grid"><div class="gdg-pass-info"><div class="gdg-pass-pill"><span class="gdg-pass-dots" aria-hidden="true"><i style="background:#4285F4"></i><i style="background:#EA4335"></i><i style="background:#FBBC04"></i><i style="background:#34A853"></i></span>OFFICIAL MEMBER CREDENTIAL · 2026</div><h2 class="gdg-pass-title">I’m officially a member<br>of <span class="c-b">Google </span><span class="c-w">Developer</span><br><span class="c-y">Group </span><span class="c-r">on Campus</span></h2><div class="gdg-pass-univ">SR UNIVERSITY</div><div class="gdg-pass-chips"><span>AI &amp; Machine Learning</span><span>#BuildWithGoogle</span></div><p class="gdg-pass-desc">Claim your customized 3D holographic conference pass and generate your ready-to-share 1200×627 LinkedIn credential card in 1 click.</p><div class="gdg-pass-actions"><a class="btn gdg-btn-launch" href="/member-badge/">Launch Member Pass Studio <span aria-hidden="true">↗</span></a><a class="btn o gdg-btn-gateway" href="https://gdg.community.dev/gdg-on-campus-sr-university-warangal-india/" target="_blank" rel="noopener">Join Official Chapter ↗</a></div></div><div class="gdg-pass-visual"><a href="/member-badge/" class="gdg-mini-card-link" title="Open Full 3D Member Pass Studio"><div class="gdg-mini-pass"><div class="gdg-mini-slot"></div><div class="gdg-mini-bar"><i></i><i></i><i></i><i></i></div><div class="gdg-mini-top"><span class="gdg-mini-dots"><b></b><b></b><b></b><b></b></span><div class="gdg-mini-brandtxt"><b>Google Developer Group</b><span><u>on Campus</u>SR UNIVERSITY</span></div></div><div class="gdg-mini-hero"><div class="gdg-mini-ring"><div class="gdg-mini-av">&lt;/&gt;</div></div><div class="gdg-mini-name">SRU Developer</div><div class="gdg-mini-roll">26-SRU-MEMBER</div><div class="gdg-mini-track">AI &amp; Machine Learning</div></div><div class="gdg-mini-perf"><hr></div><div class="gdg-mini-foot"><div><small>GOOGLE DEVELOPER GROUP ON CAMPUS</small><strong>SR University · 2026</strong><span class="gdg-mini-pass-tag">MEMBER PASS</span></div><div class="gdg-mini-qr"><svg viewBox="0 0 21 21" shape-rendering="crispEdges"><rect x="0" y="0" width="7" height="7" fill="#070a18"/><rect x="1" y="1" width="5" height="5" fill="#fff"/><rect x="2" y="2" width="3" height="3" fill="#070a18"/><rect x="14" y="0" width="7" height="7" fill="#070a18"/><rect x="15" y="1" width="5" height="5" fill="#fff"/><rect x="16" y="2" width="3" height="3" fill="#070a18"/><rect x="0" y="14" width="7" height="7" fill="#070a18"/><rect x="1" y="15" width="5" height="5" fill="#fff"/><rect x="2" y="16" width="3" height="3" fill="#070a18"/><rect x="9" y="3" width="2" height="3" fill="#070a18"/><rect x="9" y="9" width="3" height="3" fill="#070a18"/><rect x="3" y="9" width="3" height="2" fill="#070a18"/><rect x="15" y="9" width="3" height="3" fill="#070a18"/><rect x="9" y="15" width="3" height="2" fill="#070a18"/></svg></div></div><div class="gdg-mini-overlay-badge">Customize ↗</div></div></a></div></div></section>\n          <section class="card pp join-contact-section" id="contact-the-chapter" style="margin-top:22px;max-width:none"><span class="cap">NEED TO ASK SOMETHING?</span><h2 style="margin:8px 0 12px;font-size:clamp(30px,4vw,44px);letter-spacing:-.06em">Let's talk tech.</h2><p>For general questions, collaborations, speaker proposals, and community support, email the chapter team.</p><p><a class="btn" href="mailto:gdg@sru.edu.in?subject=GDG%20on%20Campus%20enquiry">Email gdg@sru.edu.in ↗</a></p><p style="color:var(--mut)">For event registration and updates, use the official chapter page. Please do not send passwords or sensitive personal information by email.</p><p class="join-contact-links"><a class="btn o" href="https://www.instagram.com/gdg_sru/" target="_blank" rel="noopener">Instagram ↗</a> <a class="btn o" href="https://www.linkedin.com/company/gdg-sru/home/" target="_blank" rel="noopener">LinkedIn ↗</a></p></section>`,
+    wheel: () =>
+      ph(
+        1,
+        "Launch-day draw",
+        "The prize",
+        "wheel.",
+        "Watch the number reel and the wheel. The winning number and prize appear here as soon as the team stops the spin.",
+      ) +
+      '<section class="card egg-panel wheel-panel" id="wheel-root" aria-live="polite"><span class="cap" id="wheel-status">Waiting for the spin</span><p class="wheel-reel" id="wheel-reel" aria-hidden="true">---</p><div class="wheel-stage"><svg id="wheel-svg" viewBox="-100 -100 200 200" role="img" aria-label="Prize wheel"></svg><span class="wheel-pointer" aria-hidden="true"></span></div><p class="wheel-result" id="wheel-result" hidden></p><p class="wheel-meta" id="wheel-meta"></p></section>',
+    "easter-eggs": () =>
+      ph(
+        1,
+        "Launch-day hunt",
+        "Find the eggs",
+        "across the site.",
+        "Read the rules, follow the countdown, and track the eggs you find. Your team verifies each find and adds your points.",
+      ) +
+      '<section class="card egg-panel" id="egg-countdown" style="display:none"><span class="cap" id="egg-countdown-title">Hunt ends in</span><p class="egg-count" id="egg-countdown-value"></p></section>' +
+      '<section class="card egg-panel"><span class="cap">Rules</span><p class="egg-rules" id="egg-rules">Loading rules…</p></section>' +
+      '<section class="card egg-panel"><span class="cap" id="egg-summary">0 of 30 eggs found</span><ol class="egg-grid" id="egg-grid" aria-label="Easter eggs"></ol></section>',
     privacy: () =>
       ph(
         2,

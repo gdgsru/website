@@ -1748,3 +1748,16 @@ html[data-theme="dark"] .mc-subtabs a[aria-current="page"] {
   100% { transform: scale(2.2); opacity: 0; }
 }
 
+
+/* Easter Egg Hunt screen (mc-easter.js) */
+.admin-status { margin: 0 0 14px; font-size: 14px; font-weight: 600; color: var(--ink-2); min-height: 1.2em; }
+.admin-status[data-state="error"] { color: #c5221f; }
+.admin-status[data-state="ok"]:not(:empty) { color: #188038; }
+.admin-check { display: flex; align-items: center; gap: 8px; font-weight: 500; }
+.admin-check input { width: auto; }
+.admin-inline { display: flex; gap: 8px; align-items: center; }
+.admin-inline input { flex: 1; min-width: 0; }
+.admin-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.admin-empty { color: var(--ink-2); font-size: 14px; margin: 8px 0; }
+.admin-panel small { font-weight: 500; color: var(--ink-2); }
+.ghost { background: transparent; }
