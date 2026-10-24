@@ -478,11 +478,21 @@
     if (pinned) {
       const main = $('.event-feature-main', root);
       if (main) {
-        const h = $('h2', main), p = $('p', main), meta = $('.event-feature-meta', main);
-        if (h) h.textContent = pinned.title;
+        const h = $('#ef-title', root) || $('h2', main);
+        const p = $('#ef-summary', root) || $('p', main);
+        const metaLabel = $('#ef-meta-label', root);
+        const metaSub = $('#ef-meta-sub', root);
+        const metaLegacy = $('.event-feature-meta', main);
+        const sideTitle = $('#ef-side-title', root);
+        const sideBody = $('#ef-side-body', root);
+        if (h) h.innerHTML = esc(pinned.title);
         if (p) p.textContent = `${whenText(pinned.start_at,pinned.timezone||'Asia/Kolkata')}${pinned.venue?` · ${pinned.venue}`:pinned.online_url?' · Online':''}. ${pinned.summary||'Join the community for this session.'}`;
-        if (meta) meta.textContent = `PINNED NEXT SESSION / ${String(pinned.category||'EVENT').toUpperCase()}`;
-        const actions = $('.event-feature-actions', main);
+        if (metaLabel) metaLabel.textContent = 'NEXT SESSION';
+        if (metaSub) metaSub.textContent = String(pinned.category||'EVENT').toUpperCase();
+        if (!metaLabel && metaLegacy) metaLegacy.textContent = `PINNED NEXT SESSION / ${String(pinned.category||'EVENT').toUpperCase()}`;
+        if (sideTitle) sideTitle.textContent = pinned.title;
+        if (sideBody) sideBody.textContent = pinned.summary || 'Open the event page for full details.';
+        const actions = $('#ef-actions', root) || $('.event-feature-actions', main);
         if (window.__gdgFillFeature) window.__gdgFillFeature();
         if (actions) actions.innerHTML = `${pinned.registration_url?`<a class="btn" href="${esc(safeUrl(pinned.registration_url))}" target="_blank" rel="noopener noreferrer">Register externally ↗</a>`:''}<a class="btn o" href="/event.html?slug=${encodeURIComponent(pinned.slug)}">Event details ↗</a>`;
       }
