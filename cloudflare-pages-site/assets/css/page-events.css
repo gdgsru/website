@@ -592,3 +592,19 @@ html[data-theme="dark"] .g16-tk-badge.virtual {
   .event-feature.will-settle,
   .event-feature.will-settle:not(.is-settled) { transition: none; opacity: 1; transform: none; }
 }
+
+/* ── Flagship card visual polish ── */
+/* Softer, lifted shadow instead of the heavy offset block */
+.flagship-showcase-tier {
+  box-shadow: 0 24px 56px rgba(15, 23, 42, 0.14), 0 2px 6px rgba(15, 23, 42, 0.06) !important;
+}
+/* Balance an odd number of info boxes: the last one spans the full row */
+.flagship-showcase-tier .ef-fields > div:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+/* Headline: tighter, bolder, and sized to sit on two lines */
+.flagship-showcase-tier h2 {
+  font-size: clamp(34px, 4.2vw, 56px);
+  line-height: 1.04;
+  letter-spacing: -0.02em;
+}
