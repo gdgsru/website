@@ -65,8 +65,12 @@ Deno.serve(async (req: Request) => {
   const authHeader = req.headers.get("authorization") || "";
   const suppliedKey = req.headers.get("apikey") || (authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "");
   const isAuthorized = publicKeys.length === 0 || (suppliedKey && publicKeys.includes(suppliedKey));
-  if (!supabaseUrl || !serviceKey || !isAuthorized) {
-    return json(req, { error: "not_authorized" }, 401);
+  if (!supabaseUrl || !serviceKey) {
+    return json(req, { error: "not_authorized", reason: "server_config" }, 401);
+  }
+  if (!isAuthorized) {
+    const reason = suppliedKey ? "key_mismatch" : "missing_key";
+    return json(req, { error: "not_authorized", reason }, 401);
   }
 
   let body: { event_id?: unknown; name?: unknown; identifier?: unknown };

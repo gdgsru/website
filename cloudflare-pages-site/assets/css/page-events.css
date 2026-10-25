@@ -527,3 +527,68 @@ html[data-theme="dark"] .g16-tk-badge.virtual {
   .g16-tickets::-webkit-scrollbar{display:none}
   .g16-tickets>*{flex:0 0 86%!important;min-width:0;scroll-snap-align:center}
 }
+
+
+/* ── Poster-first flagship card: the poster fills the whole side panel ── */
+.event-feature.has-poster .event-feature-side.flagship-poster-side:not(#_) {
+  display: block;
+  min-height: 260px;
+  padding: 0 !important;
+  background: #fff !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+.event-feature.has-poster .event-feature-side.flagship-poster-side:before,
+.event-feature.has-poster .event-feature-side.flagship-poster-side:after {
+  display: none !important;
+}
+.event-feature.has-poster .flagship-poster-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: hidden;
+}
+.event-feature.has-poster .flagship-poster-frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform-origin: center;
+  animation: irl-breathe 9s ease-in-out infinite;
+}
+@keyframes irl-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.015); }
+}
+
+/* ── Scroll settle: the card rises gently into place once, when it first appears ── */
+.event-feature.will-settle {
+  transition: opacity .7s ease, transform .7s cubic-bezier(.2,.7,.2,1);
+}
+.event-feature.will-settle:not(.is-settled) {
+  opacity: 0;
+  transform: translateY(24px);
+}
+.event-feature.is-settled {
+  opacity: 1;
+  transform: none;
+}
+
+/* ── Keyboard focus on the flagship card ── */
+.event-feature a:focus-visible,
+.event-feature button:focus-visible {
+  outline: 3px solid #4285f4;
+  outline-offset: 3px;
+}
+
+/* ── Reduced motion: no breathing, no settle ── */
+@media (prefers-reduced-motion: reduce) {
+  .event-feature.has-poster .flagship-poster-frame img { animation: none; }
+  .event-feature.will-settle,
+  .event-feature.will-settle:not(.is-settled) { transition: none; opacity: 1; transform: none; }
+}

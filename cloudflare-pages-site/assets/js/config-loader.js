@@ -47,7 +47,7 @@
   function fetchEvents(client) {
     return fetchCached('events', () =>
       client.from('public_event_list')
-        .select('id,title,slug,category,summary,description,image_url,banner_url,start_at,end_at,timezone,event_tier,event_mode,accent_color,venue,join_link,online_url,speakers,speaker,rsvp_url,registration_url,syllabus_url,discord_channel_url,resource_url,calendar_enabled,certificates_ready,program_milestones,featured,pinned_next_session')
+        .select('id,title,slug,category,summary,description,image_url,banner_url,start_at,end_at,timezone,event_tier,event_mode,accent_color,venue,join_link,online_url,speakers,speaker,rsvp_url,registration_url,syllabus_url,discord_channel_url,resource_url,calendar_enabled,certificates_ready,program_milestones,featured,pinned_next_session,rsvp_platform')
         .order('start_at', { ascending: true })
     );
   }
@@ -829,6 +829,16 @@
       const accentHex = { blue: '#4285f4', red: '#ea4335', yellow: '#fbbc04', green: '#34a853' }[accent];
 
       featureEl.className = `event-feature flagship-showcase-tier accent-${accent}`;
+      featureEl.classList.toggle('has-poster', !!bannerImg);
+      if ('IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        featureEl.classList.add('will-settle');
+        const settleObs = new IntersectionObserver((entries, obs) => {
+          entries.forEach(en => { if (en.isIntersecting) { en.target.classList.add('is-settled'); obs.disconnect(); } });
+        }, { threshold: 0.15 });
+        settleObs.observe(featureEl);
+      } else {
+        featureEl.classList.add('is-settled');
+      }
       featureEl.style.setProperty('--accent-col', accentHex);
       featureEl.innerHTML = `
         <div class="event-feature-main">
@@ -842,7 +852,7 @@
             <div><small><i style="background:#4285f4"></i>Date & time (IST)</small><b>${esc(whenStr)}</b></div>
             <div><small><i style="background:#ea4335"></i>Venue / Mode</small><b>${esc(venueText)}</b></div>
             <div><small><i style="background:#fbbc04"></i>Speaker</small><b>${esc(speakersText || 'To be announced')}</b></div>
-            <div><small><i style="background:#34a853"></i>Platform</small><b>Official GDG Bevy Portal</b></div>
+            ${flagship.rsvp_platform ? `<div><small><i style="background:#34a853"></i>Platform</small><b>${esc(flagship.rsvp_platform)}</b></div>` : ''}
           </div>
           <div class="event-feature-actions">
             ${isFallback
@@ -1061,50 +1071,25 @@
       submit.disabled=true; const label=submit.textContent; submit.textContent='Checking…'; result.innerHTML='';
       try{
         let claim = null;
-        try {
-          const { data: cData, error: fnErr } = await client.functions.invoke('claim-certificate', {
-            body: { event_id: eventId, name, identifier: rawId }
-          });
-          if (!fnErr && cData) {
-            claim = cData;
+        const { data: cData, error: fnErr } = await client.functions.invoke('claim-certificate', {
+          body: { event_id: eventId, name, identifier: rawId }
+        }).catch(err => ({ data: null, error: err }));
+        if (fnErr) {
+          const status = fnErr.context?.status ?? fnErr.status ?? 0;
+          const box = (role, title, text) => `<div class="event-vault-empty" role="${role}"><b>${title}</b><p style="margin:6px 0;font-size:14px">${text}</p></div>`;
+          if (status === 429) {
+            result.innerHTML = box('status', 'Too many attempts', 'Please wait a few minutes before trying again.');
+          } else if (status === 400) {
+            result.innerHTML = box('alert', 'Check your details', 'Enter your full name and, if you have one, your roll number or email exactly as you registered.');
+          } else if (status === 401) {
+            result.innerHTML = box('alert', 'This page is not set up correctly', 'Please contact the chapter organizers and let them know the certificate page needs attention.');
           } else {
-            console.warn('[GDG Cert] Edge function unavailable, attempting direct RPC fallback:', fnErr);
-            const { data: rpcData, error: rpcErr } = await client.rpc('claim_certificate', {
-              p_event_id: eventId,
-              p_name: name,
-              p_identifier: rawId || null
-            });
-            if (!rpcErr) {
-              claim = rpcData ? { found: true, certificate: rpcData } : { found: false };
-            } else {
-              console.warn('[GDG Cert] RPC fallback error:', rpcErr);
-              if (fnErr?.status === 429) {
-                result.innerHTML = '<div class="event-vault-empty" role="status"><b>Too many verification attempts</b><p style="margin:6px 0;font-size:14px">To protect attendee records, this network has exceeded the temporary check limit. Please wait a few minutes before trying again.</p></div>';
-                return;
-              }
-              result.innerHTML = '<div class="event-vault-empty" role="status"><b>Verification temporarily unavailable</b><p style="margin:6px 0;font-size:14px">Please try again in a few moments or contact chapter organizers.</p></div>';
-              return;
-            }
+            result.innerHTML = box('alert', 'We could not check right now', 'Please check your connection and try again in a moment.');
           }
-        } catch (invokeErr) {
-          console.warn('[GDG Cert] Invoke error, attempting direct RPC fallback:', invokeErr);
-          try {
-            const { data: rpcData, error: rpcErr } = await client.rpc('claim_certificate', {
-              p_event_id: eventId,
-              p_name: name,
-              p_identifier: rawId || null
-            });
-            if (!rpcErr) {
-              claim = rpcData ? { found: true, certificate: rpcData } : { found: false };
-            } else {
-              result.innerHTML = '<p role="alert">We could not check right now. Please try again in a moment.</p>';
-              return;
-            }
-          } catch {
-            result.innerHTML = '<p role="alert">We could not check right now. Please try again in a moment.</p>';
-            return;
-          }
+          submit.disabled = false; submit.textContent = label;
+          return;
         }
+        claim = cData;
         if(!claim?.found||!claim?.certificate){
           const mail=typeof currentContactEmail==='string'&&currentContactEmail?` or write to <a href="mailto:${esc(currentContactEmail)}">${esc(currentContactEmail)}</a>`:'';
           result.innerHTML=`<div class="event-vault-empty" role="status"><b>We couldn't find that name in the attendance roster for this event.</b><p>Check the spelling and the event, using the name, roll number or email you registered with${mail}. If multiple attendees have the same name, ask the organisers to correct the attendance list.</p></div>`;return;

@@ -123,7 +123,7 @@
           // If a new column hasn't been added to the database yet via migration,
           // safely strip new event columns and fallback to legacy columns so save succeeds!
           const legacyPayload = { ...f };
-          const newCols = ['event_tier', 'event_mode', 'accent_color', 'banner_url', 'speakers', 'rsvp_url', 'join_link', 'syllabus_url', 'discord_channel_url', 'program_milestones', 'resource_url', 'calendar_enabled', 'certificates_ready'];
+          const newCols = ['event_tier', 'event_mode', 'accent_color', 'banner_url', 'speakers', 'rsvp_url', 'rsvp_platform', 'join_link', 'syllabus_url', 'discord_channel_url', 'program_milestones', 'resource_url', 'calendar_enabled', 'certificates_ready'];
           newCols.forEach((k) => delete legacyPayload[k]);
           if (f.speakers) legacyPayload.speaker = f.speakers;
           if (f.rsvp_url) legacyPayload.registration_url = f.rsvp_url;
@@ -199,6 +199,7 @@
     { key: 'join_link', label: 'Join link (Virtual / Meet)', type: 'url', nullable: true, placeholder: 'https://meet.google.com/...' },
     { key: 'speakers', label: 'Speaker(s)', nullable: true, placeholder: 'e.g. Jane Doe (Google), John Smith' },
     { key: 'rsvp_url', label: 'Official RSVP Link (gdg.community.dev)', type: 'url', nullable: true, full: true, placeholder: 'https://gdg.community.dev/events/details/...' },
+    { key: 'rsvp_platform', label: 'RSVP platform name (shown on flagship card)', nullable: true, full: true, placeholder: 'e.g. Official GDG Bevy Portal (leave empty to hide)' },
     { key: 'banner_url', label: '16:9 Poster Banner URL (Flagship & Cards)', type: 'url', nullable: true, full: true, placeholder: 'Upload below or enter URL' },
     { key: 'accent_color', label: 'Showcase Accent Color', type: 'select', default: 'blue', options: [
       { value: 'blue', label: 'Google Blue (#4285f4)' },
