@@ -1,0 +1,209 @@
+/* Mission Control visual layer. Loaded after mission-control.css; only restyles, never changes behaviour.
+ * Remove the <link> in admin/index.html to go back to the previous look. */
+:root {
+  --ground: #f5f7fb;
+  --line: #e1e5ec;
+  --line-2: #eef1f6;
+  --sunk: #f1f4f9;
+  --r-m: 10px;
+  --r-l: 14px;
+  --r-xl: 18px;
+  --ring: 0 0 0 3px rgba(26, 115, 232, .22);
+  --card-shadow: 0 1px 2px rgba(31, 41, 55, .04), 0 4px 14px -6px rgba(31, 41, 55, .08);
+}
+html[data-theme="dark"] {
+  --ground: #0a0b0e;
+  --surface: #131519;
+  --line: #2a2d34;
+  --line-2: #1e2025;
+  --ring: 0 0 0 3px rgba(138, 180, 248, .3);
+  --card-shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 6px 18px -8px rgba(0, 0, 0, .6);
+}
+body.mc-app { background: var(--ground); -webkit-font-smoothing: antialiased; }
+
+/* ---- Bug fix: cards built from <button> inherited the 36px button height and collapsed ---- */
+button.mc-kpi-card, button.mc-quick-btn, .mc-kpi-card, .mc-quick-btn {
+  height: auto; min-height: 0; align-items: stretch; justify-content: flex-start; white-space: normal; text-align: left;
+}
+.mc-quick-btn { align-items: center; justify-content: center; text-align: center; flex-direction: column; padding: 14px 8px; gap: 8px; line-height: 1.25; }
+
+/* ---- Focus ---- */
+:where(a, button, input, select, textarea, summary):focus-visible { outline: none; box-shadow: var(--ring); }
+input, select, textarea { transition: border-color .15s, box-shadow .15s; }
+input:focus, select:focus, textarea:focus { border-color: var(--blue); box-shadow: var(--ring); outline: none; }
+input:not([type=checkbox]):not([type=radio]):not([type=file]), select { min-height: 40px; border-radius: var(--r-m); }
+textarea { border-radius: var(--r-m); }
+
+/* ---- Rail ---- */
+.mc-rail { background: var(--surface); border-right: 1px solid var(--line); }
+.mc-brand { padding: 20px 18px 16px; }
+.mc-brand b { font-size: 16px; letter-spacing: -.02em; }
+.mc-navgroup { margin-top: 2px; }
+.mc-navgroup-title { font-size: 10.5px; letter-spacing: .09em; color: var(--ink-3); padding: 10px 14px 4px; }
+.mc-nav-link { position: relative; border-radius: var(--r-m); min-height: 38px; font-weight: 500; color: var(--ink-2); transition: background .15s, color .15s; }
+.mc-nav-link:hover { background: var(--sunk); color: var(--ink); }
+.mc-nav-link[aria-current=page] { background: var(--blue-soft); color: var(--blue); font-weight: 650; }
+.mc-nav-link[aria-current=page]::before { content: ""; position: absolute; left: -10px; top: 9px; bottom: 9px; width: 4px; border-radius: 0 4px 4px 0; background: var(--blue); }
+.mc-nav-link .mc-i { opacity: .85; }
+.mc-admin-profile { border-radius: var(--r-l); background: var(--sunk); border: 1px solid var(--line-2); }
+.mc-admin-avatar { background: linear-gradient(135deg, var(--blue), #34a853); color: #fff; }
+
+/* ---- Top bar ---- */
+.mc-top { background: color-mix(in srgb, var(--surface) 82%, transparent); backdrop-filter: saturate(1.4) blur(12px); -webkit-backdrop-filter: saturate(1.4) blur(12px); border-bottom: 1px solid var(--line); }
+.mc-crumb-kicker { letter-spacing: .08em; font-size: 10.5px; }
+.mc-crumb h1, #admin-page-title { font-size: 20px; letter-spacing: -.02em; }
+.mc-search { border-radius: 999px; background: var(--sunk); border: 1px solid var(--line); }
+.mc-icon-btn { border-radius: var(--r-m); }
+
+/* ---- Content & cards ---- */
+.mc-content { padding: clamp(16px, 2.4vw, 32px); max-width: 1320px; }
+#admin-workspace { animation: mc-in .22s ease-out both; }
+@keyframes mc-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.mc-card, .admin-panel { border-radius: var(--r-xl); border: 1px solid var(--line); box-shadow: var(--card-shadow); background: var(--surface); padding: 22px; }
+.admin-panel + .admin-panel, .mc-card + .mc-card { margin-top: 18px; }
+.mc-card-head { margin-bottom: 14px; }
+.mc-card h2, .admin-panel h2 { font-size: 15.5px; letter-spacing: -.01em; }
+.mc-col { display: grid; gap: 18px; align-content: start; }
+.mc-col > .mc-card + .mc-card { margin-top: 0; }
+.mc-grid-2 { gap: 18px; }
+
+/* Hero: Google four-colour edge */
+.mc-focus { position: relative; overflow: hidden; border-radius: var(--r-xl); border: 1px solid var(--line); background: var(--surface); box-shadow: var(--card-shadow); }
+.mc-focus::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 4px; background: linear-gradient(90deg, #4285f4 0 25%, #ea4335 25% 50%, #fbbc04 50% 75%, #34a853 75%); }
+.mc-focus-title { font-size: clamp(22px, 3vw, 30px); letter-spacing: -.03em; }
+
+/* KPI + quick actions */
+.mc-kpi-grid { grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 12px; }
+.mc-kpi-card { border-radius: var(--r-l); padding: 16px; gap: 14px; background: var(--surface); box-shadow: none; }
+.mc-kpi-card:hover { border-color: var(--blue-border); box-shadow: var(--card-shadow); transform: translateY(-2px); }
+.mc-kpi-num { font-size: 30px; }
+.mc-kpi-icon { width: 36px; height: 36px; border-radius: 10px; }
+.mc-kpi-body b { font-size: 13px; }
+.mc-kpi-body small { font-size: 11.5px; }
+.mc-quick-grid { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+.mc-quick-btn { border-radius: var(--r-l); font-size: 12.5px; font-weight: 600; }
+
+/* Lists */
+.mc-rows li, .admin-list-row { padding: 12px 0; border-color: var(--line-2); }
+.mc-rows li b { font-weight: 600; }
+.mc-todo li { border-radius: var(--r-m); }
+.mc-feed li { border-color: var(--line-2); }
+
+/* Buttons */
+button, .button { border-radius: var(--r-m); min-height: 38px; height: 38px; font-weight: 600; letter-spacing: -.005em; }
+button:hover, .button:hover { transform: none; box-shadow: 0 1px 2px rgba(26, 115, 232, .35), 0 4px 10px -4px rgba(26, 115, 232, .45); }
+button.button-outline:hover, .button-outline:hover { box-shadow: var(--shadow-xs); }
+.mc-icon-btn { height: 36px; }
+button.mc-nav-link, .mc-kpi-card, .mc-quick-btn, .ee-tab { height: auto; }
+
+/* Tables */
+.table-wrap { border-radius: var(--r-l); box-shadow: none; }
+th { text-transform: uppercase; font-size: 11px; letter-spacing: .06em; }
+tbody tr { transition: background .12s; }
+tbody tr:hover { background: var(--sunk); }
+
+/* Badges */
+.tag, .status, .mc-badge { border-radius: 999px; font-weight: 600; }
+
+/* Drawer / modal */
+.mc-drawer { border-radius: var(--r-xl) 0 0 var(--r-xl); box-shadow: var(--shadow-xl); }
+.mc-modal-card { border-radius: var(--r-xl); box-shadow: var(--shadow-xl); }
+.mc-toast { border-radius: var(--r-l); box-shadow: var(--shadow-lg); }
+
+/* Hunt console polish */
+.ee-tabs { background: var(--sunk); border-radius: var(--r-l); }
+.ee-tab { height: 40px; }
+.ee-stat { border-radius: var(--r-l); box-shadow: none; }
+.ee-stat b { font-size: 28px; }
+.ee-wheel { border-radius: var(--r-l); }
+
+/* Login */
+.mc-login { background: radial-gradient(900px 500px at 15% -10%, rgba(66, 133, 244, .14), transparent 60%), radial-gradient(800px 480px at 100% 110%, rgba(52, 168, 83, .12), transparent 60%), var(--ground); }
+.mc-login-card { border-radius: 20px; box-shadow: var(--shadow-xl); border: 1px solid var(--line); }
+
+/* Mobile */
+@media (max-width: 860px) {
+  .mc-card, .admin-panel { padding: 16px; border-radius: var(--r-l); }
+  .mc-content { padding: 14px; }
+  .mc-nav-link[aria-current=page]::before { left: 0; }
+  .mc-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .mc-kpi-num { font-size: 26px; }
+  .mc-quick-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) { #admin-workspace { animation: none; } * { transition-duration: .01ms !important; } }
+
+/* Fixes found while reviewing screenshots */
+.mc-col > * { margin-top: 0 !important; }
+.mc-subtabs { border-radius: var(--r-l) !important; padding: 4px; gap: 2px; background: var(--sunk); border: 1px solid var(--line); box-shadow: none; }
+.mc-subtabs a { border-radius: var(--r-m); }
+@media (max-width: 860px) { .mc-subtabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; } .mc-subtabs a { flex: none; white-space: nowrap; } }
+
+/* Dark mode: primary buttons use the light blue, so their label must be dark to stay readable */
+html[data-theme="dark"] button:not(.button-outline):not(.danger):not(.mc-icon-btn):not(.mc-kpi-card):not(.mc-quick-btn):not(.ee-tab):not(.mc-search):not(.mc-status-btn):not(.text-link):not([class*="mc-nav"]),
+html[data-theme="dark"] .button:not(.button-outline),
+html[data-theme="dark"] button.danger.solid { color: #08172e; }
+html[data-theme="dark"] button.danger.solid { color: #3b0a07; }
+
+/* ======== Usability pass (light mode first) ======== */
+:root {
+  --line: #d3d9e3;            /* borders were too faint to see in light mode */
+  --field: #b8c0cd;           /* form field outlines */
+  --ink-2: #4a5160;           /* secondary text: stronger contrast on white */
+  --ink-3: #6b7280;
+}
+html[data-theme="dark"] { --field: #4a4f59; --ink-2: #aab0ba; --ink-3: #8b929c; }
+
+/* Fields you can actually see */
+input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]), select, textarea { border: 1px solid var(--field); background: var(--surface); }
+input:hover:not(:focus), select:hover:not(:focus), textarea:hover:not(:focus) { border-color: var(--ink-3); }
+label { font-weight: 600; font-size: 13px; color: var(--ink); }
+label > input, label > select, label > textarea { font-weight: 400; margin-top: 6px; }
+input[type=checkbox], input[type=radio] { width: 18px; height: 18px; accent-color: var(--blue); }
+::placeholder { color: var(--ink-3); opacity: 1; }
+
+/* Forms: two columns on wide screens instead of one very long column */
+@media (min-width: 900px) {
+  .admin-form { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 20px; align-items: start; }
+  .admin-form > :where(.admin-actions, .admin-check, p, h3, h4, fieldset, hr, small, .msg, .mc-upload, .two-fields, [hidden]),
+  .admin-form > label:has(textarea),
+  .admin-form > button[type=submit] { grid-column: 1 / -1; }
+  .admin-form > button[type=submit] { justify-self: start; min-width: 180px; }
+}
+/* Buttons that sit alone under a form stop stretching across the page */
+.admin-panel form > button[type=submit], .admin-panel form > .admin-actions > button { width: auto; }
+.admin-panel > form > button[type=submit]:only-of-type { justify-self: start; }
+
+/* Page intro text: readable, with room */
+.admin-lead, .mc-lead { font-size: 14.5px; line-height: 1.55; color: var(--ink-2); max-width: 78ch; margin: 2px 0 18px; }
+.admin-panel > .admin-lead:first-of-type, .admin-panel > .muted:first-of-type { margin-top: 0; }
+.admin-panel > h2 + .muted, .admin-panel > h2 + .admin-lead { margin-top: -6px; }
+.muted, .muted.small { color: var(--ink-2); }
+
+/* Filter chips: clear selected state everywhere */
+.mc-chips, .mc-chips-row { gap: 8px; }
+.mc-chip-btn { min-height: 38px; height: auto; font-weight: 600; color: var(--ink); background: var(--surface); border-color: var(--field); box-shadow: none; }
+.mc-chip-btn:hover { transform: none; box-shadow: none; background: var(--sunk); color: var(--ink); }
+.mc-chip-btn[aria-pressed=true] { background: var(--blue); border-color: var(--blue); color: #fff; box-shadow: none; }
+html[data-theme="dark"] .mc-chip-btn[aria-pressed=true] { color: #08172e; }
+.mc-chip-btn[aria-pressed=true] .mc-chip-count { background: rgba(255,255,255,.25); }
+
+/* Sub-tabs and event bar: clearer current item */
+.mc-subtabs a[aria-current=page], .mc-eventbar a[aria-current=page] { background: var(--blue); color: #fff; border-color: var(--blue); }
+html[data-theme="dark"] .mc-subtabs a[aria-current=page], html[data-theme="dark"] .mc-eventbar a[aria-current=page] { color: #08172e; }
+
+/* Outline buttons read as buttons */
+button.button-outline, .button-outline { border-color: var(--field); color: var(--ink); }
+button.danger:not(.solid) { border-color: var(--red-border); }
+
+/* Cards: slightly stronger separation from the page */
+.mc-card, .admin-panel, .mc-focus { border-color: var(--line); }
+.mc-card-head { padding-bottom: 12px; border-bottom: 1px solid var(--line-2); }
+.mc-card-head h2 { margin: 0; }
+
+/* Touch targets */
+@media (max-width: 860px) {
+  button, .button, .mc-chip-btn, input:not([type=checkbox]):not([type=radio]), select { min-height: 44px; }
+  button, .button { height: auto; }
+  .mc-nav-link { min-height: 46px; }
+  .mc-icon-btn { width: 44px; height: 44px; }
+}

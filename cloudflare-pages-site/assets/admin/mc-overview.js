@@ -25,14 +25,18 @@
 
   MC.pages.overview = async () => {
     const q = (p) => p.then((r) => r, () => ({ data: [] }));
-    const [ev, team, certs, blog, res, per, log] = await Promise.all([
+    const [ev, team, certs, blog, res, per, log, eSet, ePrz, ePpl, eWh] = await Promise.all([
       q(window.MC.sb.from('events').select('id,title,status,start_at,end_at,pinned_next_session,featured,registration_url,venue').order('start_at', { ascending: false }).limit(60)),
       q(window.MC.sb.from('team_members').select('id,name,status,photo_url')),
       q(window.MC.sb.from('event_certificates').select('event_id,claims_enabled')),
       q(window.MC.sb.from('blog_entries').select('id,status')),
       q(window.MC.sb.from('resources').select('id,status')),
       q(window.MC.sb.from('leaderboard_periods').select('id,enabled,published')),
-      q(window.MC.sb.from('audit_logs').select('action,table_name,record_id,created_at').order('created_at', { ascending: false }).limit(8))
+      q(window.MC.sb.from('audit_logs').select('action,table_name,record_id,created_at').order('created_at', { ascending: false }).limit(8)),
+      q(window.MC.sb.from('easter_egg_settings').select('countdown_enabled,countdown_ends_at').eq('id', 1).maybeSingle()),
+      q(window.MC.sb.from('easter_egg_prizes').select('status')),
+      q(window.MC.sb.from('easter_egg_participants').select('id,wheel_entrant,wheel_number,has_won,hunt_points')),
+      q(window.MC.sb.from('easter_egg_wheel_state').select('status,winner_number').eq('id', 1).maybeSingle())
     ]);
     const events = ev.data || [];
     const facts = await eventFacts(events, certs.data);
@@ -42,14 +46,44 @@
     const upcoming = live.filter((e) => e.start_at && new Date(e.start_at) > now).sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
     const focus = live.find((e) => e.pinned_next_session && new Date(e.end_at || e.start_at || 0) > now) || upcoming[0]
       || events.filter((e) => e.status !== 'cancelled' && e.status !== 'draft' && !(facts[e.id]?.cert && e.status === 'archived'))[0];
-    const items = attention(d);
+    // Launch day: Easter Egg Hunt numbers (empty-safe when the tables are not set up yet).
+    const eggSettings = Array.isArray(eSet.data) ? {} : (eSet.data || {});
+    const eggPrizes = ePrz.data || [];
+    const eggPeople = ePpl.data || [];
+    const eggWheel = Array.isArray(eWh.data) ? { status: 'idle' } : (eWh.data || { status: 'idle' });
+    const prizesLeft = eggPrizes.filter((p) => p.status === 'available').length;
+    const entrants = eggPeople.filter((p) => p.wheel_entrant).length;
+    const inDraw = eggPeople.filter((p) => p.wheel_entrant && p.wheel_number && !p.has_won).length;
+    const eggPoints = eggPeople.reduce((sum, p) => sum + (p.hunt_points || 0), 0);
+    const countdownEnd = eggSettings.countdown_ends_at ? new Date(eggSettings.countdown_ends_at) : null;
+    const countdownText = !eggSettings.countdown_enabled ? 'Off'
+      : !countdownEnd ? 'On, but no end time set'
+      : countdownEnd > new Date() ? `Ends ${when(eggSettings.countdown_ends_at)}` : 'Finished';
+    const wheelText = eggWheel.status === 'rolling' ? 'Spinning now'
+      : eggWheel.status === 'stopped' ? `Last winner #${eggWheel.winner_number}` : 'Idle';
+    const launch = [];
+    if (!eggPrizes.length) launch.push({ lvl: 'warn', t: 'No wheel prizes entered', s: 'Add the prizes before the spin.', a: 'Add prizes', r: ['easter-eggs'] });
+    if (!entrants) launch.push({ lvl: 'info', t: 'No wheel entrants yet', s: 'Enter the top 10 finishers once the hunt timer ends.', a: 'Open hunt', r: ['easter-eggs'] });
+    if (eggSettings.countdown_enabled && !countdownEnd) launch.push({ lvl: 'warn', t: 'Countdown is on but has no end time', s: 'Set the end time or switch the countdown off.', a: 'Open hunt', r: ['easter-eggs'] });
+    const eggCard = `<section class="mc-card mc-launch"><div class="mc-card-head"><h2>Launch day · Easter Egg Hunt</h2><span class="muted small">Live numbers</span></div>
+      <ul class="mc-rows">
+        <li><div><b>Countdown</b><small>${esc(countdownText)}</small></div></li>
+        <li><div><b>Prize wheel</b><small>${esc(wheelText)} · ${inDraw} numbers in the draw</small></div></li>
+        <li><div><b>Prizes left</b><small>${prizesLeft} of ${eggPrizes.length || 3}</small></div></li>
+        <li><div><b>Hunt players</b><small>${eggPeople.length} entered · ${eggPoints} points · ${entrants} on the wheel</small></div></li>
+      </ul>
+      <div class="mc-actions"><button type="button" data-go="easter-eggs">${icon('trophy')}Open Easter Egg Hunt</button></div></section>`;
+
+    const items = [...attention(d), ...launch];
     const published = d.team.filter((m) => m.status === 'published').length;
     const glance = [
       { id: 'events', label: 'Published Events', n: live.length, s: `${events.filter((e) => e.status === 'draft').length} in draft`, ic: 'calendar', c: 'blue' },
       { id: 'certificates', label: 'Certificates Open', n: (certs.data || []).filter((c) => c.claims_enabled).length, s: 'student claims open', ic: 'award', c: 'green' },
       { id: 'team', label: 'Team Members', n: published, s: `${d.team.length - published} in draft`, ic: 'users', c: 'yellow' },
       { id: 'blog', label: 'Published Articles', n: (blog.data || []).filter((b) => b.status === 'published').length, s: 'blog stories live', ic: 'doc', c: 'red' },
-      { id: 'resources', label: 'Resource Library', n: (res.data || []).filter((b) => b.status === 'published').length, s: 'materials online', ic: 'library', c: 'blue' }
+      { id: 'resources', label: 'Resource Library', n: (res.data || []).filter((b) => b.status === 'published').length, s: 'materials online', ic: 'library', c: 'blue' },
+      { id: 'easter-eggs', label: 'Hunt Players', n: eggPeople.length, s: `${entrants} on the wheel`, ic: 'trophy', c: 'yellow' },
+      { id: 'easter-eggs', label: 'Prizes Left', n: prizesLeft, s: wheelText, ic: 'award', c: 'green' }
     ];
     const activity = (log.data || []).map((a) => {
       const verb = VERB[a.action] || (a.action || '').replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase());
@@ -85,7 +119,7 @@
 <section class="mc-card"><div class="mc-card-head"><h2>Needs attention</h2><span class="mc-count ${items.length ? 'warn' : 'ok'}">${items.length}</span></div>${items.length ? `<ul class="mc-todo">${items.slice(0, 8).map((i, n) => `<li class="${i.lvl}"><span class="mc-todo-icon ${i.lvl}">${icon(i.lvl === 'warn' ? 'alert' : 'spark')}</span><div class="mc-todo-body"><b>${esc(i.t)}</b><small>${esc(i.s)}</small></div><button type="button" class="button-outline small" data-todo="${n}">${esc(i.a)} ↗</button></li>`).join('')}</ul>` : '<div class="mc-empty-ok"><span class="mc-ok-badge">✓</span><span>Everything is in order. All events and chapter profiles are up to date!</span></div>'}</section>
 <section class="mc-card"><div class="mc-card-head"><h2>All events</h2><button type="button" class="text-link" data-go="events">Manage events</button></div>${events.length ? `<ul class="mc-rows">${events.slice(0, 6).map((e) => `<li><div><b>${esc(e.title)}</b><small>${esc(when(e.start_at))} · ${esc(e.status)}</small></div>${pipeline(e, facts[e.id])}</li>`).join('')}</ul>` : '<p class="muted">No events yet.</p>'}</section></div>
 <div class="mc-col"><section class="mc-card"><div class="mc-card-head"><h2>Chapter at a glance</h2><span class="muted small">Quick metrics</span></div><div class="mc-kpi-grid">${glance.map((g) => `<button type="button" class="mc-kpi-card mc-kpi-${g.c}" data-go="${g.id}"><div class="mc-kpi-top"><span class="mc-kpi-icon ${g.c}">${icon(g.ic)}</span><strong class="mc-kpi-num">${g.n}</strong></div><div class="mc-kpi-body"><b>${esc(g.label)}</b>${g.s ? `<small>${esc(g.s)}</small>` : ''}</div></button>`).join('')}</div></section>
-<section class="mc-card"><div class="mc-card-head"><h2>Quick actions</h2></div><div class="mc-quick-grid"><button type="button" class="mc-quick-btn blue" data-go="events" data-id="new">${icon('plus')}<span>New event</span></button><button type="button" class="mc-quick-btn green" data-go="attendance">${icon('check')}<span>Attendance</span></button><button type="button" class="mc-quick-btn yellow" data-go="team" data-id="new">${icon('users')}<span>Add member</span></button><button type="button" class="mc-quick-btn red" data-go="blog" data-id="new">${icon('doc')}<span>New blog</span></button><button type="button" class="mc-quick-btn blue" data-go="resources" data-id="new">${icon('library')}<span>New resource</span></button><button type="button" class="mc-quick-btn slate" data-go="settings">${icon('settings')}<span>Site settings</span></button></div></section>
+${eggCard}<section class="mc-card"><div class="mc-card-head"><h2>Quick actions</h2></div><div class="mc-quick-grid"><button type="button" class="mc-quick-btn blue" data-go="events" data-id="new">${icon('plus')}<span>New event</span></button><button type="button" class="mc-quick-btn green" data-go="attendance">${icon('check')}<span>Attendance</span></button><button type="button" class="mc-quick-btn yellow" data-go="team" data-id="new">${icon('users')}<span>Add member</span></button><button type="button" class="mc-quick-btn red" data-go="blog" data-id="new">${icon('doc')}<span>New blog</span></button><button type="button" class="mc-quick-btn blue" data-go="resources" data-id="new">${icon('library')}<span>New resource</span></button><button type="button" class="mc-quick-btn slate" data-go="settings">${icon('settings')}<span>Site settings</span></button></div></section>
 <section class="mc-card"><div class="mc-card-head"><h2>Recent activity</h2></div>${activity ? `<ul class="mc-feed">${activity}</ul>` : '<p class="muted">Changes you make will be listed here.</p>'}</section></div></div>`);
 
     const ws = MC.$('#admin-workspace');

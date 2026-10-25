@@ -115,9 +115,11 @@
   }
 
   /* ---------- 4. Konami Code Listener ---------- */
+  // Konami code dropped for launch: the listener is switched off.
+  const KONAMI_ENABLED = false;
   const KONAMI = ['arrowup','arrowup','arrowdown','arrowdown','arrowleft','arrowright','arrowleft','arrowright','b','a'];
   let kIdx = 0;
-  window.addEventListener('keydown', (e) => {
+  if (KONAMI_ENABLED) window.addEventListener('keydown', (e) => {
     const key = e.key.toLowerCase();
     const expected = KONAMI[kIdx];
     if (key === expected) {

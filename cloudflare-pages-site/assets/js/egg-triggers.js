@@ -41,7 +41,8 @@
   /* ---------- helpers ---------- */
   const route = () => (document.body && document.body.dataset.route) || '';
   const isHome = () => route() === 'home';
-  const atBottom = () => window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 6;
+  // Phones change their visible height when the address bar moves, so allow a margin.
+  const atBottom = () => window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 60;
   const pathNoSlash = () => location.pathname.replace(/\/+$/, '') || '/';
   const closest = (e, sel) => (e.target && e.target.closest) ? e.target.closest(sel) : null;
 
@@ -65,7 +66,7 @@
     .egg-dot{width:10px;height:10px;border-radius:50%;border:0;padding:0;cursor:pointer;opacity:.9}
     .egg-share{font:inherit;font-size:12px;background:none;border:1px solid currentColor;border-radius:999px;padding:4px 10px;margin-left:12px;color:inherit;opacity:.8;cursor:pointer}
     .egg-shake-btn{position:fixed;left:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:40;font-family:inherit;font-size:13px;font-weight:600;background:var(--ink,#1f1f23);color:var(--bg,#fff);border:0;border-radius:999px;padding:11px 16px;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.2)}
-    #hero-discord-btn,.hero-blue-word{-webkit-touch-callout:none}
+    #hero-discord-btn,.hero-blue-word{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
     @media (prefers-reduced-motion: reduce){.egg-toast{transition:none}}
   `;
   document.head.appendChild(style);
@@ -152,11 +153,13 @@
     if (isHome() && atBottom()) startHold(5, 2000, e.clientX, e.clientY);
   }, { passive: true });
   document.addEventListener('pointerup', cancelHold, { passive: true });
-  document.addEventListener('pointercancel', cancelHold, { passive: true });
   document.addEventListener('pointermove', (e) => {
-    if (hold && Math.hypot(e.clientX - hold.x, e.clientY - hold.y) > 12) cancelHold();
+    if (hold && Math.hypot(e.clientX - hold.x, e.clientY - hold.y) > 24) cancelHold();
   }, { passive: true });
-  document.addEventListener('contextmenu', () => cancelHold());
+  // While a hold is running, stop text selection and the phone's long-press menu.
+  // Do not cancel the hold here: Android sends contextmenu during a long press.
+  document.addEventListener('selectstart', (e) => { if (hold) e.preventDefault(); }, true);
+  document.addEventListener('contextmenu', (e) => { if (hold) e.preventDefault(); }, true);
 
   /* ---------- click-based eggs ---------- */
   const heroBuild = tapCounter(3, 1500, () => find(19));
@@ -186,9 +189,8 @@
 
     if (closest(e, '.hero-proof-spark')) find(18);
     if (closest(e, '.home-hero-title > span:first-child')) heroBuild();
-    if (closest(e, '.label-learn')) heroLearn();
+    if (closest(e, '.label-learn') || closest(e, '.home-hero-title > span:nth-child(2)')) heroLearn();
     if (closest(e, '.avatar-stack')) avatarTaps();
-    if (closest(e, '#scroll-progress')) find(21);
 
     const teamCard = closest(e, '.tm-card');
     if (teamCard && route() === 'team') {
@@ -230,8 +232,10 @@
   const versionTaps = tapCounter(2, 1000, () => find(20));
 
   // Hello World and SRU: typing in the team search box.
+  // The search box with "Find yourself" is on the Leaderboard page.
   document.addEventListener('input', (e) => {
-    if (!e.target || e.target.id !== 'tm-search') return;
+    if (!e.target || !['q', 'tm-search'].includes(e.target.id)) return;
+    if (route() !== 'leaderboard' && route() !== 'team') return;
     const v = (e.target.value || '').trim();
     if (v.toLowerCase() === 'hello') find(14);
     if (v.toUpperCase() === 'SRU') find(29);
@@ -260,6 +264,14 @@
   let blogDone = false;
   let privacyDone = false;
 
+  // Loading Bar: scroll past halfway on any page, then back to the top.
+  let passedHalf = false;
+  window.addEventListener('scroll', () => {
+    const range = document.documentElement.scrollHeight - window.innerHeight;
+    if (range > 0 && window.scrollY >= range / 2) passedHalf = true;
+    if (passedHalf && window.scrollY <= 5) { passedHalf = false; find(21); }
+  }, { passive: true });
+
   window.addEventListener('scroll', () => {
     if (window.scrollY <= 5) topAt = Date.now();
     if (!atBottom()) return;
@@ -285,7 +297,8 @@
   }, { passive: true });
   document.addEventListener('touchmove', (e) => {
     if (pullStartY === null) return;
-    if (e.touches[0].clientY - pullStartY > 120) { pullStartY = null; find(4); }
+    const threshold = Math.max(80, window.innerHeight * 0.15);
+    if (e.touches[0].clientY - pullStartY > threshold) { pullStartY = null; find(4); }
   }, { passive: true });
   document.addEventListener('touchend', () => { pullStartY = null; }, { passive: true });
 
@@ -295,25 +308,40 @@
     if (matchMedia('(orientation: landscape)').matches && matchMedia('(pointer: coarse)').matches) find(6);
   }
 
+  /* ---------- Offline Dino helpers ---------- */
+  const KNOWN_FIRST = ['', 'index.html', 'events', 'event', 'event.html', 'team', 'blog', 'blogs', 'join', 'contact',
+    'certificates', 'verify', 'leaderboard', 'resources', 'perks', 'privacy', 'member-badge', 'member-badge.html',
+    'easter-eggs', 'wheel', 'admin', 'mission-control', 'portal', 'about', 'gallery', 'hello'];
+  function isUnknownAddress() {
+    const first = location.pathname.split('/').filter(Boolean)[0] || '';
+    return !KNOWN_FIRST.includes(first.toLowerCase());
+  }
+  // The router draws unknown addresses as a .page-404 block, so watch for that as well.
+  function watchFor404() {
+    const check = () => {
+      if (document.querySelector('.pg.page-404, .page-404')) { find(11); return true; }
+      return false;
+    };
+    if (check()) return;
+    const observer = new MutationObserver(() => { if (check()) observer.disconnect(); });
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
+
   /* ---------- on page load ---------- */
   function onLoad() {
     // Late Night Coding: visit between midnight and 5 AM on the device clock.
     const hour = new Date().getHours();
     if (hour >= 0 && hour < 5) find(24);
 
-    // Calendar Reminder: visit on a second day.
-    try {
-      const today = new Date().toLocaleDateString('en-CA');
-      const days = JSON.parse(localStorage.getItem('gdg-egg-days') || '[]').filter((d) => typeof d === 'string');
-      if (days.some((d) => d !== today)) find(16);
-      if (!days.includes(today)) {
-        localStorage.setItem('gdg-egg-days', JSON.stringify([...days, today].slice(-5)));
-      }
-    } catch (e) { /* storage unavailable */ }
-
-    // Offline Dino and Route Found: the 404 page, and the /hello route.
-    if (/page not found/i.test(document.title) || route() === '404') find(11);
+    // Route Found: the /hello address.
     if (pathNoSlash() === '/hello') find(22);
+
+    // Offline Dino: any address the site does not know. Checked now, and again when the router renders.
+    if (isUnknownAddress() || /page not found/i.test(document.title) || route() === '404') find(11);
+    watchFor404();
+
+    // Home page only: stop the phone's own pull-to-refresh so Pull to Refresh can count.
+    if (isHome()) document.documentElement.style.overscrollBehaviorY = 'contain';
 
     checkLandscape();
     window.addEventListener('orientationchange', checkLandscape, { passive: true });

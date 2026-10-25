@@ -520,3 +520,10 @@ html[data-theme="dark"] .g16-tk-badge.virtual {
 .wheel-result-number{font-size:clamp(34px,9vw,56px);font-weight:700;font-variant-numeric:tabular-nums;color:var(--g)}
 .wheel-result-prize{font-size:18px;font-weight:600;color:var(--ink)}
 .wheel-meta{margin:14px 0 0;color:var(--mut);font-size:14px}
+
+/* Event cards swipe sideways on phones (events page only). Desktop and tablet are unchanged. */
+@media (max-width:600px){
+  .g16-tickets{display:flex!important;grid-template-columns:none!important;overflow-x:auto!important;scroll-snap-type:x mandatory!important;gap:12px!important;padding:4px 2px 12px!important;scroll-padding-inline:2px;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .g16-tickets::-webkit-scrollbar{display:none}
+  .g16-tickets>*{flex:0 0 86%!important;min-width:0;scroll-snap-align:center}
+}

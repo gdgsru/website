@@ -66,4 +66,12 @@
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>
+  <url>
+    <loc>https://gdgsru.pages.dev/easter-eggs/</loc>
+    <lastmod>2026-10-25</lastmod>
+  </url>
+  <url>
+    <loc>https://gdgsru.pages.dev/wheel/</loc>
+    <lastmod>2026-10-25</lastmod>
+  </url>
 </urlset>

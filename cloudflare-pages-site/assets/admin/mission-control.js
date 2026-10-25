@@ -354,7 +354,7 @@
     try { await fn(); } catch (e) { console.error(e); toast(authErrorText(e) || 'Could not save. Please try again.'); }
     finally { if (btn?.isConnected) { btn.disabled = false; btn.textContent = label; } }
   }
-  const MC_BUILD = '20261024-8';
+  const MC_BUILD = '20261025-11';
   const loadScriptOnce = (src) => new Promise((resolve, reject) => { const versioned = src + '?v=' + MC_BUILD; if ([...document.scripts].some((x) => x.src.includes(src.split('/').pop().split('?')[0]) && x.src.includes(MC_BUILD))) return resolve(); const el = document.createElement('script'); el.src = versioned; el.onload = resolve; el.onerror = () => reject(new Error('Could not load ' + versioned)); document.head.appendChild(el); });
 
   function watchSession(main) {
@@ -408,33 +408,35 @@
   /* ---------- shell ---------- */
   /* ---------- 5 Command Decks ---------- */
   const NAV = [
-    ['Mission Briefing', [
-      ['overview', 'Command Overview', 'home'],
-      ['audit', 'Activity & Audit Log', 'clock']
+    ['Home', [
+      ['overview', 'Overview', 'home'],
+      ['audit', 'Activity log', 'clock']
     ]],
-    ['Events & RSVPs', [
-      ['events', 'Events & Flagships', 'calendar'],
-      ['attendance', 'Attendance Roster', 'check']
+    ['Launch day', [
+      ['easter-eggs', 'Easter Egg Hunt', 'trophy']
     ]],
-    ['Credentials Deck', [
-      ['certificates', 'Certificates Studio', 'award'],
-      ['badges', 'Member Passcodes', 'idcard']
+    ['Events', [
+      ['events', 'Events', 'calendar'],
+      ['attendance', 'Attendance', 'check']
     ]],
-    ['Publishing & Broadcast', [
-      ['announcement', 'Announcement Bar', 'spark'],
-      ['blog', 'Chapter Blog', 'doc'],
-      ['blog-series', 'Blog Series', 'doc'],
-      ['resources', 'Resource Hub', 'library'],
-      ['team', 'Organizing Team', 'users']
+    ['Certificates & passes', [
+      ['certificates', 'Certificates', 'award'],
+      ['badges', 'Member passes', 'idcard']
     ]],
-    ['System & Settings', [
-      ['leaderboard', 'Leaderboard & Scoring', 'trophy'],
-      ['easter-eggs', 'Easter Egg Hunt', 'trophy'],
-      ['settings', 'Platform Settings', 'settings']
+    ['Website content', [
+      ['announcement', 'Announcement bar', 'spark'],
+      ['blog', 'Blog', 'doc'],
+      ['blog-series', 'Blog series', 'doc'],
+      ['resources', 'Resources', 'library'],
+      ['team', 'Team', 'users']
+    ]],
+    ['Admin', [
+      ['leaderboard', 'Leaderboard', 'trophy'],
+      ['settings', 'Settings', 'settings']
     ]]
   ];
   const TITLES = Object.fromEntries(NAV.flatMap(([, items]) => items.map(([id, label]) => [id, label])));
-  TITLES.announcement = 'Announcement Bar Studio';
+  TITLES.announcement = 'Announcement bar';
   const MODULE_FOR = {
     overview: 'mc-overview.js',
     events: 'mc-content.js',
@@ -795,7 +797,7 @@
       { g: 'Create', label: 'New event', hint: 'Events', run: () => go('events', {}, 'new') },
       { g: 'Create', label: 'Add a team member', hint: 'Team', run: () => go('team', {}, 'new') },
       { g: 'Create', label: 'New blog post', hint: 'Blog', run: () => go('blog', {}, 'new') },
-      { g: 'Create', label: 'New resource', hint: 'Resource Hub', run: () => go('resources', {}, 'new') },
+      { g: 'Create', label: 'New resource', hint: 'Resources', run: () => go('resources', {}, 'new') },
       { g: 'Team', label: 'Edit team page text and departments', hint: 'Team', run: () => go('team', { view: 'page' }) }
     ];
     let all = base, active = 0, shown = base;

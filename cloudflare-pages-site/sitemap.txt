@@ -9,3 +9,5 @@ https://gdgsru.pages.dev/leaderboard/
 https://gdgsru.pages.dev/resources/
 https://gdgsru.pages.dev/member-badge/
 https://gdgsru.pages.dev/privacy/
+https://gdgsru.pages.dev/easter-eggs/
+https://gdgsru.pages.dev/wheel/
