@@ -1,7 +1,7 @@
 // Public client configuration for the GDG SRU Supabase project.
 // Publishable keys are intended for browser use; never place service_role/secret keys here.
 window.SUPABASE_URL = "https://isfhqbytrbilceqddnll.supabase.co";
-window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlzZmhxYnl0cmJpbGNlcWRkbmxsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE1NDk2MzcsImV4cCI6MjEwNzEyNTYzN30.KkOi9s-Mg91y6sXjPZlnJFwQJxngEX1hLWOxq_xgx6g";
+window.SUPABASE_ANON_KEY = "sb_publishable_PcPHXjghyj7QuRkvMkLKCQ_drxZXhyb";
 
 // Shared defaults. Read by the public site (config-loader.js) and Mission Control.
 // Anything saved in the admin (site_settings) overrides these.
