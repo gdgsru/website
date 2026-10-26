@@ -456,6 +456,31 @@
     if (cached) renderAnnouncementBar(JSON.parse(cached));
   } catch {}
 
+  function applyEventsPlaceholder(settings) {
+    try {
+      const raw = getSetting(settings, 'events_placeholder');
+      if (!raw) return;
+      const ph = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      const setOrHide = (sel, value) => {
+        const el = document.querySelector(sel);
+        if (!el) return;
+        if (value) { el.textContent = value; el.style.display = ''; }
+        else { el.style.display = 'none'; }
+      };
+      setOrHide('#ef-title', ph.heading);
+      setOrHide('#ef-summary', ph.summary);
+      setOrHide('#ef-side-title', ph.side_title);
+      setOrHide('#ef-side-body', ph.side_body);
+      const link = document.querySelector('#ef-actions a');
+      if (link) {
+        if (ph.button_label) link.textContent = ph.button_label;
+        if (ph.button_url && /^https:\/\//.test(ph.button_url)) link.href = ph.button_url;
+      }
+    } catch (err) {
+      console.warn('[GDG SRU] Events placeholder skipped:', err);
+    }
+  }
+
   function applyAnnouncementBar(settings) {
     try {
       const raw = getSetting(settings, 'announcement_bar') || siteDefaults().announcementBar;
@@ -1317,6 +1342,7 @@
         applyHomepageText(settings);
         applyBrandLogo(settings);
         applyAnnouncementBar(settings);
+        applyEventsPlaceholder(settings);
         updateMainMenuSocials(contactEmail);
         rewriteNavigation();
         updateHome(client);

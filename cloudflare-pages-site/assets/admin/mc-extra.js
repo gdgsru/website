@@ -292,6 +292,8 @@
     const intro=textValue(values.community_intro||'').replace(/^"|"$/g,'');
     const homeCopy=textValue(values.homepage_copy||'').replace(/^"|"$/g,'');
     const logo=textValue(values.brand_logo_url||'').replace(/^"|"$/g,'');
+    let ph = {};
+    try { if (values.events_placeholder) ph = typeof values.events_placeholder === 'string' ? JSON.parse(values.events_placeholder) : values.events_placeholder; } catch {}
     let ann = { enabled: false, badge: 'UPCOMING', text: '', button_label: 'RSVP ↗', button_url: '', announcement_id: 1 };
     try {
       if (values.announcement_bar) {
@@ -319,6 +321,17 @@
           <button type="submit">Save Announcement Bar</button>
         </form>
       </section>
+      <section class="admin-panel"><h2>Events page placeholder</h2><p class="muted">Shown on the public Events page when no flagship event is scheduled. Leave a field empty to hide it.</p>
+        <form id="placeholder-form" class="admin-form">
+          <label>Heading<input name="heading" value="${esc(ph.heading || '')}" placeholder="e.g. Coming soon"></label>
+          <label class="full">Summary<textarea name="summary" rows="2" placeholder="e.g. The next session details will be announced here once confirmed.">${esc(ph.summary || '')}</textarea></label>
+          <label>Side panel title<input name="side_title" value="${esc(ph.side_title || '')}" placeholder="e.g. Official RSVP Portal."></label>
+          <label class="full">Side panel text<textarea name="side_body" rows="2">${esc(ph.side_body || '')}</textarea></label>
+          <label>Button label<input name="button_label" value="${esc(ph.button_label || '')}" placeholder="e.g. View on Chapter Page"></label>
+          <label>Button URL (must start with https://)<input name="button_url" type="url" value="${esc(ph.button_url || '')}" placeholder="https://gdg.community.dev/..."></label>
+          <button type="submit">Save Placeholder</button>
+        </form>
+      </section>
       <section class="admin-panel"><h2>Brand logo</h2><p class="muted">Optional logo override. Upload PNG, JPEG, or WebP up to 5 MB. When no override is set, the original Google-colour mark stays in place.</p>${logo&&safeUrl(logo)?`<p><img src="${esc(safeUrl(logo))}" alt="Current GDG SRU logo" style="max-width:180px;max-height:100px;object-fit:contain"></p>`:''}<form id="logo-form" class="admin-form"><label>Logo file<input type="file" name="logo" accept="image/png,image/jpeg,image/webp" required></label><button type="submit">Upload logo</button></form>${logo?'<button type="button" class="button-outline" id="clear-logo">Remove logo override</button>':''}</section>
       <section class="admin-panel"><h2>Official contact</h2><form id="contact-form" class="admin-form"><label>Primary contact email<input name="email" type="email" value="${esc(email)}" required></label><label>Additional contact email<input name="secondary_email" type="email" value="${esc(secondaryEmail)}" required></label><button type="submit">Save contact emails</button></form><p class="muted">The primary address is used for privacy enquiries. Both addresses appear in the community contact section.</p></section>
       <section class="admin-panel"><h2>Social links</h2><p class="muted">Manage the six standard destinations and any additional platforms. Empty URLs are not displayed publicly.</p><form id="social-form" class="admin-form">${merged.map((s,i)=>`<div class="social-edit-row" data-social-row="${i}"><input type="hidden" name="key_${i}" value="${esc(s.key||slugify(s.label))}"><label>Platform<input name="label_${i}" value="${esc(s.label||'')}" required></label><label>URL<input name="url_${i}" type="url" value="${esc(s.url||'')}" placeholder="https://…"></label><label>Icon / short mark<input name="icon_${i}" value="${esc(s.icon||'')}" maxlength="40" placeholder="e.g. in, ✦, brand icon"></label><label>Description<input name="description_${i}" value="${esc(s.description||'')}" maxlength="180"></label><label class="inline-check"><input type="checkbox" name="enabled_${i}" ${s.enabled!==false?'checked':''}> Visible on site</label><label>Display order<input name="order_${i}" type="number" value="${Number(s.sort_order)||i+1}"></label><button type="button" class="button-outline remove-social" data-remove-social="${i}">Remove platform</button></div>`).join('')}<button type="button" class="button-outline" id="add-social">Add platform</button><button type="submit">Save social links</button></form></section>
@@ -338,6 +351,27 @@
       remove.closest('[data-social-row]').remove();
     });
     // Announcement bar live preview & save
+    const phForm = $('#placeholder-form');
+    if (phForm) phForm.onsubmit = async (e) => {
+      e.preventDefault();
+      const fd = formObject(e.target);
+      const url = String(fd.button_url || '').trim();
+      if (url && !/^https:\/\//.test(url)) return adminMessage('Button URL must begin with https://');
+      const record = {
+        heading: String(fd.heading || '').trim(),
+        summary: String(fd.summary || '').trim(),
+        side_title: String(fd.side_title || '').trim(),
+        side_body: String(fd.side_body || '').trim(),
+        button_label: String(fd.button_label || '').trim(),
+        button_url: url
+      };
+      const r = await upsertSetting('events_placeholder', record);
+      if (r.error) return adminMessage(authErrorText(r.error));
+      await audit('update', 'site_settings', 'events_placeholder');
+      adminMessage('Events page placeholder saved.', true);
+      await adminSettings();
+    };
+
     const annForm = $('#announcement-form');
     if (annForm) {
       const updateAnnPreview = () => {
