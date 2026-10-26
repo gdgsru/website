@@ -381,6 +381,10 @@
     key: 'blog-series', title: 'Blog series', table: 'blog_series', titleKey: 'title', order: { col: 'sort_order' }, statuses: ['published', 'draft', 'archived'],
     lead: 'Series group blog posts on the blog page. Create, rename, reorder or retire them here. Posts keep their series when you change it.',
     newLabel: 'New series', empty: 'No series yet. Create the first one.',
+    row: (r) => {
+      const tone = { b: 'blue', g: 'green', y: 'yellow', r: 'red' }[r.color] || 'blue';
+      return `<li class="mc-item"><div class="mc-item-main"><b>${esc(r.title)}</b><small>${esc(r.description || 'No description')}</small><span class="mc-tags"><span class="tag ${tone}">${esc(r.slug || '')}</span><span class="status s-${esc(r.status)}">${esc(r.status)}</span></span></div><div class="mc-item-actions"><button type="button" class="button-outline" data-edit="${esc(r.id)}">${icon('edit')}Edit</button></div></li>`;
+    },
     fields: [
       { key: 'title', label: 'Series name', required: true, full: true },
       { key: 'slug', label: 'Link name', required: true, placeholder: 'build-logs', help: 'Lowercase letters, numbers and hyphens only.' },
