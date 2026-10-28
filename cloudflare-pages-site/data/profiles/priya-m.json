@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "handle": "priya-m",
+  "name": "Priya Menon",
+  "roll_display": "2404••••10",
+  "department": "ECE",
+  "cohort": "2024",
+  "status": "verified",
+  "theme": "terminal-dark",
+  "avatar": "avatar-21",
+  "github": "",
+  "portfolio": "",
+  "linkedin": "",
+  "bio": "Circuit design meets software. Interested in embedded systems and IoT.",
+  "skills": [
+    "Embedded C",
+    "IoT",
+    "Python",
+    "MATLAB"
+  ],
+  "joined": "2026-10-16"
+}

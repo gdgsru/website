@@ -1,3 +1,11 @@
 Timestamp,Email Address,Full Name,Roll Number,Department,Cohort,Desired Handle,GitHub,Portfolio,LinkedIn,Bio,Theme,Skills,Approved,Avatar
-10/20/2026 10:00:00,alex.k@sru.edu.in,Alex Kumar,2403a51001,CSE (AI & ML),2024,alexk,torvalds,https://alexk.dev,https://linkedin.com/in/alexk,Building things with Flutter and Firebase.,google-green,"Flutter, Firebase, Python",TRUE,9
-10/21/2026 11:00:00,sana.r@sru.edu.in,Sana Reddy,2403 a51022,CSE,2024,sana,,,,I like Android.,google-red,Kotlin,TRUE,
+10/15/2026 09:30:00,narayan.b@sru.edu.in,Narayan Bora,2403A51001,CSE (AI & ML),2024,narayan,,,,Organizer and web developer. Passionate about building community-first products.,google-blue,"Web Dev, Python, Cloud, React",TRUE,3
+10/15/2026 10:00:00,alex.k@sru.edu.in,Alex Kumar,2403A51002,CSE (AI & ML),2024,alexk,gdgsru,https://gdgsru.pages.dev,,Building things with Flutter and Firebase. GDG Core Team.,google-green,"Flutter, Firebase, Python, Android",TRUE,9
+10/15/2026 10:15:00,sana.r@sru.edu.in,Sana Reddy,2403A51022,CSE,2024,sana-r,,,,Open source contributor and hackathon enthusiast.,google-red,"Kotlin, Android, Open Source",TRUE,14
+10/16/2026 11:00:00,priya.m@sru.edu.in,Priya Menon,2404B52010,ECE,2024,priya-m,,,,Circuit design meets software. Interested in embedded systems and IoT.,terminal-dark,"Embedded C, IoT, Python, MATLAB",TRUE,21
+10/16/2026 11:30:00,rahul.v@sru.edu.in,Rahul Varma,2403A51045,CSE,2024,rahulv,,,,Full-stack developer. Always shipping something new.,google-blue,"JavaScript, React, Node.js, PostgreSQL",TRUE,5
+10/17/2026 09:00:00,deepa.s@sru.edu.in,Deepa Sharma,2404A51008,CSE (Data Science),2024,deepa-s,,,,Data storyteller. Turning numbers into narratives.,google-yellow,"Python, Data Science, Tableau, SQL",TRUE,18
+10/17/2026 09:45:00,kiran.t@sru.edu.in,Kiran Teja,2403A51067,CSE (AI & ML),2024,kirant,,,,AI/ML enthusiast building intelligent systems.,google-green,"Python, TensorFlow, scikit-learn, NLP",TRUE,2
+10/18/2026 10:00:00,ananya.p@sru.edu.in,Ananya Patel,2403B51030,IT,2024,ananya,,,,Cloud computing and DevOps. Certified in Google Cloud.,google-blue,"GCP, Docker, Kubernetes, Terraform",TRUE,25
+10/18/2026 10:30:00,vikram.n@sru.edu.in,Vikram Naidu,2403A51089,CSE,2024,vikram-n,,,,Competitive programmer and algorithm nerd.,terminal-dark,"C++, Algorithms, Competitive Programming",TRUE,11
+10/19/2026 11:00:00,meera.k@sru.edu.in,Meera Krishnan,2404A51015,CSE (AI & ML),2024,meera-k,,,,Research-oriented developer. Interested in NLP and multi-modal AI.,google-red,"Python, PyTorch, Research, NLP",TRUE,7

@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "handle": "narayan",
+  "name": "Narayan Bora",
+  "roll_display": "2403••••01",
+  "department": "CSE (AI & ML)",
+  "cohort": "2024",
+  "status": "verified",
+  "theme": "google-blue",
+  "avatar": "avatar-03",
+  "github": "",
+  "portfolio": "",
+  "linkedin": "",
+  "bio": "Organizer and web developer. Passionate about building community-first products.",
+  "skills": [
+    "Web Dev",
+    "Python",
+    "Cloud",
+    "React"
+  ],
+  "joined": "2026-10-15"
+}

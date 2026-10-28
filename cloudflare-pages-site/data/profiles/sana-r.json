@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "handle": "sana-r",
+  "name": "Sana Reddy",
+  "roll_display": "2403••••22",
+  "department": "CSE",
+  "cohort": "2024",
+  "status": "verified",
+  "theme": "google-red",
+  "avatar": "avatar-14",
+  "github": "",
+  "portfolio": "",
+  "linkedin": "",
+  "bio": "Open source contributor and hackathon enthusiast.",
+  "skills": [
+    "Kotlin",
+    "Android",
+    "Open Source"
+  ],
+  "joined": "2026-10-15"
+}

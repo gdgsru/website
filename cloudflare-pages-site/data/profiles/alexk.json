@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "handle": "alexk",
+  "name": "Alex Kumar",
+  "roll_display": "2403••••02",
+  "department": "CSE (AI & ML)",
+  "cohort": "2024",
+  "status": "verified",
+  "theme": "google-green",
+  "avatar": "avatar-09",
+  "github": "gdgsru",
+  "portfolio": "https://gdgsru.pages.dev",
+  "linkedin": "",
+  "bio": "Building things with Flutter and Firebase. GDG Core Team.",
+  "skills": [
+    "Flutter",
+    "Firebase",
+    "Python",
+    "Android"
+  ],
+  "joined": "2026-10-15"
+}

@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "handle": "meera-k",
+  "name": "Meera Krishnan",
+  "roll_display": "2404••••15",
+  "department": "CSE (AI & ML)",
+  "cohort": "2024",
+  "status": "verified",
+  "theme": "google-red",
+  "avatar": "avatar-07",
+  "github": "",
+  "portfolio": "",
+  "linkedin": "",
+  "bio": "Research-oriented developer. Interested in NLP and multi-modal AI.",
+  "skills": [
+    "Python",
+    "PyTorch",
+    "Research",
+    "NLP"
+  ],
+  "joined": "2026-10-19"
+}

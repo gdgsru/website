@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "handle": "rahulv",
+  "name": "Rahul Varma",
+  "roll_display": "2403••••45",
+  "department": "CSE",
+  "cohort": "2024",
+  "status": "verified",
+  "theme": "google-blue",
+  "avatar": "avatar-05",
+  "github": "",
+  "portfolio": "",
+  "linkedin": "",
+  "bio": "Full-stack developer. Always shipping something new.",
+  "skills": [
+    "JavaScript",
+    "React",
+    "Node.js",
+    "PostgreSQL"
+  ],
+  "joined": "2026-10-16"
+}

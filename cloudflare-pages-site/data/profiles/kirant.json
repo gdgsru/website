@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "handle": "kirant",
+  "name": "Kiran Teja",
+  "roll_display": "2403••••67",
+  "department": "CSE (AI & ML)",
+  "cohort": "2024",
+  "status": "verified",
+  "theme": "google-green",
+  "avatar": "avatar-02",
+  "github": "",
+  "portfolio": "",
+  "linkedin": "",
+  "bio": "AI/ML enthusiast building intelligent systems.",
+  "skills": [
+    "Python",
+    "TensorFlow",
+    "scikit-learn",
+    "NLP"
+  ],
+  "joined": "2026-10-17"
+}

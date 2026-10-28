@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "handle": "vikram-n",
+  "name": "Vikram Naidu",
+  "roll_display": "2403••••89",
+  "department": "CSE",
+  "cohort": "2024",
+  "status": "verified",
+  "theme": "terminal-dark",
+  "avatar": "avatar-11",
+  "github": "",
+  "portfolio": "",
+  "linkedin": "",
+  "bio": "Competitive programmer and algorithm nerd.",
+  "skills": [
+    "C++",
+    "Algorithms",
+    "Competitive Programming"
+  ],
+  "joined": "2026-10-18"
+}

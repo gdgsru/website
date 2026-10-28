@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "handle": "ananya",
+  "name": "Ananya Patel",
+  "roll_display": "2403••••30",
+  "department": "IT",
+  "cohort": "2024",
+  "status": "verified",
+  "theme": "google-blue",
+  "avatar": "avatar-25",
+  "github": "",
+  "portfolio": "",
+  "linkedin": "",
+  "bio": "Cloud computing and DevOps. Certified in Google Cloud.",
+  "skills": [
+    "GCP",
+    "Docker",
+    "Kubernetes",
+    "Terraform"
+  ],
+  "joined": "2026-10-18"
+}

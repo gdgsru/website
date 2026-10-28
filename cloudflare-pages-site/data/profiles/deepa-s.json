@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "handle": "deepa-s",
+  "name": "Deepa Sharma",
+  "roll_display": "2404••••08",
+  "department": "CSE (Data Science)",
+  "cohort": "2024",
+  "status": "verified",
+  "theme": "google-yellow",
+  "avatar": "avatar-18",
+  "github": "",
+  "portfolio": "",
+  "linkedin": "",
+  "bio": "Data storyteller. Turning numbers into narratives.",
+  "skills": [
+    "Python",
+    "Data Science",
+    "Tableau",
+    "SQL"
+  ],
+  "joined": "2026-10-17"
+}
