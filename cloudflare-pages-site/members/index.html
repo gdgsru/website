@@ -27,10 +27,11 @@
     <link rel="stylesheet" href="/assets/css/page-members.css">
     <script>(function(){var t="dark";try{t=localStorage.getItem("gdg-theme")==="light"?"light":"dark"}catch(e){}document.documentElement.dataset.theme=t})()</script>
     <script src="/config.js" defer></script>
-    <script src="/assets/js/vendor/supabase.js?v=20261028-members2" defer></script>
-    <script src="/assets/js/command-palette.js?v=20261028-members2" defer></script>
-    <script src="/assets/js/members-directory.js?v=20261028-members2" defer></script>
-    <script src="/assets/js/menu.js?v=20261028-members2" defer></script>
+    <script src="/assets/js/vendor/supabase.js?v=20261028-members3" defer></script>
+    <script src="/assets/js/command-palette.js?v=20261028-members3" defer></script>
+    <script src="/assets/js/members-directory.js?v=20261028-members3" defer></script>
+    <script src="/assets/js/card-tilt.js?v=20261028-members3" defer></script>
+    <script src="/assets/js/menu.js?v=20261028-members3" defer></script>
     <style>.menu-side-heading,#mo .menu-side .menu-side-heading{margin:0 0 5px!important;font:500 11px/1 var(--f-mono,monospace)!important;letter-spacing:.2em!important;text-transform:uppercase!important;color:var(--mut,#5f6368)!important}</style>
   </head>
   <body data-route="members" data-multipage="true">
@@ -165,17 +166,7 @@
           <h2 class="members-sec-title" id="all-members-title">
             <span style="color: var(--b, #4285f4);">👥</span> Verified Member Passes
           </h2>
-          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-            <p class="members-sec-sub" style="margin: 0;">Click card to inspect or flip</p>
-            <div class="members-design-toggle" role="group" aria-label="Card design style">
-              <button type="button" class="members-design-btn active" data-card-design="holo">
-                <span>🃏</span> Tech Card (Flip)
-              </button>
-              <button type="button" class="members-design-btn" data-card-design="pass">
-                <span>🪪</span> Digital Pass
-              </button>
-            </div>
-          </div>
+          <p class="members-sec-sub" style="margin: 0;">Interactive member cards with verified credentials &amp; 3D pass link</p>
         </div>
 
         <div class="members-grid" id="members-directory-grid">

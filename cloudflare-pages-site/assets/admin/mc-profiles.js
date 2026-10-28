@@ -199,67 +199,49 @@
       const avatarSrc = getAvatarSrc(r.avatar);
       const lvl = levelOf(r.points);
       const lvlNum = r.points >= 1000 ? 4 : r.points >= 500 ? 3 : r.points >= 200 ? 2 : 1;
-      const achieve = `${r.points > 0 ? `💎 ${r.points} Community XP` : '✓ Verified Member'}`;
+      const achieve = r.points > 0 ? `💎 ${r.points} Community XP` : '✓ Verified Pass';
+      const colorMap = { 'google-blue': '#4285f4', 'google-red': '#ea4335', 'google-yellow': '#fbbc04', 'google-green': '#34a853', 'terminal-dark': '#4285f4' };
+      const themeHex = colorMap[r.theme] || '#4285f4';
 
-      if (previewDesign === 'pass') {
-        return `
-          <div style="width:280px;border-radius:20px;padding:16px;background:linear-gradient(160deg,#4285f4,#1a4fb8);color:#fff;box-shadow:0 12px 30px rgba(0,0,0,0.35);position:relative;display:flex;flex-direction:column;min-height:360px;" data-skin="${esc(previewSkin)}">
-            <div style="width:40px;height:7px;border-radius:99px;background:rgba(0,0,0,0.35);margin:0 auto 10px;"></div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-              <span style="font-size:10px;font-weight:700;line-height:1.2;opacity:0.8;">GDG on Campus<br>SR University</span>
-              <span style="font-size:9px;font-weight:700;padding:3px 7px;border-radius:99px;background:rgba(255,255,255,0.18);">MEMBER</span>
-            </div>
-            <div style="width:68px;height:68px;margin:0 auto 8px;border-radius:50%;overflow:hidden;border:2px solid #fff;background:#fff;">
+      return `
+        <div style="width:280px;border-radius:26px;overflow:hidden;position:relative;background:radial-gradient(120% 75% at 85% 0,${themeHex}44,transparent 68%),linear-gradient(180deg,#fffefa,${themeHex}14);border:1.5px solid ${themeHex}44;box-shadow:0 24px 38px -24px ${themeHex};padding:18px;display:flex;flex-direction:column;min-height:360px;font-family:var(--f-body,sans-serif);">
+          <!-- Orbit Ripples & Avatar -->
+          <div style="position:absolute;right:14px;top:14px;width:110px;height:110px;pointer-events:none;" aria-hidden="true">
+            <span style="position:absolute;inset:0;border-radius:50%;border:1px solid ${themeHex}33;"></span>
+            <span style="position:absolute;inset:12px;border-radius:50%;border:1px dashed ${themeHex}55;"></span>
+            <span style="position:absolute;inset:24px;border-radius:50%;border:1px dotted ${themeHex}77;"></span>
+            <div style="position:absolute;inset:30px;border-radius:50%;border:2px solid #fff;overflow:hidden;box-shadow:0 0 20px ${themeHex}88;background:#fff;">
               <img src="${avatarSrc}" alt="" style="width:100%;height:100%;object-fit:cover;">
             </div>
-            <h4 style="text-align:center;font-size:17px;font-weight:800;margin:0 0 2px;">${esc(r.name || r.handle)}</h4>
-            <p style="text-align:center;font-size:11px;opacity:0.75;margin:0 0 10px;">@${esc(r.handle)}</p>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;padding:8px 0;border-top:1px dashed rgba(255,255,255,0.3);border-bottom:1px dashed rgba(255,255,255,0.3);margin-bottom:8px;">
-              <div><span style="font-size:9px;text-transform:uppercase;opacity:0.75;display:block;">Cohort</span><b>${esc(r.cohort || '2024')}</b></div>
-              <div><span style="font-size:9px;text-transform:uppercase;opacity:0.75;display:block;">Points</span><b>${r.points} XP</b></div>
-            </div>
-            <div style="margin-top:auto;display:flex;justify-content:space-between;align-items:center;">
-              <span style="font-size:9.5px;padding:3px 8px;border-radius:99px;background:rgba(255,255,255,0.18);">Verified</span>
-              <span style="font-size:9.5px;padding:3px 8px;border-radius:99px;background:#fff;color:#111;font-weight:700;">Lvl ${lvlNum} · ${esc(lvl)}</span>
-            </div>
+            <span style="position:absolute;right:30px;bottom:30px;width:16px;height:16px;background:#34a853;color:#fff;border-radius:50%;border:2px solid #fff;display:grid;place-items:center;font-size:9px;font-weight:900;">✓</span>
           </div>
-        `;
-      }
 
-      // Holo-card
-      return `
-        <div style="width:280px;height:360px;position:relative;perspective:1000px;cursor:pointer;" id="mp-drawer-card-flip">
-          <div style="width:100%;height:100%;position:relative;transition:transform 0.6s;transform-style:preserve-3d;${isFlipped ? 'transform:rotateY(180deg)' : ''}">
-            <!-- Front -->
-            <div style="position:absolute;inset:0;backface-visibility:hidden;border-radius:22px;background:#fff;border:1.5px solid #e8eaed;padding:18px;display:flex;flex-direction:column;box-shadow:0 10px 30px rgba(0,0,0,0.1);">
-              <div style="height:3px;background:linear-gradient(90deg,#4285f4,#ea4335,#fbbc04,#34a853);margin:-18px -18px 14px -18px;border-radius:22px 22px 0 0;"></div>
-              <div style="display:flex;justify-content:space-between;align-items:center;font-size:10.5px;font-weight:700;color:#5f6368;margin-bottom:10px;">
-                <span>GDG SRU // BUILDER</span>
-                <span style="color:#4285f4;background:rgba(66,133,244,0.1);padding:3px 7px;border-radius:99px;">${r.points} XP</span>
-              </div>
-              <div style="width:64px;height:64px;margin:0 auto 8px;border-radius:50%;padding:2px;background:conic-gradient(#4285f4,#ea4335,#fbbc04,#34a853,#4285f4);">
-                <img src="${avatarSrc}" alt="" style="width:100%;height:100%;border-radius:50%;object-fit:cover;background:#fff;">
-              </div>
-              <h4 style="text-align:center;font-size:16.5px;font-weight:800;margin:0 0 2px;color:#111;">${esc(r.name || r.handle)}</h4>
-              <p style="text-align:center;font-size:11.5px;color:#5f6368;margin:0 0 8px;">@${esc(r.handle)}</p>
-              <div style="padding:6px 10px;border-radius:8px;background:#f8f9fc;border:1px solid #e8eaed;font-size:11.5px;font-weight:600;margin-bottom:8px;text-align:center;color:#111;">
-                ${achieve}
-              </div>
-              <p style="text-align:center;font-size:10.5px;color:#5f6368;margin-top:auto;">↺ Click card to flip</p>
+          <!-- Top Meta -->
+          <div style="display:flex;align-items:center;gap:6px;max-width:calc(100% - 75px);margin-bottom:34px;position:relative;z-index:2;">
+            <span style="display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:99px;font:800 10px/1 monospace;background:${themeHex}18;color:${themeHex};border:1px solid ${themeHex}44;">LVL ${lvlNum} · ${esc(lvl.toUpperCase())}</span>
+            <span style="font:600 11px/1 monospace;color:#5f6368;">'${String(r.cohort || '2024').slice(-2)}</span>
+          </div>
+
+          <!-- Content -->
+          <div style="position:relative;z-index:2;flex:1;display:flex;flex-direction:column;">
+            <h4 style="font-size:18px;font-weight:800;letter-spacing:-0.03em;margin:0 0 2px;color:#111b2e;">${esc(r.name || r.handle)}</h4>
+            <span style="font:600 12px/1 monospace;color:${themeHex};margin-bottom:10px;display:block;">@${esc(r.handle)}</span>
+
+            <div style="display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:10px;font-size:11.5px;font-weight:600;margin-bottom:10px;background:rgba(255,255,255,0.85);border:1px solid ${themeHex}33;color:#111;">
+              ${achieve}
             </div>
-            <!-- Back -->
-            <div style="position:absolute;inset:0;backface-visibility:hidden;transform:rotateY(180deg);border-radius:22px;background:#141518;color:#fff;border:1.5px solid #2b2d32;padding:18px;display:flex;flex-direction:column;justify-content:space-between;">
-              <div>
-                <span style="font-size:11px;font-weight:700;color:#8ab4f8;text-transform:uppercase;letter-spacing:0.1em;">Developer Pass</span>
-                <p style="font-size:12.5px;line-height:1.45;color:rgba(255,255,255,0.75);margin:10px 0;">"${esc(r.bio || 'Verified GDG SRU student developer.')}"</p>
-                <div style="font-size:11.5px;color:rgba(255,255,255,0.5);line-height:1.4;">
-                  <p>Branch: <b style="color:#fff;">${esc(r.dept || 'SR University')}</b></p>
-                  <p>Cohort: <b style="color:#fff;">${esc(r.cohort || '2024')}</b></p>
-                  <p>Status: <b style="color:#81c995;">Verified</b></p>
-                </div>
-              </div>
-              <p style="text-align:center;font-size:10.5px;color:rgba(255,255,255,0.5);">↺ Click to flip back</p>
-            </div>
+
+            <p style="font-size:12px;line-height:1.45;color:#53647d;margin:0 0 12px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
+              "${esc(r.bio || 'Verified student developer at SR University.')}"
+            </p>
+          </div>
+
+          <!-- Bottom Action Bar -->
+          <div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid ${themeHex}22;padding-top:10px;position:relative;z-index:2;">
+            <span style="font:700 10px/1 monospace;color:#5f6368;text-transform:uppercase;">GDG SRU // PASS</span>
+            <span style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:99px;font-size:11.5px;font-weight:700;background:#fff;border:1px solid #e4e8ed;color:#111b2e;">
+              View Pass ↗
+            </span>
           </div>
         </div>
       `;
