@@ -44,6 +44,17 @@
   }
 
   function getAchievement(m) {
+    if (m._achieveText) {
+      const pts = m._liveXP || 0;
+      const lvl = pts >= 1000 ? 'Vanguard' : pts >= 500 ? 'Innovator' : pts >= 200 ? 'Builder' : 'Explorer';
+      const lvlNum = pts >= 1000 ? 4 : pts >= 500 ? 3 : pts >= 200 ? 2 : 1;
+      return {
+        icon: m._achieveIcon || '✓',
+        text: m._achieveText,
+        level: lvl,
+        lvlNum: lvlNum
+      };
+    }
     if (FALLBACK_ACHIEVEMENTS[m.u]) {
       return FALLBACK_ACHIEVEMENTS[m.u];
     }
@@ -197,7 +208,7 @@
       const data = await res.json();
       allMembers = Array.isArray(data.profiles) ? data.profiles : (Array.isArray(data) ? data : []);
 
-      // If Supabase live layer is available, fetch live points
+      // If Supabase live layer is available, fetch live points and profile overrides
       if (window.sbClient && typeof window.sbClient.from === 'function') {
         try {
           const { data: pts } = await window.sbClient
@@ -217,6 +228,60 @@
           }
         } catch (e) {
           console.warn('[GDG SRU] Supabase live points sync skipped:', e);
+        }
+
+        try {
+          const { data: stRow } = await window.sbClient
+            .from('public_site_settings')
+            .select('value')
+            .eq('key', 'member_profile_overrides')
+            .maybeSingle();
+
+          if (stRow && stRow.value && typeof stRow.value === 'object') {
+            const overrides = stRow.value;
+            const memberMap = new Map();
+            allMembers.forEach((m) => memberMap.set(m.u, m));
+
+            Object.entries(overrides).forEach(([h, o]) => {
+              let m = memberMap.get(h);
+              if (!m) {
+                if (!o.hidden) {
+                  m = {
+                    u: h,
+                    n: o.name || h,
+                    d: o.dept || o.department || '',
+                    c: o.cohort || '',
+                    a: o.avatar || 'avatar-01',
+                    t: o.theme || 'google-blue',
+                    s: Array.isArray(o.skills) ? o.skills : [],
+                    b: o.bio || ''
+                  };
+                  if (o.achievement_text) m._achieveText = o.achievement_text;
+                  if (o.achievement_icon) m._achieveIcon = o.achievement_icon;
+                  allMembers.push(m);
+                  memberMap.set(h, m);
+                }
+              } else {
+                if (o.hidden) {
+                  m._hidden = true;
+                } else {
+                  if (o.name) m.n = o.name;
+                  if (o.dept || o.department) m.d = o.dept || o.department;
+                  if (o.cohort) m.c = o.cohort;
+                  if (o.avatar) m.a = o.avatar;
+                  if (o.theme) m.t = o.theme;
+                  if (Array.isArray(o.skills)) m.s = o.skills;
+                  if (o.bio) m.b = o.bio;
+                  if (o.achievement_text) m._achieveText = o.achievement_text;
+                  if (o.achievement_icon) m._achieveIcon = o.achievement_icon;
+                }
+              }
+            });
+
+            allMembers = allMembers.filter((m) => !m._hidden);
+          }
+        } catch (stErr) {
+          console.warn('[GDG SRU] Could not fetch member profile overrides:', stErr);
         }
       }
 

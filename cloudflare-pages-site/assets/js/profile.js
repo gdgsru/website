@@ -139,18 +139,55 @@
     };
   }
   async function fetchProfile(handle) {
-    // Cache-bust: profiles are rebuilt in batches and must show up immediately.
-    const res = await fetch(`/data/profiles/${encodeURIComponent(handle)}.json?v=${Date.now()}`, { cache: "no-store" });
-    if (res.status === 404) return null;
-    if (!res.ok) throw new Error("HTTP " + res.status);
-    let data;
+    let p = null;
     try {
-      data = await res.json();
-    } catch (_) {
-      return null; // some hosts answer unknown files with an HTML page; treat as "not found"
+      const res = await fetch(`/data/profiles/${encodeURIComponent(handle)}.json?v=${Date.now()}`, { cache: "no-store" });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && typeof data === "object") p = sanitizeProfile(data, handle);
+      }
+    } catch (_) {}
+
+    // Check Supabase site_settings overrides (enables instant profile updates from Mission Control)
+    const url = window.SUPABASE_URL, key = window.SUPABASE_ANON_KEY;
+    if (url && key) {
+      try {
+        const headers = { "Content-Type": "application/json", apikey: key };
+        if (/^eyJ/.test(key)) headers.Authorization = "Bearer " + key;
+        const res = await fetch(String(url).replace(/\/$/, "") + "/rest/v1/public_site_settings?key=eq.member_profile_overrides&select=value", {
+          headers
+        });
+        if (res.ok) {
+          const arr = await res.json();
+          if (Array.isArray(arr) && arr[0] && arr[0].value && arr[0].value[handle]) {
+            const ov = arr[0].value[handle];
+            if (ov.hidden) return { handle, hidden: true };
+            if (!p) {
+              p = sanitizeProfile({
+                name: ov.name || handle,
+                roll_display: ov.roll || "",
+                department: ov.dept || ov.department || "",
+                cohort: ov.cohort || "",
+                theme: ov.theme || "google-blue",
+                avatar: ov.avatar || "avatar-01",
+                bio: ov.bio || "",
+                skills: Array.isArray(ov.skills) ? ov.skills : []
+              }, handle);
+            } else {
+              if (ov.name) p.name = ov.name;
+              if (ov.dept || ov.department) p.department = ov.dept || ov.department;
+              if (ov.cohort) p.cohort = ov.cohort;
+              if (ov.theme && SKINS.includes(ov.theme)) p.theme = ov.theme;
+              if (ov.avatar) p.avatar = avatarId(ov.avatar);
+              if (ov.bio) p.bio = ov.bio;
+              if (Array.isArray(ov.skills)) p.skills = ov.skills;
+            }
+          }
+        }
+      } catch (_) {}
     }
-    if (!data || typeof data !== "object") return null;
-    return sanitizeProfile(data, handle);
+
+    return p;
   }
 
   /* ------------------------------------------------------------------ data: live stats (Supabase, anon, read-only) */
@@ -180,7 +217,18 @@
           cred: String((w && w.credential_id) || "").toUpperCase(),
         }))
         .filter((w) => CRED_RE.test(w.cred));
-      return { points, activities: Math.max(0, Number(d.activities) || 0), workshops };
+      return {
+        points,
+        activities: Math.max(0, Number(d.activities) || 0),
+        workshops,
+        name: d.name,
+        department: d.department,
+        cohort: d.cohort,
+        avatar: d.avatar,
+        theme: d.theme,
+        bio: d.bio,
+        skills: d.skills
+      };
     } catch (_) {
       return null;
     } finally {
@@ -317,6 +365,17 @@
 
   function renderStats(stats) {
     state.stats = stats;
+    if (stats && state.profile) {
+      let updated = false;
+      if (stats.name && stats.name !== state.profile.name) { state.profile.name = stats.name; updated = true; }
+      if (stats.department && stats.department !== state.profile.department) { state.profile.department = stats.department; updated = true; }
+      if (stats.cohort && stats.cohort !== state.profile.cohort) { state.profile.cohort = stats.cohort; updated = true; }
+      if (stats.avatar && avatarId(stats.avatar) !== state.profile.avatar) { state.profile.avatar = avatarId(stats.avatar); updated = true; }
+      if (stats.theme && SKINS.includes(stats.theme) && stats.theme !== state.profile.theme) { state.profile.theme = stats.theme; updated = true; }
+      if (stats.bio && stats.bio !== state.profile.bio) { state.profile.bio = stats.bio; updated = true; }
+      if (Array.isArray(stats.skills) && stats.skills.length) { state.profile.skills = stats.skills; updated = true; }
+      if (updated) renderProfile(state.profile);
+    }
     const live = $("#pf-live");
     const timeline = $("#pf-timeline");
     const empty = $("#pf-timeline-empty");
@@ -667,6 +726,21 @@
       console.error(err);
       text("#pf-status", "Couldn’t load this pass. Check your connection and refresh.");
       return;
+    }
+    if (!profile) {
+      // Check if live stats provide the member profile
+      const liveStats = await statsPromise;
+      if (liveStats && (liveStats.name || liveStats.department || liveStats.avatar)) {
+        profile = sanitizeProfile({
+          name: liveStats.name,
+          department: liveStats.department,
+          cohort: liveStats.cohort,
+          avatar: liveStats.avatar,
+          theme: liveStats.theme,
+          bio: liveStats.bio,
+          skills: liveStats.skills
+        }, handle);
+      }
     }
     if (!profile) {
       text("#pf-nf-handle", "@" + handle);
