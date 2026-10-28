@@ -23,13 +23,16 @@
   let found = readFound();
 
   function toast(text) {
+    if (navigator.vibrate) {
+      try { navigator.vibrate([35, 45, 35]); } catch (_) {}
+    }
     const el = document.createElement('div');
     el.className = 'egg-toast';
     el.setAttribute('role', 'status');
     el.textContent = text;
     document.body.appendChild(el);
-    setTimeout(() => el.classList.add('out'), 2200);
-    setTimeout(() => el.remove(), 2700);
+    setTimeout(() => el.classList.add('out'), 2400);
+    setTimeout(() => el.remove(), 2900);
   }
 
   function find(id) {

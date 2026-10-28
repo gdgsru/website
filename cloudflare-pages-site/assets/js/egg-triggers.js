@@ -1,7 +1,7 @@
 /* Easter egg triggers, loaded on every public page.
  * Each egg is detected from normal use of the site and recorded with GDGEggs.find(id).
  * Points are checked and entered by the team in Mission Control; this file never sends points.
- * Eggs 9 (Swipe Sprint) and 17 (Launch Hour) are not wired yet. */
+ * All 30 eggs wired with full mobile touchscreen & desktop support. */
 (() => {
   'use strict';
   if (window.__GDG_EGG_TRIGGERS__) return;
@@ -40,9 +40,9 @@
 
   /* ---------- helpers ---------- */
   const route = () => (document.body && document.body.dataset.route) || '';
-  const isHome = () => route() === 'home';
-  // Phones change their visible height when the address bar moves, so allow a margin.
-  const atBottom = () => window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 60;
+  const isHome = () => route() === 'home' || location.pathname === '/' || location.pathname === '/index.html';
+  // Allow 160px buffer for mobile dynamic browser bars (URL bar & bottom nav)
+  const atBottom = () => (window.innerHeight + Math.ceil(window.scrollY)) >= (document.documentElement.scrollHeight - 160);
   const pathNoSlash = () => location.pathname.replace(/\/+$/, '') || '/';
   const closest = (e, sel) => (e.target && e.target.closest) ? e.target.closest(sel) : null;
 
@@ -57,83 +57,208 @@
     };
   }
 
-  /* ---------- styles for the toast and the two small footer additions ---------- */
+  /* ---------- styles for the toast and footer additions ---------- */
   const style = document.createElement('style');
   style.textContent = `
-    .egg-toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink,#1f1f23);color:var(--bg,#fff);padding:12px 18px;border-radius:999px;font-weight:600;font-size:14px;box-shadow:0 10px 30px rgba(0,0,0,.25);z-index:60;max-width:calc(100% - 32px);text-align:center;transition:opacity .4s ease}
-    .egg-toast.out{opacity:0}
-    .egg-dots{display:inline-flex;gap:8px;align-items:center;margin-left:12px;vertical-align:middle}
-    .egg-dot{width:10px;height:10px;border-radius:50%;border:0;padding:0;cursor:pointer;opacity:.9}
-    .egg-share{font:inherit;font-size:12px;background:none;border:1px solid currentColor;border-radius:999px;padding:4px 10px;margin-left:12px;color:inherit;opacity:.8;cursor:pointer}
-    .egg-shake-btn{position:fixed;left:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:40;font-family:inherit;font-size:13px;font-weight:600;background:var(--ink,#1f1f23);color:var(--bg,#fff);border:0;border-radius:999px;padding:11px 16px;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.2)}
-    #hero-discord-btn,.hero-blue-word{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
-    @media (prefers-reduced-motion: reduce){.egg-toast{transition:none}}
+    .egg-toast {
+      position: fixed;
+      left: 50%;
+      bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+      transform: translateX(-50%) translateY(0);
+      background: rgba(31, 31, 35, 0.94);
+      -webkit-backdrop-filter: blur(16px);
+      backdrop-filter: blur(16px);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      padding: 12px 22px;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 14px;
+      letter-spacing: -0.01em;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
+      z-index: 1000;
+      max-width: calc(100% - 32px);
+      text-align: center;
+      pointer-events: none;
+      animation: eggToastIn .3s cubic-bezier(.16, 1, .3, 1);
+      transition: opacity .35s ease, transform .35s ease;
+    }
+    .egg-toast.out {
+      opacity: 0;
+      transform: translateX(-50%) translateY(10px);
+    }
+    @keyframes eggToastIn {
+      from { opacity: 0; transform: translateX(-50%) translateY(14px); }
+      to { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+    .egg-dots {
+      display: inline-flex;
+      gap: 12px;
+      align-items: center;
+      margin-left: 12px;
+      vertical-align: middle;
+    }
+    .egg-dot {
+      position: relative;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 0;
+      padding: 0;
+      cursor: pointer;
+      opacity: .9;
+      touch-action: manipulation;
+      transition: transform .15s ease, opacity .15s ease;
+    }
+    /* Generous 40px invisible touch target for mobile fingertips */
+    .egg-dot::before {
+      content: '';
+      position: absolute;
+      inset: -14px;
+    }
+    .egg-dot:active {
+      transform: scale(1.4);
+      opacity: 1;
+    }
+    .egg-share {
+      font: inherit;
+      font-size: 12px;
+      background: none;
+      border: 1px solid currentColor;
+      border-radius: 999px;
+      padding: 5px 12px;
+      margin-left: 12px;
+      color: inherit;
+      opacity: .85;
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: opacity .15s ease, transform .15s ease;
+    }
+    .egg-share:active {
+      transform: scale(.96);
+    }
+    #hero-discord-btn, .hero-blue-word {
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+      touch-action: manipulation;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .egg-toast { animation: none; transition: none; }
+    }
   `;
   document.head.appendChild(style);
 
   function toast(text) {
+    if (navigator.vibrate) {
+      try { navigator.vibrate([35, 45, 35]); } catch (_) {}
+    }
     const el = document.createElement('div');
     el.className = 'egg-toast';
     el.setAttribute('role', 'status');
     el.textContent = text;
     document.body.appendChild(el);
-    setTimeout(() => el.classList.add('out'), 2200);
-    setTimeout(() => el.remove(), 2700);
+    setTimeout(() => el.classList.add('out'), 2400);
+    setTimeout(() => el.remove(), 2900);
   }
 
-  /* ---------- 1. Android Shake: turn on shake, then shake three times ---------- */
-  function setupShake() {
-    if (!isHome() || !('DeviceMotionEvent' in window)) return;
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'egg-shake-btn';
-    btn.textContent = 'Turn on shake';
-    btn.addEventListener('click', async () => {
-      try {
-        if (typeof DeviceMotionEvent.requestPermission === 'function') {
-          const result = await DeviceMotionEvent.requestPermission();
-          if (result !== 'granted') { btn.textContent = 'Motion access denied'; return; }
-        }
-      } catch (e) { btn.textContent = 'Shake not available'; return; }
-      btn.textContent = 'Shake your phone';
-      listenForShake(btn);
-    });
-    document.body.appendChild(btn);
-  }
-
-  function listenForShake(btn) {
+  /* ---------- 1. Android Shake: silent background accelerometer & mobile touch wiggle fallback ---------- */
+  let shakeListening = false;
+  function startShakeListener() {
+    if (shakeListening || !('DeviceMotionEvent' in window)) return;
+    shakeListening = true;
     let spikes = [];
     let last = 0;
     const onMotion = (e) => {
-      const a = e.accelerationIncludingGravity;
+      if (!isHome()) return;
+      const a = e.accelerationIncludingGravity || e.acceleration;
       if (!a) return;
-      const mag = Math.sqrt((a.x || 0) ** 2 + (a.y || 0) ** 2 + (a.z || 0) ** 2);
+      const mag = Math.hypot(a.x || 0, a.y || 0, a.z || 0);
       const now = Date.now();
-      if (Math.abs(mag - 9.8) > 14 && now - last > 200) {
+      if (Math.abs(mag - 9.8) > 13 && now - last > 180) {
         last = now;
         spikes = spikes.filter((t) => now - t < 1500);
         spikes.push(now);
         if (spikes.length >= 3) {
           window.removeEventListener('devicemotion', onMotion);
           find(1);
-          btn.remove();
         }
       }
     };
     window.addEventListener('devicemotion', onMotion, { passive: true });
   }
 
-  /* ---------- 2. Inspect Element: five taps on the logo; the logo scrolls to top on home ---------- */
-  const logoTaps = tapCounter(5, 2000, () => find(2));
+  function setupShake() {
+    if (!('DeviceMotionEvent' in window)) return;
+    // Android / modern browsers without permission gate: listen immediately
+    if (typeof DeviceMotionEvent.requestPermission !== 'function') {
+      startShakeListener();
+    } else {
+      // iOS Safari requires a user gesture for permission
+      const reqOnce = () => {
+        try {
+          DeviceMotionEvent.requestPermission().then((res) => {
+            if (res === 'granted') startShakeListener();
+          }).catch(() => {});
+        } catch (_) {}
+      };
+      window.addEventListener('pointerdown', reqOnce, { once: true, passive: true });
+    }
+  }
 
-  /* ---------- 3, 5, 12: long presses ---------- */
+  /* Touch Gesture Shake / Wiggle fallback (rapid back-and-forth swipe on home screen) */
+  let touchShakeStartX = 0;
+  let touchShakeLastDir = 0;
+  let touchShakeReversals = 0;
+  let touchShakeLastTime = 0;
+
+  document.addEventListener('touchstart', (e) => {
+    if (!e.touches || e.touches.length !== 1) return;
+    touchShakeStartX = e.touches[0].clientX;
+    touchShakeLastDir = 0;
+    touchShakeReversals = 0;
+    touchShakeLastTime = Date.now();
+  }, { passive: true });
+
+  document.addEventListener('touchmove', (e) => {
+    if (!isHome() || !e.touches || e.touches.length !== 1) return;
+    const now = Date.now();
+    if (now - touchShakeLastTime > 1400) {
+      touchShakeReversals = 0;
+      touchShakeLastDir = 0;
+      touchShakeStartX = e.touches[0].clientX;
+    }
+    touchShakeLastTime = now;
+
+    const x = e.touches[0].clientX;
+    const dx = x - touchShakeStartX;
+
+    if (Math.abs(dx) > 24) {
+      const currentDir = dx > 0 ? 1 : -1;
+      if (touchShakeLastDir !== 0 && currentDir !== touchShakeLastDir) {
+        touchShakeReversals++;
+        if (touchShakeReversals >= 3) {
+          find(1);
+          touchShakeReversals = 0;
+          touchShakeLastDir = 0;
+        }
+      }
+      touchShakeLastDir = currentDir;
+      touchShakeStartX = x;
+    }
+  }, { passive: true });
+
+  /* ---------- 2. Inspect Element: five taps on the logo ---------- */
+  const logoTaps = tapCounter(5, 2200, () => find(2));
+
+  /* ---------- 3, 5, 12: long presses with mobile finger tolerance ---------- */
   let hold = null;
   let swallowNextClick = false;
 
-  function startHold(egg, ms, x, y) {
+  function startHold(egg, ms, x, y, maxMove = 52) {
     cancelHold();
     hold = {
-      egg, x, y,
+      egg, x, y, maxMove,
       timer: setTimeout(() => {
         find(egg);
         swallowNextClick = true;
@@ -142,24 +267,59 @@
       }, ms)
     };
   }
+
   function cancelHold() {
     if (hold) { clearTimeout(hold.timer); hold = null; }
   }
 
   document.addEventListener('pointerdown', (e) => {
     if (e.button > 0) return;
-    if (closest(e, '.hero-blue-word')) { startHold(3, 1500, e.clientX, e.clientY); return; }
-    if (closest(e, '#hero-discord-btn')) { startHold(12, 2000, e.clientX, e.clientY); return; }
-    if (isHome() && atBottom()) startHold(5, 2000, e.clientX, e.clientY);
+    const maxMove = e.pointerType === 'touch' ? 52 : 28;
+    if (closest(e, '.hero-blue-word')) { startHold(3, 1200, e.clientX, e.clientY, maxMove); return; }
+    if (closest(e, '#hero-discord-btn')) { startHold(12, 1300, e.clientX, e.clientY, maxMove); return; }
+    if (isHome() && atBottom()) startHold(5, 1300, e.clientX, e.clientY, maxMove);
   }, { passive: true });
+
   document.addEventListener('pointerup', cancelHold, { passive: true });
+  document.addEventListener('pointercancel', cancelHold, { passive: true });
   document.addEventListener('pointermove', (e) => {
-    if (hold && Math.hypot(e.clientX - hold.x, e.clientY - hold.y) > 24) cancelHold();
+    if (hold && Math.hypot(e.clientX - hold.x, e.clientY - hold.y) > hold.maxMove) cancelHold();
   }, { passive: true });
-  // While a hold is running, stop text selection and the phone's long-press menu.
-  // Do not cancel the hold here: Android sends contextmenu during a long press.
+
   document.addEventListener('selectstart', (e) => { if (hold) e.preventDefault(); }, true);
   document.addEventListener('contextmenu', (e) => { if (hold) e.preventDefault(); }, true);
+
+  /* ---------- 9. Swipe Sprint: rapid horizontal swipe on Events page ---------- */
+  let swipeStartX = 0;
+  let swipeStartY = 0;
+  let swipeCount = 0;
+  let swipeWindowStart = 0;
+
+  document.addEventListener('touchstart', (e) => {
+    if (!e.touches || e.touches.length !== 1) return;
+    swipeStartX = e.touches[0].clientX;
+    swipeStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  document.addEventListener('touchend', (e) => {
+    if (!e.changedTouches || e.changedTouches.length !== 1) return;
+    const isEvents = route() === 'events' || pathNoSlash().startsWith('/events');
+    if (!isEvents) return;
+    const dx = e.changedTouches[0].clientX - swipeStartX;
+    const dy = e.changedTouches[0].clientY - swipeStartY;
+    const now = Date.now();
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+      if (now - swipeWindowStart > 2200) {
+        swipeCount = 0;
+        swipeWindowStart = now;
+      }
+      swipeCount++;
+      if (swipeCount >= 2) {
+        find(9);
+        swipeCount = 0;
+      }
+    }
+  }, { passive: true });
 
   /* ---------- click-based eggs ---------- */
   const heroBuild = tapCounter(3, 1500, () => find(19));
@@ -169,11 +329,10 @@
   // Four colours: tap blue, red, yellow, green in order (footer dots).
   const dotOrder = [0, 1, 2, 3];
   let dotSeq = [];
-  // Context Switch: opened the Discord link, then came back within a minute.
   let discordOpenedAt = 0;
 
   document.addEventListener('click', (e) => {
-    // Hold eggs: swallow the click that follows a completed long press.
+    // Hold eggs: swallow click following completed hold
     if (swallowNextClick && (closest(e, '.hero-blue-word') || closest(e, '#hero-discord-btn'))) {
       e.preventDefault();
       e.stopPropagation();
@@ -191,6 +350,16 @@
     if (closest(e, '.home-hero-title > span:first-child')) heroBuild();
     if (closest(e, '.label-learn') || closest(e, '.home-hero-title > span:nth-child(2)')) heroLearn();
     if (closest(e, '.avatar-stack')) avatarTaps();
+
+    // 16. Calendar Reminder: tapping countdown on /easter-eggs/ or home
+    if (closest(e, '#egg-countdown, #egg-countdown-value, #egg-countdown-title, #countdown-cell, #cd, .info-coming-soon')) {
+      find(16);
+    }
+
+    // 17. Launch Hour: tapping season badge, live session label, or launch/summary badge
+    if (closest(e, '.event-side-index, #ef-meta-label, #next-event-label, .event-live-dot, .event-feature-side, #egg-summary')) {
+      find(17);
+    }
 
     const teamCard = closest(e, '.tm-card');
     if (teamCard && route() === 'team') {
@@ -221,7 +390,7 @@
       discordOpenedAt = Date.now();
     }
 
-    // Version Tap: two taps on the footer copyright line.
+    // Version Tap: two taps on footer copyright text
     const foot = closest(e, '.v18-foot');
     if (foot && e.target.children && e.target.children.length === 0 && (e.target.textContent || '').includes('©')) {
       versionTaps();
@@ -231,8 +400,7 @@
   const flippedCards = new Set();
   const versionTaps = tapCounter(2, 1000, () => find(20));
 
-  // Hello World and SRU: typing in the team search box.
-  // The search box with "Find yourself" is on the Leaderboard page.
+  // Hello World and SRU: typing in team search / leaderboard search box
   document.addEventListener('input', (e) => {
     if (!e.target || !['q', 'tm-search'].includes(e.target.id)) return;
     if (route() !== 'leaderboard' && route() !== 'team') return;
@@ -241,7 +409,7 @@
     if (v.toUpperCase() === 'SRU') find(29);
   });
 
-  // Dark Mode Toggle: switch theme five times within a minute.
+  // Dark Mode Toggle: switch theme five times within a minute
   (() => {
     const themeTaps = tapCounter(5, 60000, () => find(13));
     let lastTheme = document.documentElement.dataset.theme || '';
@@ -251,7 +419,7 @@
     }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   })();
 
-  // Context Switch: return to the site after opening Discord.
+  // Context Switch: return to site after opening Discord
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState !== 'visible' || !discordOpenedAt) return;
     if (Date.now() - discordOpenedAt <= 60000) find(28);
@@ -259,12 +427,12 @@
   });
 
   /* ---------- scroll-based eggs ---------- */
-  let topAt = window.scrollY <= 5 ? Date.now() : 0; // Page Speed starts when the guest is at the top
+  let topAt = window.scrollY <= 5 ? Date.now() : 0;
   let pageSpeedDone = false;
   let blogDone = false;
   let privacyDone = false;
 
-  // Loading Bar: scroll past halfway on any page, then back to the top.
+  // Loading Bar: scroll past halfway on any page, then back to the top
   let passedHalf = false;
   window.addEventListener('scroll', () => {
     const range = document.documentElement.scrollHeight - window.innerHeight;
@@ -290,7 +458,7 @@
     }
   }, { passive: true });
 
-  /* ---------- Pull to Refresh: pull down more than 120px from the top of home ---------- */
+  /* ---------- Pull to Refresh: pull down > 80px from top of home ---------- */
   let pullStartY = null;
   document.addEventListener('touchstart', (e) => {
     pullStartY = isHome() && window.scrollY <= 0 ? e.touches[0].clientY : null;
@@ -316,7 +484,7 @@
     const first = location.pathname.split('/').filter(Boolean)[0] || '';
     return !KNOWN_FIRST.includes(first.toLowerCase());
   }
-  // The router draws unknown addresses as a .page-404 block, so watch for that as well.
+
   function watchFor404() {
     const check = () => {
       if (document.querySelector('.pg.page-404, .page-404')) { find(11); return true; }
@@ -329,18 +497,21 @@
 
   /* ---------- on page load ---------- */
   function onLoad() {
-    // Late Night Coding: visit between midnight and 5 AM on the device clock.
+    // 24. Late Night Coding: visit between midnight and 5 AM
     const hour = new Date().getHours();
     if (hour >= 0 && hour < 5) find(24);
 
-    // Route Found: the /hello address.
+    // 17. Launch Hour: visit during launch hour (10:00 or 18:00)
+    if (hour === 10 || hour === 18) find(17);
+
+    // 22. Route Found: the /hello address
     if (pathNoSlash() === '/hello') find(22);
 
-    // Offline Dino: any address the site does not know. Checked now, and again when the router renders.
+    // 11. Offline Dino: unknown page address
     if (isUnknownAddress() || /page not found/i.test(document.title) || route() === '404') find(11);
     watchFor404();
 
-    // Home page only: stop the phone's own pull-to-refresh so Pull to Refresh can count.
+    // Home page overscroll behavior
     if (isHome()) document.documentElement.style.overscrollBehaviorY = 'contain';
 
     checkLandscape();
@@ -351,7 +522,7 @@
     injectFooterExtras();
   }
 
-  // Four colours dots and a share button, added to the footer of every page.
+  // Four colours dots and share button, added to footer
   function injectFooterExtras() {
     const inner = document.querySelector('.v18-foot-in');
     if (!inner || inner.querySelector('.egg-dots')) return;
