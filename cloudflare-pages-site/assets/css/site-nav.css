@@ -1,208 +1,207 @@
 /* ==========================================================================
    GDG SRU · Signature Floating Frosted Navbar (Visual Identity)
-   Official Google Developer Groups on Campus Navigation Bar System
-   - Pixel-perfect Google brand typography using Google Sans Flex
-   - Floating frosted glass capsule with subtle multi-color ambient top sheen
-   - Dynamic 5-link navigation pill with active color indicators
-   - Fully responsive: spacious on desktop & laptops (1024px-1366px),
-     compact and collision-free on tablet & mobile (< 960px).
+   Official Google Developer Groups on Campus Design System
    ========================================================================== */
 
+/* Design Tokens for Navbar */
 :root {
-  --nav-font: "Google Sans Flex", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --nav-mono: "Google Sans Code", monospace;
+  --gdg-font: "Google Sans Flex", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  --gdg-blue: #4285f4;
+  --gdg-red: #ea4335;
+  --gdg-yellow: #fbbc04;
+  --gdg-green: #34a853;
+  --gdg-btn-blue: #1a73e8;
+  --gdg-btn-blue-hover: #1765cc;
 
   /* Light Theme */
-  --nav-bg: rgba(255, 255, 255, 0.88);
-  --nav-border: rgba(0, 0, 0, 0.08);
-  --nav-shadow: 0 10px 32px -8px rgba(32, 33, 36, 0.09), 0 2px 6px rgba(0, 0, 0, 0.02);
-  --nav-sheen: linear-gradient(90deg, transparent 5%, rgba(66, 133, 244, 0.28) 25%, rgba(234, 67, 53, 0.28) 50%, rgba(251, 188, 4, 0.28) 75%, rgba(52, 168, 83, 0.28) 90%, transparent 95%);
-
-  --nav-pill-bg: rgba(0, 0, 0, 0.035);
-  --nav-pill-border: rgba(0, 0, 0, 0.06);
-  --nav-text-title: #1f1f23;
-  --nav-text-sub: #5f6368;
+  --nav-bar-bg: rgba(255, 255, 255, 0.90);
+  --nav-bar-border: rgba(218, 220, 224, 0.85);
+  --nav-bar-shadow: 0 4px 20px -2px rgba(32, 33, 36, 0.08), 0 1px 3px rgba(32, 33, 36, 0.04);
+  --nav-brand-ink: #202124;
+  --nav-brand-muted: #5f6368;
+  --nav-pill-bg: rgba(241, 243, 244, 0.78);
+  --nav-pill-border: rgba(218, 220, 224, 0.75);
+  --nav-pill-inner-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
   --nav-link-color: #5f6368;
-  --nav-link-hover: #1f1f23;
+  --nav-link-hover-color: #202124;
   --nav-link-hover-bg: rgba(0, 0, 0, 0.05);
-  --nav-active-bg: #ffffff;
-  --nav-active-color: #1f1f23;
-  --nav-active-shadow: 0 2px 8px rgba(0, 0, 0, 0.09);
-
-  --nav-menu-bg: rgba(255, 255, 255, 0.8);
-  --nav-menu-border: rgba(0, 0, 0, 0.08);
-  --nav-menu-text: #1f1f23;
+  --nav-link-active-color: #202124;
+  --nav-link-active-bg: #ffffff;
+  --nav-link-active-shadow: 0 2px 6px rgba(32, 33, 36, 0.1), 0 1px 2px rgba(32, 33, 36, 0.06);
+  --nav-menu-btn-bg: rgba(241, 243, 244, 0.85);
+  --nav-menu-btn-border: rgba(218, 220, 224, 0.8);
+  --nav-menu-btn-color: #202124;
+  --nav-menu-btn-hover-bg: #e8eaed;
+  --nav-menu-btn-hover-border: rgba(189, 193, 198, 0.9);
 }
 
 :root[data-theme="dark"] {
   /* Dark Theme */
-  --nav-bg: rgba(16, 18, 23, 0.85);
-  --nav-border: rgba(255, 255, 255, 0.12);
-  --nav-shadow: 0 14px 40px -10px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  --nav-sheen: linear-gradient(90deg, transparent 5%, rgba(66, 133, 244, 0.45) 25%, rgba(234, 67, 53, 0.45) 50%, rgba(251, 188, 4, 0.45) 75%, rgba(52, 168, 83, 0.45) 90%, transparent 95%);
-
-  --nav-pill-bg: rgba(255, 255, 255, 0.05);
-  --nav-pill-border: rgba(255, 255, 255, 0.09);
-  --nav-text-title: #ffffff;
-  --nav-text-sub: rgba(255, 255, 255, 0.72);
-  --nav-link-color: rgba(255, 255, 255, 0.75);
-  --nav-link-hover: #ffffff;
+  --nav-bar-bg: rgba(26, 27, 30, 0.88);
+  --nav-bar-border: rgba(255, 255, 255, 0.12);
+  --nav-bar-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --nav-brand-ink: #ffffff;
+  --nav-brand-muted: #9aa0a6;
+  --nav-pill-bg: rgba(255, 255, 255, 0.07);
+  --nav-pill-border: rgba(255, 255, 255, 0.1);
+  --nav-pill-inner-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
+  --nav-link-color: #bdc1c6;
+  --nav-link-hover-color: #ffffff;
   --nav-link-hover-bg: rgba(255, 255, 255, 0.09);
-  --nav-active-bg: rgba(255, 255, 255, 0.14);
-  --nav-active-color: #ffffff;
-  --nav-active-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  --nav-link-active-color: #ffffff;
+  --nav-link-active-bg: #303134;
+  --nav-link-active-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+  --nav-menu-btn-bg: rgba(255, 255, 255, 0.08);
+  --nav-menu-btn-border: rgba(255, 255, 255, 0.12);
+  --nav-menu-btn-color: #e8eaed;
+  --nav-menu-btn-hover-bg: rgba(255, 255, 255, 0.14);
+  --nav-menu-btn-hover-border: rgba(255, 255, 255, 0.22);
+}
 
-  --nav-menu-bg: rgba(255, 255, 255, 0.07);
-  --nav-menu-border: rgba(255, 255, 255, 0.13);
-  --nav-menu-text: #ffffff;
+/* Prevent viewport horizontal blowout */
+html, body {
+  overflow-x: clip !important;
 }
 
 /* ==========================================================================
-   Header Floating Capsule
+   Header Container (Sticky Floating Capsule)
    ========================================================================== */
 header#hd,
 header#hd.fl {
   position: sticky !important;
-  top: 14px !important;
-  z-index: 999 !important;
-  width: min(calc(100% - 32px), 1180px) !important;
-  max-width: 1180px !important;
-  margin: 14px auto 0 !important;
-  padding: 6px 10px 6px 14px !important;
-  border-radius: 999px !important;
-  background: var(--nav-bg) !important;
-  border: 1px solid var(--nav-border) !important;
-  box-shadow: var(--nav-shadow) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
-  backdrop-filter: blur(24px) saturate(180%) !important;
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease !important;
-  box-sizing: border-box !important;
+  top: 12px !important;
+  z-index: 100 !important;
+  width: min(calc(100% - 28px), 1180px) !important;
+  max-width: calc(100vw - 28px) !important;
+  margin: 12px auto 0 !important;
+  padding: 6px 8px 6px 14px !important;
+  border-radius: 9999px !important;
+  background: var(--nav-bar-bg) !important;
+  border: 1px solid var(--nav-bar-border) !important;
+  box-shadow: var(--nav-bar-shadow) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(180%) !important;
+  backdrop-filter: blur(18px) saturate(180%) !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
   pointer-events: auto !important;
+  box-sizing: border-box !important;
 }
 
-/* Ambient rainbow sheen along top edge */
-header#hd::before,
-header#hd.fl::before {
+/* Subtle rainbow highlight along top edge */
+header#hd:after {
   content: "" !important;
   position: absolute !important;
+  left: 16% !important;
+  right: 16% !important;
   top: -1px !important;
-  left: 12% !important;
-  right: 12% !important;
   height: 1px !important;
-  background: var(--nav-sheen) !important;
   pointer-events: none !important;
-  border-radius: 999px !important;
+  background: linear-gradient(90deg, transparent, rgba(66, 133, 244, 0.35) 25%, rgba(234, 67, 53, 0.35) 50%, rgba(251, 188, 4, 0.35) 75%, transparent) !important;
 }
 
-/* Hide on downward scroll, elevate when condensed */
-html.nav-hide header#hd {
-  transform: translateY(-130%) !important;
-}
-html.nav-min header#hd {
-  box-shadow: 0 16px 42px -10px rgba(0, 0, 0, 0.45) !important;
-}
-
-/* Inner flex row */
-header#hd .nv,
-header#hd.fl .nv {
+/* Inner Flex Container */
+header#hd .nv {
+  position: relative !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
   width: 100% !important;
-  height: 44px !important;
-  gap: clamp(8px, 1.2vw, 18px) !important;
-  box-sizing: border-box !important;
-  margin: 0 !important;
-  padding: 0 !important;
+  min-height: 44px !important;
+  gap: 12px !important;
   background: transparent !important;
   border: none !important;
+  padding: 0 !important;
   box-shadow: none !important;
+  box-sizing: border-box !important;
 }
 
 /* ==========================================================================
-   Official GDG Brand Logo Lockup
+   Brand & Logo Lockup (.lg)
    ========================================================================== */
-header#hd .lg,
-header#hd.fl .lg {
+header#hd .lg {
   display: inline-flex !important;
   align-items: center !important;
-  gap: 11px !important;
+  gap: 10px !important;
   text-decoration: none !important;
+  color: inherit !important;
   flex: 0 0 auto !important;
+  min-width: 0 !important;
   padding: 0 !important;
-  margin: 0 !important;
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
   cursor: pointer !important;
 }
 
-/* Brackets Icon */
+/* Brackets Icon SVG Container */
 header#hd #lgs,
 header#hd .gdg-header-logo {
-  display: flex !important;
+  display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  width: 40px !important;
-  height: 24px !important;
-  flex: 0 0 40px !important;
+  width: 44px !important;
+  height: 26px !important;
+  flex: 0 0 44px !important;
+  border-radius: 6px !important;
   background: transparent !important;
-  border: none !important;
   box-shadow: none !important;
-  padding: 0 !important;
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
+
 header#hd .lg:hover #lgs {
-  transform: scale(1.08) !important;
+  transform: rotate(-6deg) scale(1.06) !important;
 }
 
 header#hd #lgs svg {
-  width: 40px !important;
-  height: 22px !important;
+  width: 44px !important;
+  height: 24px !important;
+  aspect-ratio: 710/390 !important;
   display: block !important;
 }
 
-/* Official Logo Typography */
-header#hd .lg > span:last-child {
-  display: flex !important;
+/* Brand Text Lockup */
+header#hd .lg-brand-text {
+  display: inline-flex !important;
   flex-direction: column !important;
   justify-content: center !important;
-  gap: 2px !important;
+  gap: 1px !important;
   line-height: 1.15 !important;
-  font-family: var(--nav-font) !important;
-  font-size: 15.5px !important;
-  font-weight: 700 !important;
-  letter-spacing: -0.02em !important;
-  color: var(--nav-text-title) !important;
-  white-space: nowrap !important;
-  background: none !important;
-  -webkit-text-fill-color: initial !important;
 }
 
-header#hd .lg-short {
-  display: none !important;
+header#hd .lg .lg-full {
+  display: inline-block !important;
+  font-family: var(--gdg-font) !important;
+  font-size: 14.5px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em !important;
+  color: var(--nav-brand-ink) !important;
+  white-space: nowrap !important;
 }
-header#hd .lg-full {
-  display: inline !important;
+
+header#hd .lg .lg-short {
+  display: none !important;
+  font-family: var(--gdg-font) !important;
+  font-size: 14.5px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em !important;
+  color: var(--nav-brand-ink) !important;
+  white-space: nowrap !important;
 }
 
 header#hd .lg small {
   display: block !important;
-  font-family: var(--nav-font) !important;
-  font-size: 10.5px !important;
-  font-weight: 600 !important;
-  letter-spacing: 0.08em !important;
+  font-family: var(--gdg-font) !important;
+  font-size: 10px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.05em !important;
   text-transform: uppercase !important;
-  color: var(--nav-text-sub) !important;
+  color: var(--nav-brand-muted) !important;
   white-space: nowrap !important;
-  line-height: 1 !important;
   background: none !important;
   -webkit-text-fill-color: initial !important;
 }
 
-/* Prevent unwanted pseudo-elements */
-header#hd .lg > span:last-child::after,
-header#hd .lg > span:last-child::before {
+/* Strip any pseudo :after replacements from previous rules */
+header#hd .lg > span:last-child:after {
   display: none !important;
 }
 
@@ -210,337 +209,326 @@ header#hd .lg > span:last-child::before {
    Centered Navigation Capsule (.lk)
    ========================================================================== */
 header#hd .lk {
-  display: flex !important;
+  position: absolute !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  display: inline-flex !important;
   align-items: center !important;
-  position: relative !important;
-  gap: 3px !important;
+  gap: 2px !important;
   padding: 3px 4px !important;
-  margin: 0 auto !important;
-  border-radius: 999px !important;
+  border-radius: 9999px !important;
   background: var(--nav-pill-bg) !important;
   border: 1px solid var(--nav-pill-border) !important;
+  box-shadow: var(--nav-pill-inner-shadow) !important;
   box-sizing: border-box !important;
-  flex: 0 1 auto !important;
+  z-index: 2 !important;
 }
 
-/* Gliding lens behind links */
-header#hd .lk .nav-lens {
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  border-radius: 999px !important;
-  background: var(--nav-active-bg) !important;
-  box-shadow: var(--nav-active-shadow) !important;
-  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), width 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease !important;
-  pointer-events: none !important;
-  opacity: 0 !important;
-  z-index: 0 !important;
-}
-header#hd .lk .nav-lens.ready {
-  opacity: 1 !important;
-}
-
-/* Individual Links */
-header#hd .lk a {
+/* Individual Link Styling - ZERO UNDERLINES EVER */
+header#hd .lk a,
+header#hd .lk a:visited,
+header#hd .lk a:hover,
+header#hd .lk a:focus,
+header#hd .lk a:active {
   position: relative !important;
-  z-index: 1 !important;
   height: 34px !important;
-  padding: 0 15px !important;
-  border-radius: 999px !important;
-  font-family: var(--nav-font) !important;
-  font-size: 14px !important;
+  padding: 0 14px !important;
+  border-radius: 9999px !important;
+  font-family: var(--gdg-font) !important;
+  font-size: 13.5px !important;
   font-weight: 500 !important;
+  letter-spacing: -0.01em !important;
   color: var(--nav-link-color) !important;
   text-decoration: none !important;
   white-space: nowrap !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  transition: color 0.18s ease, background 0.18s ease !important;
+  transition: all 0.16s ease !important;
   border: none !important;
   background: transparent !important;
   box-shadow: none !important;
+  outline: none !important;
 }
 
-header#hd .lk a:hover {
-  color: var(--nav-link-hover) !important;
+/* Hover on Link */
+header#hd .lk a:hover:not(.on) {
+  color: var(--nav-link-hover-color) !important;
   background: var(--nav-link-hover-bg) !important;
+  text-decoration: none !important;
+  transform: none !important;
 }
 
 /* Active Link (.on) */
-header#hd .lk a.on {
-  color: var(--nav-active-color) !important;
+header#hd .lk a.on,
+header#hd .lk a.on:hover {
+  color: var(--nav-link-active-color) !important;
   font-weight: 600 !important;
-  background: var(--nav-active-bg) !important;
-  box-shadow: var(--nav-active-shadow) !important;
+  background: var(--nav-link-active-bg) !important;
+  box-shadow: var(--nav-link-active-shadow) !important;
+  text-decoration: none !important;
 }
 
-/* Active color dot */
-header#hd .lk a.on::before {
+/* Active Dot Colors per Link */
+header#hd .lk a:nth-child(1) { --dot-c: var(--gdg-blue); }    /* Home */
+header#hd .lk a:nth-child(2) { --dot-c: var(--gdg-red); }     /* Events */
+header#hd .lk a:nth-child(3) { --dot-c: var(--gdg-yellow); }  /* Team */
+header#hd .lk a:nth-child(4) { --dot-c: var(--gdg-green); }   /* Blog */
+header#hd .lk a:nth-child(5) { --dot-c: var(--gdg-blue); }    /* Members */
+
+/* Active Glowing Indicator Dot */
+header#hd .lk a.on:before {
   content: "" !important;
   display: inline-block !important;
   width: 6px !important;
   height: 6px !important;
-  border-radius: 50% !important;
   margin-right: 7px !important;
-  background: var(--lc, #4285f4) !important;
-}
-header#hd .lk a:nth-of-type(1) { --lc: #4285f4; } /* Home - Blue */
-header#hd .lk a:nth-of-type(2) { --lc: #ea4335; } /* Events - Red */
-header#hd .lk a:nth-of-type(3) { --lc: #fbbc04; } /* Team - Yellow */
-header#hd .lk a:nth-of-type(4) { --lc: #34a853; } /* Blog - Green */
-header#hd .lk a:nth-of-type(5) { --lc: #4285f4; } /* Members - Blue */
-
-/* Right Spacer */
-header#hd .sp2 {
-  flex: 1 1 0 !important;
-  min-width: 0 !important;
+  border-radius: 50% !important;
+  background: var(--dot-c, var(--gdg-blue)) !important;
+  box-shadow: 0 0 5px var(--dot-c, var(--gdg-blue)) !important;
+  flex-shrink: 0 !important;
 }
 
 /* ==========================================================================
-   Action Buttons: Join & Menu
+   Right Actions Area (.nav-actions, .btn.rg, .mn)
    ========================================================================== */
+header#hd .nav-actions {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin-left: auto !important;
+  flex: 0 0 auto !important;
+  flex-shrink: 0 !important;
+}
+
+/* Spacer override */
+header#hd .sp2 {
+  display: none !important;
+  flex: 0 0 0 !important;
+  width: 0 !important;
+}
 
 /* Join Button (.btn.rg) */
-header#hd .btn.rg {
+header#hd .btn.rg,
+header#hd .btn.rg:visited {
   height: 38px !important;
   padding: 0 5px 0 16px !important;
-  border-radius: 999px !important;
-  background: #1a73e8 !important;
+  border-radius: 9999px !important;
+  background: var(--gdg-btn-blue) !important;
   color: #ffffff !important;
-  font-family: var(--nav-font) !important;
+  font-family: var(--gdg-font) !important;
   font-size: 13.5px !important;
-  font-weight: 700 !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.01em !important;
   display: inline-flex !important;
   align-items: center !important;
   gap: 8px !important;
   border: none !important;
   text-decoration: none !important;
-  box-shadow: 0 4px 14px rgba(26, 115, 232, 0.4) !important;
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s, background 0.2s !important;
+  box-shadow: 0 2px 8px rgba(26, 115, 232, 0.28) !important;
+  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1) !important;
   flex: 0 0 auto !important;
   margin: 0 !important;
-  cursor: pointer !important;
 }
+
 header#hd .btn.rg:hover {
+  background: var(--gdg-btn-blue-hover) !important;
   transform: translateY(-1px) !important;
-  background: #1765cc !important;
-  box-shadow: 0 6px 20px rgba(26, 115, 232, 0.5) !important;
+  box-shadow: 0 4px 14px rgba(26, 115, 232, 0.4) !important;
 }
+
 header#hd .btn.rg i {
   display: grid !important;
   place-items: center !important;
   width: 28px !important;
   height: 28px !important;
   border-radius: 50% !important;
-  background: conic-gradient(#4285f4, #34a853, #fbbc04, #ea4335, #4285f4) !important;
+  background: conic-gradient(var(--gdg-blue), var(--gdg-green), var(--gdg-yellow), var(--gdg-red), var(--gdg-blue)) !important;
   color: #ffffff !important;
   font-style: normal !important;
-  font-size: 14px !important;
+  font-size: 13px !important;
   line-height: 1 !important;
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1) !important;
 }
+
 header#hd .btn.rg:hover i {
-  transform: translateX(2px) rotate(-12deg) !important;
+  transform: translateX(2px) !important;
 }
 
 /* Menu Button (.mn) */
 header#hd .mn {
   height: 38px !important;
   padding: 0 14px 0 12px !important;
-  border-radius: 999px !important;
-  border: 1px solid var(--nav-menu-border) !important;
-  background: var(--nav-menu-bg) !important;
-  font-family: var(--nav-font) !important;
-  font-size: 13.5px !important;
+  border-radius: 9999px !important;
+  border: 1px solid var(--nav-menu-btn-border) !important;
+  background: var(--nav-menu-btn-bg) !important;
+  font-family: var(--gdg-font) !important;
+  font-size: 13px !important;
   font-weight: 600 !important;
-  color: var(--nav-menu-text) !important;
+  letter-spacing: -0.01em !important;
+  text-transform: none !important;
+  color: var(--nav-menu-btn-color) !important;
   cursor: pointer !important;
   display: inline-flex !important;
   align-items: center !important;
   gap: 8px !important;
-  transition: transform 0.2s, background 0.2s, border-color 0.2s !important;
+  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1) !important;
   flex: 0 0 auto !important;
-  margin: 0 !important;
-}
-header#hd .mn:hover {
-  transform: translateY(-1px) !important;
-  background: var(--nav-link-hover-bg) !important;
 }
 
-/* 4 Google Dots */
+header#hd .mn:hover {
+  transform: translateY(-1px) !important;
+  background: var(--nav-menu-btn-hover-bg) !important;
+  border-color: var(--nav-menu-btn-hover-border) !important;
+}
+
+/* 4 Google Dots inside Menu Button */
 header#hd .mn .dts {
   display: grid !important;
-  grid-template-columns: repeat(2, 5.5px) !important;
+  grid-template-columns: repeat(2, 5px) !important;
   gap: 2.5px !important;
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition: transform 0.35s cubic-bezier(0.2, 0, 0, 1) !important;
 }
+
 header#hd .mn .dts i {
-  width: 5.5px !important;
-  height: 5.5px !important;
+  width: 5px !important;
+  height: 5px !important;
   border-radius: 50% !important;
   display: block !important;
 }
+
+header#hd .mn .dts i:nth-child(1) { background: var(--gdg-blue) !important; }
+header#hd .mn .dts i:nth-child(2) { background: var(--gdg-red) !important; }
+header#hd .mn .dts i:nth-child(3) { background: var(--gdg-yellow) !important; }
+header#hd .mn .dts i:nth-child(4) { background: var(--gdg-green) !important; }
+
 header#hd .mn:hover .dts {
   transform: rotate(90deg) !important;
 }
 
 /* ==========================================================================
-   Responsive Adaptations: Laptops, Tablets, and Mobile
+   Responsive Adaptations (Desktop, Laptop, Tablet, Mobile)
    ========================================================================== */
 
-/* Laptop screens (961px to 1180px) */
-@media (max-width: 1180px) and (min-width: 961px) {
-  header#hd {
-    width: calc(100% - 32px) !important;
-    padding: 6px 8px 6px 12px !important;
+/* Laptop / Narrow Desktop (921px - 1080px): Compact text to avoid collision */
+@media (max-width: 1080px) and (min-width: 921px) {
+  header#hd .lg .lg-full {
+    display: none !important;
   }
-  header#hd .nv {
-    gap: 10px !important;
+  header#hd .lg .lg-short {
+    display: inline-block !important;
   }
   header#hd .lk a {
     padding: 0 11px !important;
-    font-size: 13.5px !important;
-  }
-  header#hd .lg > span:last-child {
-    font-size: 14.5px !important;
+    font-size: 13px !important;
   }
 }
 
-/* Tablet & Mobile Screens (<= 960px): Hide .lk capsule cleanly */
-@media (max-width: 960px) {
-  header#hd .lk,
-  header#hd .lk a,
-  #lk {
+/* Tablet & Mobile (<= 920px): Hide center pill, expand logo and actions */
+@media (max-width: 920px) {
+  header#hd .lk {
     display: none !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
   }
-
   header#hd {
-    width: calc(100% - 24px) !important;
-    margin: 10px auto 0 !important;
-    top: 10px !important;
+    width: min(calc(100% - 20px), 1180px) !important;
+    max-width: calc(100vw - 20px) !important;
     padding: 6px 8px 6px 12px !important;
   }
-
-  header#hd .nv {
-    gap: 10px !important;
+  header#hd .lg .lg-short {
+    display: none !important;
   }
-
-  header#hd .sp2 {
-    flex: 1 1 auto !important;
+  header#hd .lg .lg-full {
+    display: inline-block !important;
   }
 }
 
-/* Mobile Screens (<= 680px): Ensure Logo + Join + Menu all fit beautifully */
-@media (max-width: 680px) {
+/* Small Tablet & Mobile (<= 580px) */
+@media (max-width: 580px) {
   header#hd {
-    width: calc(100% - 16px) !important;
-    margin: 8px auto 0 !important;
     top: 8px !important;
-    padding: 5px 8px 5px 10px !important;
+    margin: 8px auto 0 !important;
+    width: calc(100% - 16px) !important;
+    max-width: calc(100vw - 16px) !important;
+    padding: 5px 6px 5px 10px !important;
   }
-
   header#hd .nv {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    width: 100% !important;
-    gap: 6px !important;
+    gap: 8px !important;
   }
-
-  header#hd .sp2 {
-    display: none !important;
-    width: 0 !important;
-    flex: 0 0 0 !important;
-    margin: 0 !important;
-  }
-
   header#hd .lg {
     gap: 8px !important;
     flex: 0 1 auto !important;
     min-width: 0 !important;
-    overflow: hidden !important;
   }
-
   header#hd #lgs,
   header#hd .gdg-header-logo {
+    width: 36px !important;
+    height: 20px !important;
+    flex: 0 0 36px !important;
+  }
+  header#hd #lgs svg {
+    width: 36px !important;
+    height: 20px !important;
+  }
+  header#hd .lg .lg-full {
+    display: none !important;
+  }
+  header#hd .lg .lg-short {
+    display: inline-block !important;
+    font-size: 13.5px !important;
+  }
+  header#hd .lg small {
+    display: none !important;
+  }
+  header#hd .nav-actions {
+    gap: 6px !important;
+    flex: 0 0 auto !important;
+  }
+  header#hd .btn.rg {
+    height: 35px !important;
+    padding: 0 4px 0 11px !important;
+    font-size: 12.5px !important;
+    gap: 6px !important;
+  }
+  header#hd .btn.rg i {
+    width: 25px !important;
+    height: 25px !important;
+    font-size: 12px !important;
+  }
+  header#hd .mn {
+    height: 35px !important;
+    padding: 0 10px 0 8px !important;
+    font-size: 12.5px !important;
+    gap: 6px !important;
+  }
+}
+
+/* Ultra-compact Phone (<= 360px) */
+@media (max-width: 360px) {
+  header#hd {
+    padding: 4px 5px 4px 8px !important;
+    width: calc(100% - 12px) !important;
+  }
+  header#hd .lg {
+    gap: 6px !important;
+  }
+  header#hd #lgs {
     width: 30px !important;
-    height: 19px !important;
+    height: 18px !important;
     flex: 0 0 30px !important;
   }
   header#hd #lgs svg {
     width: 30px !important;
     height: 17px !important;
   }
-
-  /* Show short name on mobile so everything fits */
-  header#hd .lg-full {
-    display: none !important;
-  }
-  header#hd .lg-short {
-    display: inline !important;
-    font-size: 13px !important;
-    font-weight: 700 !important;
-    white-space: nowrap !important;
-  }
-
-  header#hd .lg > span:last-child {
-    font-size: 13px !important;
-    min-width: 0 !important;
-    overflow: hidden !important;
-  }
-  header#hd .lg small {
-    font-size: 8.5px !important;
-    letter-spacing: 0.04em !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    white-space: nowrap !important;
-  }
-
-  /* Compact Action Buttons on Mobile */
-  header#hd .btn.rg {
-    height: 33px !important;
-    padding: 0 3px 0 10px !important;
-    font-size: 11.5px !important;
-    gap: 5px !important;
-    flex: 0 0 auto !important;
-  }
-  header#hd .btn.rg i {
-    width: 23px !important;
-    height: 23px !important;
-    font-size: 11px !important;
-  }
-
-  header#hd .mn {
-    height: 33px !important;
-    padding: 0 9px 0 7px !important;
-    font-size: 11.5px !important;
-    gap: 5px !important;
-    flex: 0 0 auto !important;
-  }
-  header#hd .mn .dts {
-    grid-template-columns: repeat(2, 4.5px) !important;
-    gap: 2px !important;
-  }
-  header#hd .mn .dts i {
-    width: 4.5px !important;
-    height: 4.5px !important;
-  }
-}
-
-/* Ultra-Compact Mobile (< 360px) */
-@media (max-width: 360px) {
-  header#hd .lg small {
-    display: none !important;
+  header#hd .lg .lg-short {
+    font-size: 12.5px !important;
   }
   header#hd .btn.rg {
     padding: 0 3px 0 8px !important;
-    font-size: 11px !important;
+    font-size: 12px !important;
   }
   header#hd .mn {
     padding: 0 8px 0 6px !important;
-    font-size: 11px !important;
+    font-size: 12px !important;
   }
 }
