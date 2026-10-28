@@ -15,6 +15,7 @@ alter table public.member_profiles
   add column if not exists social_links jsonb default '{}'::jsonb;
 
 -- Update get_member_stats to include editable profile fields if present in DB
+drop function if exists public.get_member_stats(text);
 create or replace function public.get_member_stats(p_handle text)
 returns jsonb
 language sql
@@ -78,6 +79,7 @@ revoke all on function public.get_member_stats(text) from public;
 grant execute on function public.get_member_stats(text) to anon, authenticated;
 
 -- Admin: update or upsert a member's profile
+drop function if exists public.admin_update_member_profile(text, text, text, text, text, text, text, text[], text, text, boolean);
 create or replace function public.admin_update_member_profile(
   p_handle text,
   p_name text default null,
@@ -157,6 +159,7 @@ revoke all on function public.admin_update_member_profile(text, text, text, text
 grant execute on function public.admin_update_member_profile(text, text, text, text, text, text, text, text[], text, text, boolean) to authenticated;
 
 -- Also update admin_member_overview to return the edited fields
+drop function if exists public.admin_member_overview();
 create or replace function public.admin_member_overview()
 returns table (
   handle     text,
