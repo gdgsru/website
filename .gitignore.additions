@@ -1,0 +1,3 @@
+# Member pass pipeline: never commit the raw sheet export or the private Supabase seed.
+verified_responses.csv
+build/

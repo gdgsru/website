@@ -31,8 +31,49 @@
   let inputEl = null;
   let listEl = null;
   let filtered = [...COMMANDS];
+
+  // ---- Member directory search (static /data/profiles_index.json, no database round-trips) ----
+  const MEMBER_ICON = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+  let memberIndex = null;
+  let memberIndexPromise = null;
+  const escHtml = (v) => String(v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  function loadMemberIndex() {
+    if (!memberIndexPromise) {
+      memberIndexPromise = fetch('/data/profiles_index.json', { cache: 'no-cache' })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((j) => {
+          memberIndex = j && Array.isArray(j.profiles) ? j.profiles : [];
+          return memberIndex;
+        })
+        .catch(() => { memberIndex = []; return memberIndex; });
+    }
+    return memberIndexPromise;
+  }
+
+  function memberMatches(q) {
+    if (!memberIndex || q.length < 2) return [];
+    const out = [];
+    for (const m of memberIndex) {
+      if (!m || typeof m.u !== 'string' || !/^[a-z0-9_-]{2,32}$/.test(m.u)) continue;
+      const hay = `${m.n || ''} ${m.u} ${m.d || ''} ${m.c || ''}`.toLowerCase();
+      if (!hay.includes(q)) continue;
+      out.push({
+        id: 'member-' + m.u,
+        category: 'Members',
+        icon: MEMBER_ICON,
+        title: escHtml(m.n || m.u), // titles are inserted with innerHTML below, so escape names
+        desc: escHtml('@' + m.u + (m.d ? ' · ' + m.d : '')),
+        keywords: '',
+        url: '/u/' + encodeURIComponent(m.u),
+      });
+      if (out.length >= 6) break;
+    }
+    return out;
+  }
   let selectedIndex = 0;
   let isOpen = false;
+  let lastActiveElement = null; // was assigned but never declared: threw a ReferenceError in strict mode, so Ctrl+K never opened
 
   function ensureStyles() {
     if (document.getElementById('gdg-cp-styles')) return;
@@ -207,7 +248,7 @@
         filtered = COMMANDS.filter((cmd) => {
           const hay = `${cmd.title} ${cmd.desc} ${cmd.keywords} ${cmd.category}`.toLowerCase();
           return hay.includes(q);
-        });
+        }).concat(memberMatches(q));
       }
       selectedIndex = 0;
       renderList();
@@ -332,6 +373,10 @@
     renderList();
     updateActive();
     requestAnimationFrame(() => inputEl.focus());
+    // Warm the member index; if the person already started typing, re-run the search once it lands.
+    loadMemberIndex().then(() => {
+      if (isOpen && inputEl && inputEl.value.trim()) inputEl.dispatchEvent(new Event('input'));
+    });
   }
 
   function closePalette() {

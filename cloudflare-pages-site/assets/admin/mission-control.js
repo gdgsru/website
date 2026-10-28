@@ -421,7 +421,8 @@
     ]],
     ['Certificates & passes', [
       ['certificates', 'Certificates', 'award'],
-      ['badges', 'Member passes', 'idcard']
+      ['badges', 'Member passes', 'idcard'],
+      ['member-profiles', 'Member profiles', 'users']
     ]],
     ['Website content', [
       ['announcement', 'Announcement bar', 'spark'],
@@ -449,7 +450,8 @@
     announcement: 'mc-extra.js',
     settings: 'mc-extra.js',
     audit: 'mc-extra.js',
-    'easter-eggs': 'mc-easter.js'
+    'easter-eggs': 'mc-easter.js',
+    'member-profiles': 'mc-profiles.js'
   };
 
   function renderShell(main) {

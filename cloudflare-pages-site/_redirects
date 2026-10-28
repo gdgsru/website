@@ -18,8 +18,12 @@
 /mission-control /admin/ 301
 /mission-control.html /admin/ 301
 /portal /admin/ 301
+/u /profile 302
 
 # A single segment after these paths is a detail identifier; the bare directory
 # path continues to serve its HTML entry point above.
 /events/:slug /event?slug=:slug 200
 /verify/:code /verify/?code=:code 200
+
+# Public member pass: /u/alex serves profile.html (the page reads the handle from the URL).
+/u/:username /profile?u=:username 200

@@ -1,0 +1,325 @@
+/* GDG SRU · Member profile & digital pass.
+   Self-contained: does not load the site-wide page-*.css bundles, so nothing here is affected by their
+   global card/button overrides. Every class is prefixed pf-. */
+
+:root {
+  --google-blue: #4285f4;
+  --google-red: #ea4335;
+  --google-yellow: #fbbc04;
+  --google-green: #34a853;
+
+  --pf-bg: #0e0f11;
+  --pf-surface: #16171a;
+  --pf-surface-2: #1d1f23;
+  --pf-ink: #ecebe8;
+  --pf-mut: #a0a1a7;
+  --pf-line: rgba(255, 255, 255, 0.12);
+  --pf-accent: #8ab4f8;
+  --pf-focus: #8ab4f8;
+  --pf-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.8);
+  --pf-font: "Google Sans Flex", "Outfit", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --pf-mono: "Google Sans Code", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+:root[data-theme="light"] {
+  --pf-bg: #f6f5f1;
+  --pf-surface: #ffffff;
+  --pf-surface-2: #efede7;
+  --pf-ink: #17181b;
+  --pf-mut: #5c5f66;
+  --pf-line: rgba(20, 22, 28, 0.13);
+  --pf-accent: #1a73e8;
+  --pf-focus: #1a73e8;
+  --pf-shadow: 0 30px 60px -34px rgba(24, 40, 90, 0.4);
+  color-scheme: light;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; scroll-padding-top: 80px; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--pf-bg);
+  color: var(--pf-ink);
+  font: 400 16px/1.55 var(--pf-font);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+body::before { /* the site's dot grid */
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(color-mix(in srgb, var(--pf-ink) 8%, transparent) 1px, transparent 1.2px) 0 0 / 24px 24px;
+}
+h1, h2, h3, p, dl, dd, ol, ul { margin: 0; padding: 0; }
+ol, ul { list-style: none; }
+a { color: inherit; }
+img, svg { max-width: 100%; }
+code { font-family: var(--pf-mono); font-size: 0.9em; padding: 1px 6px; border-radius: 6px; background: var(--pf-surface-2); }
+:focus-visible { outline: 3px solid var(--pf-focus); outline-offset: 3px; border-radius: 8px; }
+[hidden] { display: none !important; }
+
+.pf-skip {
+  position: absolute; left: 12px; top: -60px; z-index: 100;
+  background: var(--pf-ink); color: var(--pf-bg); padding: 10px 16px; border-radius: 10px; text-decoration: none; font-weight: 700;
+}
+.pf-skip:focus { top: 12px; }
+
+/* ---------- header ---------- */
+.pf-top {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: max(10px, env(safe-area-inset-top)) clamp(16px, 4vw, 48px) 10px;
+  background: color-mix(in srgb, var(--pf-bg) 88%, transparent);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--pf-line);
+}
+.pf-brand { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; font-weight: 700; letter-spacing: -0.03em; }
+.pf-brand small { display: block; font: 500 10px/1.2 var(--pf-mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--pf-mut); margin-top: 2px; }
+.pf-top-actions { display: flex; gap: 8px; align-items: center; }
+kbd { font: 500 11px var(--pf-mono); padding: 2px 6px; border: 1px solid var(--pf-line); border-radius: 6px; background: var(--pf-surface); }
+
+/* ---------- buttons ---------- */
+.pf-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 44px; padding: 0 18px; border-radius: 12px; cursor: pointer;
+  font: 700 14px/1 var(--pf-font); text-decoration: none;
+  color: var(--pf-bg); background: var(--pf-ink); border: 1px solid var(--pf-ink);
+  transition: transform 0.18s ease, background-color 0.2s ease, border-color 0.2s ease, opacity 0.2s;
+}
+.pf-btn:hover { transform: translateY(-2px); }
+.pf-btn:active { transform: translateY(0); }
+.pf-btn[disabled] { opacity: 0.55; cursor: progress; transform: none; }
+.pf-btn-ghost { background: transparent; color: var(--pf-ink); border-color: var(--pf-line); }
+.pf-btn-ghost:hover { border-color: var(--pf-ink); }
+.pf-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+
+/* ---------- layout ---------- */
+.pf-main { width: min(1120px, 100%); margin: 0 auto; padding: clamp(20px, 4vw, 48px) clamp(16px, 4vw, 40px) 64px; outline: 0; }
+.pf-status { color: var(--pf-mut); padding: 40px 0; text-align: center; }
+.pf-status.is-hidden { display: none; }
+.pf-notice { max-width: 560px; margin: clamp(30px, 8vh, 90px) auto; text-align: center; }
+.pf-notice h1 { font-size: clamp(30px, 5vw, 46px); letter-spacing: -0.05em; line-height: 1.05; margin-bottom: 14px; }
+.pf-notice p { color: var(--pf-mut); }
+.pf-notice .pf-row { justify-content: center; }
+.pf-hero { display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: clamp(28px, 6vw, 80px); align-items: center; }
+.pf-hide-sm { }
+.pf-muted { color: var(--pf-mut); font-size: 14px; }
+
+/* ---------- the pass ---------- */
+.pf-stage { display: grid; place-items: center; perspective: 1100px; padding: 8px; }
+
+.pf-card {
+  /* Skin variables, overridden per data-skin below */
+  --c1: #4285f4; --c2: #1a4fb8; --c-ink: #ffffff; --c-soft: rgba(255, 255, 255, 0.78);
+  --c-chip: rgba(255, 255, 255, 0.18); --c-line: rgba(255, 255, 255, 0.28); --c-accent: #fbbc04;
+  --rx: 0deg; --ry: 0deg; --mx: 50%; --my: 20%;
+
+  position: relative; isolation: isolate; overflow: hidden;
+  width: min(100%, 340px);
+  aspect-ratio: 54 / 86; /* CR80 badge proportions, so print/lanyard output is true to size */
+  container-type: inline-size;
+  border-radius: 22px; /* not cqw: an element's own cqw resolves against its ancestor container, not itself */
+  color: var(--c-ink);
+  background: linear-gradient(160deg, var(--c1), var(--c2));
+  box-shadow: var(--pf-shadow), inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+  transform: rotateX(var(--rx)) rotateY(var(--ry));
+  transform-style: preserve-3d;
+  transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+  will-change: transform;
+  touch-action: pan-y;
+  user-select: none; -webkit-user-select: none;
+}
+.pf-card.is-tilting { transition: transform 0.06s linear; }
+
+.pf-card[data-skin="google-red"]    { --c1: #ea4335; --c2: #a8231a; }
+.pf-card[data-skin="google-yellow"] { --c1: #fbbc04; --c2: #e08f00; --c-ink: #1f1f23; --c-soft: rgba(31, 31, 35, 0.74); --c-chip: rgba(31, 31, 35, 0.12); --c-line: rgba(31, 31, 35, 0.25); --c-accent: #1a73e8; }
+.pf-card[data-skin="google-green"]  { --c1: #34a853; --c2: #0f6b2e; --c-accent: #fdd663; }
+.pf-card[data-skin="terminal-dark"] {
+  --c1: #0c110e; --c2: #050806; --c-ink: #b6ffcb; --c-soft: rgba(182, 255, 203, 0.7); --c-chip: rgba(182, 255, 203, 0.1);
+  --c-line: rgba(182, 255, 203, 0.28); --c-accent: #7cfc9a;
+  font-family: var(--pf-mono);
+}
+.pf-card[data-skin="terminal-dark"]::after { /* scanlines */
+  content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(0, 255, 120, 0.05) 0 1px, transparent 1px 3px);
+}
+
+.pf-card-inner { position: relative; z-index: 2; height: 100%; padding: 7cqw 7.5cqw 6cqw; display: flex; flex-direction: column; }
+.pf-slot { position: absolute; left: 50%; top: 3.2cqw; width: 17cqw; height: 3cqw; margin-left: -8.5cqw; border-radius: 99px; background: rgba(0, 0, 0, 0.32); box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.45); }
+.pf-card-head { display: flex; align-items: center; gap: 2.6cqw; margin-top: 4.5cqw; }
+.pf-card-head svg { width: 11cqw; height: auto; flex: none; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25)); }
+.pf-card-org { font-size: 3.1cqw; line-height: 1.15; font-weight: 700; letter-spacing: 0; word-spacing: 0.18em; color: var(--c-soft); }
+.pf-card-kind { margin-left: auto; font: 700 2.4cqw/1 var(--pf-mono); letter-spacing: 0.16em; padding: 1.4cqw 2.2cqw; border-radius: 99px; background: var(--c-chip); border: 1px solid var(--c-line); }
+
+.pf-avatar-wrap { position: relative; width: 35cqw; height: 35cqw; margin: 5.5cqw auto 4cqw; }
+.pf-avatar { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; background: var(--c-chip); border: 0.9cqw solid rgba(255, 255, 255, 0.9); box-shadow: 0 2cqw 5cqw rgba(0, 0, 0, 0.35); display: block; }
+.pf-check { position: absolute; right: -1cqw; bottom: 1cqw; width: 9.5cqw; height: 9.5cqw; padding: 2cqw; border-radius: 50%; background: #34a853; color: #fff; border: 0.9cqw solid #fff; box-shadow: 0 1cqw 2.5cqw rgba(0, 0, 0, 0.3); }
+.pf-card[data-skin="google-green"] .pf-check { background: #1a73e8; }
+
+.pf-card-name { text-align: center; font-size: 7cqw; line-height: 1.08; font-weight: 800; letter-spacing: -0.04em; overflow-wrap: anywhere; text-wrap: balance; }
+.pf-card-handle { text-align: center; margin-top: 1.4cqw; font: 500 3.5cqw/1.2 var(--pf-mono); color: var(--c-soft); overflow-wrap: anywhere; }
+
+.pf-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 3cqw 4cqw; margin-top: 5.5cqw; padding-top: 4.5cqw; border-top: 1px dashed var(--c-line); }
+.pf-fields .pf-wide { grid-column: 1 / -1; }
+.pf-fields dt { font: 600 2.3cqw/1 var(--pf-mono); letter-spacing: 0.16em; text-transform: uppercase; color: var(--c-soft); }
+.pf-fields dd { margin-top: 1.1cqw; font-size: 3.6cqw; font-weight: 700; line-height: 1.2; overflow-wrap: anywhere; }
+
+/* Decorative, derived from the handle. Fills the space above the footer and reads as a badge barcode. */
+.pf-barcode { margin-top: auto; height: 6.5cqw; color: var(--c-ink); opacity: 0.5; }
+.pf-barcode svg { width: 100%; height: 100%; display: block; }
+.pf-card-foot { margin-top: 4cqw; display: flex; align-items: center; justify-content: space-between; gap: 2cqw; }
+.pf-status-tag { display: inline-flex; align-items: center; gap: 1.6cqw; font: 700 2.5cqw/1 var(--pf-mono); letter-spacing: 0.12em; text-transform: uppercase; padding: 1.8cqw 2.8cqw; border-radius: 99px; background: var(--c-chip); border: 1px solid var(--c-line); }
+.pf-status-tag i { width: 2cqw; height: 2cqw; border-radius: 50%; background: var(--c-accent); box-shadow: 0 0 0 0.8cqw color-mix(in srgb, var(--c-accent) 30%, transparent); }
+.pf-level-pill { font: 700 2.5cqw/1 var(--pf-mono); letter-spacing: 0.1em; text-transform: uppercase; padding: 1.8cqw 2.8cqw; border-radius: 99px; background: var(--c-ink); color: var(--c1); }
+.pf-card[data-skin="google-yellow"] .pf-level-pill { color: #fbbc04; }
+.pf-card-url { margin-top: 3cqw; text-align: center; font: 500 2.5cqw/1 var(--pf-mono); letter-spacing: 0.04em; color: var(--c-soft); overflow-wrap: anywhere; }
+
+.pf-sheen { position: absolute; inset: 0; z-index: 4; pointer-events: none; border-radius: inherit; opacity: 0; transition: opacity 0.3s;
+  background: radial-gradient(circle at var(--mx) var(--my), rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0) 55%); }
+.pf-card.is-tilting .pf-sheen { opacity: 1; }
+
+/* Holographic foil: only for the top tier (Vanguard). */
+.pf-foil { display: none; position: absolute; inset: 0; z-index: 5; pointer-events: none; border-radius: inherit; }
+.pf-card[data-foil="on"] .pf-foil {
+  display: block;
+  background:
+    linear-gradient(115deg, transparent 18%, rgba(255, 255, 255, 0.5) 32%, rgba(255, 150, 230, 0.38) 40%, rgba(110, 220, 255, 0.42) 48%, rgba(255, 245, 140, 0.4) 56%, rgba(255, 255, 255, 0.45) 64%, transparent 78%);
+  background-size: 260% 260%;
+  mix-blend-mode: overlay;
+  animation: pf-foil 5.5s ease-in-out infinite;
+}
+.pf-card[data-foil="on"]::before { /* rainbow edge */
+  content: ""; position: absolute; inset: 0; z-index: 6; border-radius: inherit; padding: 0.8cqw; pointer-events: none;
+  background: conic-gradient(from var(--foil-angle, 0deg), #4285f4, #ea4335, #fbbc04, #34a853, #4285f4);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  opacity: 0.85;
+}
+@keyframes pf-foil { 0% { background-position: 0% 0%; } 50% { background-position: 100% 100%; } 100% { background-position: 0% 0%; } }
+
+/* While exporting a PNG we freeze motion so the capture is deterministic. */
+.pf-card.pf-exporting { transform: none !important; transition: none !important; animation: none !important; box-shadow: none !important; }
+.pf-card.pf-exporting .pf-foil { animation: none; background-position: 40% 40%; }
+.pf-card.pf-exporting .pf-sheen { display: none; }
+
+/* ---------- details column ---------- */
+.pf-eyebrow { font: 700 12px/1 var(--pf-mono); letter-spacing: 0.16em; text-transform: uppercase; color: var(--pf-accent); display: inline-flex; align-items: center; gap: 8px; }
+.pf-eyebrow::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--google-green); box-shadow: 0 0 0 4px color-mix(in srgb, var(--google-green) 22%, transparent); }
+.pf-name { margin: 14px 0 6px; font-size: clamp(36px, 6vw, 68px); line-height: 0.98; letter-spacing: -0.055em; font-weight: 800; overflow-wrap: anywhere; text-wrap: balance; }
+.pf-meta { color: var(--pf-mut); font-size: 17px; }
+.pf-bio { margin-top: 18px; max-width: 56ch; font-size: 17px; line-height: 1.6; overflow-wrap: anywhere; }
+.pf-links { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 8px; }
+.pf-links a { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px; border-radius: 99px; text-decoration: none; font-weight: 600; font-size: 14px; border: 1px solid var(--pf-line); background: var(--pf-surface); transition: border-color 0.2s, transform 0.18s; }
+.pf-links a:hover { border-color: var(--pf-accent); transform: translateY(-2px); }
+.pf-actions { margin-top: 26px; display: flex; flex-wrap: wrap; gap: 10px; }
+
+/* ---------- sections ---------- */
+.pf-section { margin-top: clamp(44px, 7vw, 84px); }
+.pf-section-head { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 6px 18px; padding-bottom: 14px; margin-bottom: 20px; border-bottom: 1px solid var(--pf-line); }
+.pf-section-head h2 { font-size: clamp(24px, 3.4vw, 34px); letter-spacing: -0.045em; line-height: 1.1; }
+.pf-live { display: inline-flex; align-items: center; gap: 8px; font: 500 12px/1 var(--pf-mono); color: var(--pf-mut); }
+.pf-live i { width: 8px; height: 8px; border-radius: 50%; background: var(--pf-mut); }
+.pf-live[data-state="live"] i { background: var(--google-green); box-shadow: 0 0 0 4px color-mix(in srgb, var(--google-green) 22%, transparent); }
+.pf-live[data-state="off"] i { background: var(--google-yellow); }
+
+.pf-stats { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 16px; }
+.pf-level-card, .pf-counters > div, .pf-timeline li { background: var(--pf-surface); border: 1px solid var(--pf-line); border-radius: 20px; }
+.pf-level-card { padding: clamp(20px, 3vw, 30px); }
+.pf-level-label { font-size: clamp(22px, 3vw, 30px); font-weight: 800; letter-spacing: -0.04em; }
+.pf-bar { height: 12px; margin: 16px 0 10px; border-radius: 99px; background: var(--pf-surface-2); overflow: hidden; }
+.pf-bar span { display: block; height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, var(--google-blue), var(--google-green), var(--google-yellow), var(--google-red)); transition: width 0.9s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.pf-level-next { color: var(--pf-mut); font-size: 14px; }
+.pf-levels { margin-top: 20px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.pf-levels li { padding: 12px 10px; border-radius: 14px; border: 1px dashed var(--pf-line); text-align: center; color: var(--pf-mut); font-size: 12px; line-height: 1.25; }
+.pf-levels li b { display: block; margin-top: 6px; font-size: 13px; color: inherit; }
+.pf-levels li svg { width: 22px; height: 22px; }
+.pf-levels li.is-unlocked { border-style: solid; border-color: color-mix(in srgb, var(--lv, var(--pf-accent)) 55%, transparent); color: var(--pf-ink); background: color-mix(in srgb, var(--lv, var(--pf-accent)) 10%, transparent); }
+.pf-levels li.is-current { box-shadow: 0 0 0 2px var(--lv, var(--pf-accent)); }
+.pf-counters { display: grid; gap: 12px; }
+.pf-counters > div { padding: 18px 22px; }
+.pf-counters dt { font: 600 11px/1 var(--pf-mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--pf-mut); }
+.pf-counters dd { margin-top: 8px; font-size: clamp(34px, 5vw, 48px); font-weight: 800; letter-spacing: -0.05em; line-height: 1; font-variant-numeric: tabular-nums; }
+
+.pf-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.pf-chips li { padding: 8px 14px; border-radius: 99px; background: var(--pf-surface); border: 1px solid var(--pf-line); font-weight: 600; font-size: 14px; overflow-wrap: anywhere; }
+.pf-chips li:nth-child(4n+1) { border-color: color-mix(in srgb, var(--google-blue) 55%, var(--pf-line)); }
+.pf-chips li:nth-child(4n+2) { border-color: color-mix(in srgb, var(--google-red) 55%, var(--pf-line)); }
+.pf-chips li:nth-child(4n+3) { border-color: color-mix(in srgb, var(--google-yellow) 65%, var(--pf-line)); }
+.pf-chips li:nth-child(4n)   { border-color: color-mix(in srgb, var(--google-green) 55%, var(--pf-line)); }
+
+.pf-timeline { position: relative; display: grid; gap: 12px; padding-left: 22px; }
+.pf-timeline::before { content: ""; position: absolute; left: 5px; top: 8px; bottom: 8px; width: 2px; background: var(--pf-line); border-radius: 2px; }
+.pf-timeline li { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 16px; align-items: center; padding: 16px 20px; }
+.pf-timeline li::before { content: ""; position: absolute; left: -22px; top: 50%; width: 12px; height: 12px; margin-top: -6px; border-radius: 50%; background: var(--dot, var(--google-blue)); border: 3px solid var(--pf-bg); }
+.pf-timeline li:nth-child(4n+2) { --dot: var(--google-red); }
+.pf-timeline li:nth-child(4n+3) { --dot: var(--google-yellow); }
+.pf-timeline li:nth-child(4n)   { --dot: var(--google-green); }
+.pf-timeline time { font: 600 11px/1 var(--pf-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--pf-mut); }
+.pf-timeline h3 { margin-top: 6px; font-size: 18px; letter-spacing: -0.03em; line-height: 1.2; overflow-wrap: anywhere; }
+.pf-timeline .pf-cred { margin-top: 4px; font: 500 12px/1.2 var(--pf-mono); color: var(--pf-mut); overflow-wrap: anywhere; }
+.pf-timeline a { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px; border-radius: 99px; border: 1px solid var(--pf-line); text-decoration: none; font-weight: 700; font-size: 13px; white-space: nowrap; }
+.pf-timeline a:hover { border-color: var(--google-green); color: var(--google-green); }
+.pf-empty-line { padding: 22px; border: 1px dashed var(--pf-line); border-radius: 18px; color: var(--pf-mut); text-align: center; }
+
+.pf-foot { max-width: 1120px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 40px) 48px; color: var(--pf-mut); font-size: 13px; }
+.pf-foot a { text-decoration-color: var(--pf-line); text-underline-offset: 3px; }
+
+/* ---------- QR modal + toast ---------- */
+.pf-modal { padding: 0; border: 1px solid var(--pf-line); border-radius: 24px; background: var(--pf-surface); color: var(--pf-ink); width: min(92vw, 380px); box-shadow: var(--pf-shadow); }
+.pf-modal::backdrop { background: rgba(0, 0, 0, 0.62); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+.pf-modal-body { padding: 26px; text-align: center; }
+.pf-modal h2 { font-size: 24px; letter-spacing: -0.04em; margin-bottom: 16px; }
+.pf-qr { width: min(100%, 260px); margin: 0 auto; border-radius: 16px; overflow: hidden; border: 1px solid var(--pf-line); background: #fff; line-height: 0; }
+.pf-qr svg { width: 100%; height: auto; display: block; }
+.pf-qr-url { margin-top: 12px; font: 500 12px/1.4 var(--pf-mono); color: var(--pf-mut); overflow-wrap: anywhere; }
+.pf-modal .pf-row { justify-content: center; }
+.pf-toast { position: fixed; left: 50%; bottom: max(20px, env(safe-area-inset-bottom)); z-index: 60; transform: translate(-50%, 160%); transition: transform 0.4s cubic-bezier(0.2, 0.9, 0.25, 1.05), opacity 0.3s, visibility 0s 0.4s;
+  opacity: 0; visibility: hidden; /* fully hidden when idle (also in full-page screenshots) */
+  max-width: min(92vw, 460px); padding: 12px 18px; border-radius: 99px; background: var(--pf-ink); color: var(--pf-bg); font-weight: 600; font-size: 14px; box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.6); }
+.pf-toast.is-on { transform: translate(-50%, 0); opacity: 1; visibility: visible; transition-delay: 0s; }
+
+/* ---------- responsive ---------- */
+@media (max-width: 880px) {
+  .pf-hero { grid-template-columns: minmax(0, 1fr); }
+  .pf-stage { order: -1; }
+  .pf-side { text-align: left; }
+  .pf-stats { grid-template-columns: minmax(0, 1fr); }
+  .pf-counters { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  .pf-hide-sm { display: none; }
+  .pf-counters { grid-template-columns: minmax(0, 1fr); }
+  .pf-levels { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pf-timeline li { grid-template-columns: minmax(0, 1fr); }
+  .pf-actions .pf-btn { flex: 1 1 calc(50% - 10px); padding: 0 12px; }
+  .pf-actions .pf-btn:first-child { flex-basis: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  .pf-card { transform: none !important; }
+}
+@media (hover: none) { .pf-btn:hover, .pf-links a:hover { transform: none; } }
+
+/* ---------- print: lanyard badge ----------
+   Ctrl+P (or the "Print / lanyard" button) prints ONLY the card at true CR80 size (54 x 86 mm),
+   centred on an A4 sheet with a dashed cut guide. Cut it out and slip it into a lanyard holder. */
+@page { size: A4; margin: 0; }
+@media print {
+  html, body { background: #fff !important; }
+  body::before { display: none; }
+  .pf-skip, .pf-top, .pf-foot, .pf-status, .pf-notice, .pf-side, .pf-section, .pf-toast, .pf-modal { display: none !important; }
+  .pf-main { width: auto; padding: 0; margin: 0; }
+  .pf-hero { display: block; }
+  .pf-stage { display: block; perspective: none; padding: 0; }
+  .pf-card {
+    position: absolute; left: 50%; top: 22mm; margin-left: -27mm;
+    width: 54mm; height: 86mm; aspect-ratio: auto; border-radius: 3.4mm;
+    transform: none !important; transition: none !important; animation: none !important;
+    box-shadow: none; outline: 0.25mm dashed #888; outline-offset: 1.2mm;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  .pf-card .pf-foil, .pf-card .pf-sheen { animation: none !important; }
+}

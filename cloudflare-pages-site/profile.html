@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Member Pass · GDG SRU</title>
+    <meta name="description" content="Verified member pass for GDG on Campus SR University." />
+    <!-- Member pages are personal. Keep them out of search engines; people can still share the link. -->
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="theme-color" content="#0e0f11" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="canonical" id="pf-canonical" href="https://gdgsru.pages.dev/" />
+    <script>(function(){var t="dark";try{t=localStorage.getItem("gdg-theme")==="light"?"light":"dark"}catch(e){}document.documentElement.dataset.theme=t})()</script>
+    <link rel="preload" as="font" type="font/woff2" href="/assets/fonts/google-sans-flex-latin-700-normal.woff2" crossorigin />
+    <link rel="stylesheet" href="/assets/fonts/fonts.css" />
+    <link rel="stylesheet" href="/assets/css/profile.css" />
+    <script src="/config.js" defer></script>
+    <script src="/assets/js/qr-svg.js" defer></script>
+    <script src="/assets/js/command-palette.js" defer></script>
+    <script src="/assets/js/profile.js" defer></script>
+  </head>
+  <body data-route="profile">
+    <a class="pf-skip" href="#pf-main">Skip to content</a>
+
+    <header class="pf-top">
+      <a class="pf-brand" href="/" aria-label="GDG on Campus SR University home">
+        <svg viewBox="185 345 710 390" width="34" height="19" aria-hidden="true" focusable="false">
+          <line x1="279" y1="540" x2="432" y2="430" stroke="#ea4335" stroke-width="128" stroke-linecap="round" />
+          <line x1="279" y1="540" x2="432" y2="650" stroke="#4285f4" stroke-width="128" stroke-linecap="round" />
+          <line x1="648" y1="650" x2="801" y2="540" stroke="#fbbc04" stroke-width="128" stroke-linecap="round" />
+          <line x1="648" y1="430" x2="801" y2="540" stroke="#34a853" stroke-width="128" stroke-linecap="round" />
+        </svg>
+        <span>GDG on Campus <small>SR University</small></span>
+      </a>
+      <nav class="pf-top-actions" aria-label="Profile navigation">
+        <button type="button" class="pf-btn pf-btn-ghost" id="pf-search" aria-label="Search members (Ctrl+K)">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+          <span class="pf-hide-sm">Search members</span>
+          <kbd class="pf-hide-sm">Ctrl K</kbd>
+        </button>
+        <button type="button" class="pf-btn pf-btn-ghost" id="pf-theme" aria-label="Toggle light and dark theme">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" /></svg>
+        </button>
+      </nav>
+    </header>
+
+    <main id="pf-main" class="pf-main" tabindex="-1">
+      <p id="pf-status" class="pf-status" role="status" aria-live="polite">Loading member pass…</p>
+
+      <section id="pf-empty" class="pf-notice" hidden aria-labelledby="pf-empty-title">
+        <h1 id="pf-empty-title">Find a member</h1>
+        <p>Open a member pass from the search palette, or go straight to <code>/u/their-handle</code>.</p>
+        <button type="button" class="pf-btn" data-open-palette>Search members</button>
+      </section>
+
+      <section id="pf-notfound" class="pf-notice" hidden aria-labelledby="pf-nf-title">
+        <h1 id="pf-nf-title">No member pass here</h1>
+        <p>We couldn’t find <strong id="pf-nf-handle"></strong>. Handles are case-insensitive and use letters, numbers, <code>-</code> and <code>_</code>. Passes appear after your attendance is verified and the team publishes the next batch.</p>
+        <div class="pf-row">
+          <button type="button" class="pf-btn" data-open-palette>Search members</button>
+          <a class="pf-btn pf-btn-ghost" href="/join/">How to get a pass</a>
+        </div>
+      </section>
+
+      <section id="pf-withdrawn" class="pf-notice" hidden aria-labelledby="pf-wd-title">
+        <h1 id="pf-wd-title">This pass isn’t available</h1>
+        <p>The member or the GDG SRU team has withdrawn this pass. If you think this is a mistake, contact the core team.</p>
+        <div class="pf-row"><a class="pf-btn pf-btn-ghost" href="/">Back to the site</a></div>
+      </section>
+
+      <div id="pf-content" hidden>
+        <section class="pf-hero" aria-label="Member pass">
+          <div class="pf-stage" id="pf-stage">
+            <article class="pf-card" id="pf-card" data-skin="google-blue" data-foil="off" aria-label="Member pass card">
+              <div class="pf-card-inner">
+                <div class="pf-slot" aria-hidden="true"></div>
+                <div class="pf-card-head">
+                  <svg viewBox="185 345 710 390" width="40" height="22" aria-hidden="true" focusable="false">
+                    <line x1="279" y1="540" x2="432" y2="430" stroke="#ea4335" stroke-width="128" stroke-linecap="round" />
+                    <line x1="279" y1="540" x2="432" y2="650" stroke="#4285f4" stroke-width="128" stroke-linecap="round" />
+                    <line x1="648" y1="650" x2="801" y2="540" stroke="#fbbc04" stroke-width="128" stroke-linecap="round" />
+                    <line x1="648" y1="430" x2="801" y2="540" stroke="#34a853" stroke-width="128" stroke-linecap="round" />
+                  </svg>
+                  <span class="pf-card-org">GDG on Campus<br />SR University</span>
+                  <span class="pf-card-kind">MEMBER PASS</span>
+                </div>
+
+                <div class="pf-avatar-wrap">
+                  <img id="pf-avatar" class="pf-avatar" alt="" width="200" height="200" decoding="async" src="/assets/avatars/avatar-01.svg" />
+                  <span class="pf-check" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
+                  </span>
+                </div>
+
+                <p class="pf-card-name" id="pf-card-name"></p>
+                <p class="pf-card-handle" id="pf-card-handle"></p>
+
+                <dl class="pf-fields">
+                  <div><dt>Roll no.</dt><dd id="pf-f-roll">—</dd></div>
+                  <div><dt>Cohort</dt><dd id="pf-f-cohort">—</dd></div>
+                  <div class="pf-wide"><dt>Department</dt><dd id="pf-f-dept">—</dd></div>
+                  <div class="pf-wide"><dt>Member since</dt><dd id="pf-f-since">—</dd></div>
+                </dl>
+
+                <div class="pf-barcode" id="pf-barcode" aria-hidden="true"></div>
+
+                <div class="pf-card-foot">
+                  <span class="pf-status-tag"><i aria-hidden="true"></i>Verified member</span>
+                  <span class="pf-level-pill" id="pf-card-level" hidden></span>
+                </div>
+                <p class="pf-card-url" id="pf-card-url"></p>
+              </div>
+              <div class="pf-sheen" aria-hidden="true"></div>
+              <div class="pf-foil" aria-hidden="true"></div>
+            </article>
+          </div>
+
+          <div class="pf-side">
+            <p class="pf-eyebrow">Verified member</p>
+            <h1 id="pf-name" class="pf-name"></h1>
+            <p id="pf-meta" class="pf-meta"></p>
+            <p id="pf-bio" class="pf-bio" hidden></p>
+            <ul id="pf-links" class="pf-links" hidden></ul>
+
+            <div class="pf-actions" role="toolbar" aria-label="Pass actions">
+              <button type="button" class="pf-btn" id="pf-png">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14" /></svg>
+                Download card (PNG)
+              </button>
+              <button type="button" class="pf-btn" id="pf-pdf">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5M9 13h6M9 17h6" /></svg>
+                ATS resume (PDF)
+              </button>
+              <button type="button" class="pf-btn pf-btn-ghost" id="pf-qr">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h3v3h-3zM20 14v3M14 20h3M20 20h1" /></svg>
+                Check-in QR
+              </button>
+              <button type="button" class="pf-btn pf-btn-ghost" id="pf-print">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-2M7 14h10v7H7z" /></svg>
+                Print / lanyard
+              </button>
+              <button type="button" class="pf-btn pf-btn-ghost" id="pf-copy">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 0 0 11 18.7l1-1" /></svg>
+                Copy link
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section class="pf-section" aria-labelledby="pf-level-title">
+          <div class="pf-section-head">
+            <h2 id="pf-level-title">Community level</h2>
+            <p id="pf-live" class="pf-live" role="status"><i aria-hidden="true"></i><span>Checking live stats…</span></p>
+          </div>
+          <div class="pf-stats">
+            <div class="pf-level-card" id="pf-level-card">
+              <p class="pf-level-label" id="pf-level-label">Level 1 · Explorer</p>
+              <div class="pf-bar" role="progressbar" aria-label="Progress to next level" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="pf-bar"><span id="pf-bar-fill"></span></div>
+              <p class="pf-level-next" id="pf-level-next">Unlocked when your attendance was verified.</p>
+              <ol class="pf-levels" id="pf-levels" aria-label="All levels"></ol>
+            </div>
+            <dl class="pf-counters">
+              <div><dt>Community XP</dt><dd id="pf-xp">—</dd></div>
+              <div><dt>Workshops attended</dt><dd id="pf-workshops">—</dd></div>
+              <div><dt>Verified activities</dt><dd id="pf-activities">—</dd></div>
+            </dl>
+          </div>
+        </section>
+
+        <section class="pf-section" id="pf-skills-section" aria-labelledby="pf-skills-title" hidden>
+          <div class="pf-section-head"><h2 id="pf-skills-title">Skills &amp; interests</h2></div>
+          <ul class="pf-chips" id="pf-skills"></ul>
+        </section>
+
+        <section class="pf-section" aria-labelledby="pf-certs-title">
+          <div class="pf-section-head">
+            <h2 id="pf-certs-title">Verified workshops</h2>
+            <p class="pf-muted">Each badge links to the official credential record.</p>
+          </div>
+          <ol class="pf-timeline" id="pf-timeline"></ol>
+          <p class="pf-empty-line" id="pf-timeline-empty" hidden></p>
+        </section>
+      </div>
+    </main>
+
+    <footer class="pf-foot">
+      <p>Passes are issued by the GDG on Campus SRU core team after attendance is verified. <a href="/privacy/">Privacy</a> · <a href="/verify/">Verify a certificate</a></p>
+    </footer>
+
+    <dialog id="pf-qr-modal" class="pf-modal" aria-labelledby="pf-qr-title">
+      <form method="dialog" class="pf-modal-body">
+        <h2 id="pf-qr-title">Check-in QR</h2>
+        <div class="pf-qr" id="pf-qr-box" role="img" aria-label="QR code that opens this member pass"></div>
+        <p class="pf-qr-url" id="pf-qr-url"></p>
+        <div class="pf-row">
+          <button type="button" class="pf-btn pf-btn-ghost" id="pf-qr-copy">Copy link</button>
+          <button class="pf-btn" value="close" autofocus>Close</button>
+        </div>
+      </form>
+    </dialog>
+
+    <div id="pf-toast" class="pf-toast" role="status" aria-live="polite"></div>
+  </body>
+</html>
