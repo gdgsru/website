@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "handle": "demo",
+  "name": "Alex Demo",
+  "roll_display": "2403•••01",
+  "department": "Computer Science & Engineering",
+  "cohort": "2024",
+  "status": "verified",
+  "theme": "google-blue",
+  "avatar": "avatar-07",
+  "github": "gdgsru",
+  "portfolio": "https://gdgsru.pages.dev/",
+  "linkedin": "",
+  "bio": "Passionate about cloud computing and open-source. Core team member at GDG on Campus SR University.",
+  "skills": ["Python", "Cloud", "React", "Open Source", "Machine Learning", "Git"],
+  "joined": "2024-09-01"
+}

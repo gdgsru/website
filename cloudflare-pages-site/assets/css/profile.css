@@ -204,6 +204,7 @@ kbd { font: 500 11px var(--pf-mono); padding: 2px 6px; border: 1px solid var(--p
 .pf-card.pf-exporting { transform: none !important; transition: none !important; animation: none !important; box-shadow: none !important; }
 .pf-card.pf-exporting .pf-foil { animation: none; background-position: 40% 40%; }
 .pf-card.pf-exporting .pf-sheen { display: none; }
+.pf-card.pf-exporting::before { animation: none !important; }
 
 /* ---------- details column ---------- */
 .pf-eyebrow { font: 700 12px/1 var(--pf-mono); letter-spacing: 0.16em; text-transform: uppercase; color: var(--pf-accent); display: inline-flex; align-items: center; gap: 8px; }
@@ -302,6 +303,18 @@ kbd { font: 500 11px var(--pf-mono); padding: 2px 6px; border: 1px solid var(--p
   .pf-card { transform: none !important; }
 }
 @media (hover: none) { .pf-btn:hover, .pf-links a:hover { transform: none; } }
+
+/* Animating a CSS custom property requires @property (Houdini) for browsers that support it.
+   Falls back to static 0deg on browsers without Houdini — the foil still renders, just doesn't spin. */
+@property --foil-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+@keyframes pf-foil-border { to { --foil-angle: 360deg; } }
+.pf-card[data-foil="on"]::before {
+  animation: pf-foil-border 4s linear infinite;
+}
 
 /* ---------- print: lanyard badge ----------
    Ctrl+P (or the "Print / lanyard" button) prints ONLY the card at true CR80 size (54 x 86 mm),
