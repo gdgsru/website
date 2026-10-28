@@ -45,16 +45,51 @@
 
   /* ---------- data ---------- */
   async function load() {
-    const [idxRes, ov, rulesRes] = await Promise.all([
-      fetch('/data/profiles_index.json?v=' + Date.now(), { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
-      sb.rpc('admin_member_overview'),
-      sb.from('point_rules').select('*').eq('enabled', true).order('sort_order').catch(() => ({ data: [] }))
-    ]);
-    if (ov.error) throw ov.error;
+    let idxRes = null;
+    try {
+      const res = await fetch('/data/profiles_index.json?v=' + Date.now(), { cache: 'no-store' });
+      if (res.ok) idxRes = await res.json();
+    } catch (_) {}
+
+    let rulesRes = null;
+    try {
+      rulesRes = await sb.from('point_rules').select('*').eq('enabled', true).order('sort_order');
+    } catch (_) {
+      rulesRes = { data: [] };
+    }
     pointRules = (rulesRes && rulesRes.data) || [];
 
+    let ov = null;
+    try {
+      ov = await sb.rpc('admin_member_overview');
+    } catch (e) {
+      ov = { error: e };
+    }
+
+    if (ov && ov.error) {
+      console.warn('[GDG SRU] admin_member_overview RPC failed:', ov.error);
+      try {
+        const direct = await sb.from('member_passes').select('*');
+        if (direct && !direct.error && direct.data) {
+          ov = {
+            data: direct.data.map((p) => ({
+              handle: p.handle,
+              hidden: p.hidden,
+              points: 0,
+              activities: 0,
+              workshops: 0
+            }))
+          };
+        }
+      } catch (_) {}
+    }
+
     const published = idxRes && Array.isArray(idxRes.profiles) ? idxRes.profiles : [];
-    meta = { generated: (idxRes && idxRes.generated) || '', indexMissing: !idxRes };
+    meta = {
+      generated: (idxRes && idxRes.generated) || '',
+      indexMissing: !idxRes,
+      dbWarning: (ov && ov.error) ? (ov.error.message || 'Database overview RPC not yet installed in Supabase.') : ''
+    };
 
     const map = new Map();
     published.forEach((p) => {
@@ -77,7 +112,7 @@
       });
     });
 
-    (ov.data || []).forEach((d) => {
+    ((ov && ov.data) || []).forEach((d) => {
       const r = map.get(d.handle) || { handle: d.handle, name: '', dept: '', cohort: '', avatar: 'avatar-01', theme: 'google-blue', skills: [], bio: '', published: false };
       Object.assign(r, {
         inDb: true,
@@ -403,6 +438,7 @@
     setWorkspace('Member profiles', `
       <p class="admin-lead" style="margin:0 0 14px">Public member passes at <code>/u/handle</code>. Inspect any member to preview their 3D pass, toggle visibility, or award XP.</p>
       ${meta.indexMissing ? '<p class="mp-note" style="margin:0 0 14px">Couldn’t load <code>/data/profiles_index.json</code>. Run <code>build_profiles.py</code> and push it.</p>' : ''}
+      ${meta.dbWarning ? `<p class="mp-note" style="margin:0 0 14px;background:#fef7e0;color:#b06000;border:1px solid #fde293;">⚠️ ${esc(meta.dbWarning)} — Run <code>supabase/migrations/20261028090000_member_profiles_admin.sql</code> in the Supabase SQL editor to enable live XP overview & pass toggling.</p>` : ''}
       ${summaryHtml()}
       <section class="admin-panel">
         <div class="mp-tools">
