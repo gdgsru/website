@@ -1,7 +1,7 @@
-// Cache-bust all script tags in HTML pages
+// Cache-bust all script and css tags in HTML pages
 const fs = require('fs');
 const path = require('path');
-const VER = '20261028-navbar1';
+const VER = '20261028-navbar2';
 const MESH_VER = '20261025-bento3';
 
 const root = path.join(__dirname, '..', 'cloudflare-pages-site');
@@ -24,6 +24,7 @@ const files = findHtml(root);
 console.log(`Found ${files.length} HTML files`);
 
 const scriptPattern = /src="(\/assets\/js\/[^"?]+?)(\?[^"]*)?"/g;
+const navCssPattern = /href="(\/assets\/css\/site-nav\.css)(\?[^"]*)?"/g;
 
 for (const file of files) {
   let content = fs.readFileSync(file, 'utf-8');
@@ -34,6 +35,12 @@ for (const file of files) {
     const newSrc = `src="${scriptPath}?v=${ver}"`;
     if (match !== newSrc) changed = true;
     return newSrc;
+  });
+
+  content = content.replace(navCssPattern, (match, cssPath) => {
+    const newHref = `href="${cssPath}?v=${VER}"`;
+    if (match !== newHref) changed = true;
+    return newHref;
   });
   
   if (changed) {
