@@ -309,3 +309,20 @@
     display: none !important;
   }
 }
+
+/* Spacious Desktop & Laptop Navbar Fix */
+header#hd:not(#_):not(#__):not(#___) .nv:not(#_) {
+  gap: clamp(8px, 1.4vw, 20px) !important;
+}
+header#hd:not(#_):not(#__):not(#___) .lk:not(#_) {
+  gap: clamp(3px, 0.5vw, 6px) !important;
+  padding: 3px 4px !important;
+  margin: 0 auto !important;
+}
+header#hd:not(#_):not(#__):not(#___) .lk a:not(#_) {
+  padding: 0 clamp(9px, 1vw, 15px) !important;
+  height: 38px !important;
+  font-size: 13.5px !important;
+  font-weight: 500 !important;
+  white-space: nowrap !important;
+}

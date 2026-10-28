@@ -77,14 +77,11 @@
     return `
       <a href="/u/${encodeURIComponent(m.u)}" class="g16-mcard g16-tl-${colorKey}" aria-label="View ${esc(m.n)}'s digital pass">
         <div class="g16-tl-card">
-          <!-- Radar Orbit Lens with Avatar -->
+          <!-- Avatar Lens with Verified Checkmark -->
           <div class="g16-tl-logo" aria-hidden="true">
             <span class="g16-tl-c g16-tl-c1"></span>
-            <span class="g16-tl-c g16-tl-c2"></span>
-            <span class="g16-tl-c g16-tl-c3"></span>
-            <span class="g16-tl-c g16-tl-c4"></span>
-            <div class="g16-tl-c g16-tl-c5">
-              <img src="${avatarSrc}" alt="${esc(m.n)}" loading="lazy" width="56" height="56">
+            <div class="g16-tl-c5">
+              <img src="${avatarSrc}" alt="${esc(m.n)}" loading="lazy" width="66" height="66">
               <span class="g16-mcard-check" title="Verified Member">✓</span>
             </div>
           </div>

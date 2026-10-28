@@ -196,6 +196,11 @@
    Adapted for GDG SRU Member Profiles & Directory
    ===================================================== */
 
+/* ========================================================
+   SIGNATURE GDG MEMBER PASS CARD SYSTEM (.g16-mcard / .g16-tl)
+   Polished Google-accented pass design with clean avatar badge,
+   official Google Sans typography, and responsive hover depth.
+   ======================================================== */
 .g16-tl-b { --a: #4285f4; }
 .g16-tl-r { --a: #ea4335; }
 .g16-tl-y { --a: #fbbc04; }
@@ -227,85 +232,83 @@ a.g16-mcard {
 .g16-mcard .g16-tl-card {
   position: relative !important;
   flex: 1 1 auto !important;
-  min-height: 370px !important;
-  border-radius: 30px !important;
+  min-height: 350px !important;
+  border-radius: 24px !important;
   overflow: hidden !important;
-  padding: 24px !important;
+  padding: 22px !important;
   display: flex !important;
   flex-direction: column !important;
   justify-content: space-between !important;
-  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.45s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.35s !important;
   cursor: pointer !important;
   box-sizing: border-box !important;
 }
 
 /* Light Theme Card */
 :root:not([data-theme="dark"]) .g16-mcard .g16-tl-card {
-  background: radial-gradient(120% 75% at 85% 0, color-mix(in srgb, var(--a) 36%, transparent), transparent 68%), linear-gradient(180deg, #fffefa, color-mix(in srgb, var(--a) 9%, #fffefa)) !important;
-  border: 1px solid color-mix(in srgb, var(--a) 30%, #e4e8ed) !important;
-  box-shadow: 0 30px 44px -30px color-mix(in srgb, var(--a) 85%, #111b2e), inset 0 1px 0 #fff !important;
+  background: radial-gradient(120% 75% at 90% 0, color-mix(in srgb, var(--a) 22%, transparent), transparent 60%), linear-gradient(180deg, #ffffff, color-mix(in srgb, var(--a) 6%, #ffffff)) !important;
+  border: 1.5px solid color-mix(in srgb, var(--a) 25%, #e2e8f0) !important;
+  box-shadow: 0 16px 32px -16px color-mix(in srgb, var(--a) 36%, transparent), 0 2px 8px rgba(0,0,0,0.04) !important;
 }
 :root:not([data-theme="dark"]) .g16-mcard:hover .g16-tl-card,
 :root:not([data-theme="dark"]) .g16-mcard:focus-visible .g16-tl-card {
-  transform: translateY(-8px) !important;
-  box-shadow: 0 44px 56px -28px color-mix(in srgb, var(--a) 85%, #111b2e), inset 0 1px 0 #fff !important;
+  transform: translateY(-6px) !important;
+  border-color: color-mix(in srgb, var(--a) 45%, #e2e8f0) !important;
+  box-shadow: 0 26px 44px -16px color-mix(in srgb, var(--a) 55%, transparent), 0 4px 12px rgba(0,0,0,0.06) !important;
 }
 
 /* Dark Theme Card */
 :root[data-theme="dark"] .g16-mcard .g16-tl-card {
-  background: radial-gradient(120% 75% at 85% 0, color-mix(in srgb, var(--a) 60%, transparent), transparent 68%), linear-gradient(180deg, #151c2b, #0a0f19) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  box-shadow: 0 34px 50px -30px var(--a) !important;
+  background: radial-gradient(120% 75% at 90% 0, color-mix(in srgb, var(--a) 32%, transparent), transparent 60%), linear-gradient(180deg, #151c2b, #0c121e) !important;
+  border: 1.5px solid color-mix(in srgb, var(--a) 25%, rgba(255, 255, 255, 0.1)) !important;
+  box-shadow: 0 18px 36px -16px var(--a) !important;
 }
 :root[data-theme="dark"] .g16-mcard:hover .g16-tl-card,
 :root[data-theme="dark"] .g16-mcard:focus-visible .g16-tl-card {
-  transform: translateY(-8px) !important;
-  box-shadow: 0 46px 60px -28px var(--a) !important;
+  transform: translateY(-6px) !important;
+  border-color: color-mix(in srgb, var(--a) 55%, rgba(255, 255, 255, 0.2)) !important;
+  box-shadow: 0 28px 48px -16px var(--a) !important;
 }
 
-/* Radar Orbit Graphic with Embedded Avatar */
+/* Avatar Badge Container (Top Right) */
 .g16-mcard .g16-tl-logo {
   position: absolute !important;
-  right: 18px !important;
-  top: 18px !important;
-  width: 140px !important;
-  height: 140px !important;
+  right: 20px !important;
+  top: 20px !important;
+  width: 66px !important;
+  height: 66px !important;
   pointer-events: none !important;
-  z-index: 2 !important;
+  z-index: 4 !important;
 }
+/* Subtle rotating dashed orbit ring */
 .g16-mcard .g16-tl-c {
   position: absolute !important;
-  inset: 0 !important;
-  margin: auto !important;
+  inset: -6px !important;
   border-radius: 50% !important;
-  border: 1px solid rgba(255, 255, 255, 0.18) !important;
-  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  border: 1.5px dashed color-mix(in srgb, var(--a) 45%, transparent) !important;
+  animation: g16-spinr 24s linear infinite !important;
 }
-:root:not([data-theme="dark"]) .g16-mcard .g16-tl-c {
-  border-color: color-mix(in srgb, var(--a) 38%, transparent) !important;
-}
-.g16-mcard .g16-tl-c1 { width: 140px !important; height: 140px !important; }
-.g16-mcard .g16-tl-c2 { width: 110px !important; height: 110px !important; border-style: dashed !important; }
-.g16-mcard .g16-tl-c3 { width: 84px !important; height: 84px !important; border-style: dotted !important; }
-:root:not([data-theme="dark"]) .g16-mcard .g16-tl-c3 { border-color: color-mix(in srgb, var(--a) 55%, transparent) !important; }
-.g16-mcard .g16-tl-c4 {
-  width: 68px !important; height: 68px !important;
-  background: color-mix(in srgb, var(--a) 18%, transparent) !important;
-  border-color: color-mix(in srgb, var(--a) 60%, transparent) !important;
-}
+.g16-mcard .g16-tl-c1 { display: block !important; }
+.g16-mcard .g16-tl-c2,
+.g16-mcard .g16-tl-c3,
+.g16-mcard .g16-tl-c4 { display: none !important; }
+
+/* Avatar Circle */
 .g16-mcard .g16-tl-c5 {
-  width: 58px !important; height: 58px !important;
-  display: grid !important; place-content: center !important;
-  border: 2px solid #fff !important;
+  position: absolute !important;
+  inset: 0 !important;
+  width: 66px !important;
+  height: 66px !important;
   border-radius: 50% !important;
-  background: radial-gradient(circle at 32% 28%, #fff, color-mix(in srgb, var(--a) 80%, #fff) 26%, var(--a) 62%, color-mix(in srgb, var(--a) 55%, #000)) !important;
-  box-shadow: 0 0 34px 4px color-mix(in srgb, var(--a) 65%, transparent) !important;
+  border: 2.5px solid #ffffff !important;
+  background: #ffffff !important;
+  box-shadow: 0 8px 24px -4px color-mix(in srgb, var(--a) 60%, transparent), 0 2px 6px rgba(0,0,0,0.08) !important;
   overflow: hidden !important;
-  position: relative !important;
   pointer-events: auto !important;
 }
 :root[data-theme="dark"] .g16-mcard .g16-tl-c5 {
   border-color: rgba(255, 255, 255, 0.25) !important;
+  background: #1a2234 !important;
 }
 .g16-mcard .g16-tl-c5 img {
   width: 100% !important;
@@ -316,41 +319,34 @@ a.g16-mcard {
 }
 .g16-mcard .g16-mcard-check {
   position: absolute !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  width: 18px !important;
-  height: 18px !important;
+  right: -1px !important;
+  bottom: -1px !important;
+  width: 20px !important;
+  height: 20px !important;
   background: #34a853 !important;
-  color: #fff !important;
-  border: 2px solid #fff !important;
+  color: #ffffff !important;
+  border: 2px solid #ffffff !important;
   border-radius: 50% !important;
   display: grid !important;
   place-items: center !important;
-  font-size: 10px !important;
+  font-size: 11px !important;
   font-weight: 900 !important;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2) !important;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.18) !important;
 }
 :root[data-theme="dark"] .g16-mcard .g16-mcard-check {
   border-color: #151c2b !important;
 }
 
-.g16-mcard:hover .g16-tl-c1 { transform: scale(1.12) !important; }
-.g16-mcard:hover .g16-tl-c2 { transform: scale(1.08) !important; animation: g16-spinr 16s linear infinite !important; }
-.g16-mcard:hover .g16-tl-c3 { transform: scale(1.05) !important; animation: g16-spinr 22s linear infinite reverse !important; }
-.g16-mcard:hover .g16-tl-c4 { transform: scale(1.04) !important; }
-.g16-mcard:hover .g16-tl-c5 { transform: scale(1.1) !important; animation: g16-tlf 3s ease-in-out infinite !important; }
+@keyframes g16-spinr { to { transform: rotate(360deg); } }
 
-@keyframes g16-spinr { to { rotate: 360deg; } }
-@keyframes g16-tlf { 50% { translate: 0 -4px; } }
-
-/* Top Meta Bar */
+/* Top Meta Bar (Level & Cohort) */
 .g16-mcard .g16-mcard-top {
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
   position: relative !important;
   z-index: 3 !important;
-  max-width: calc(100% - 94px) !important;
+  max-width: calc(100% - 86px) !important;
   flex-wrap: wrap !important;
 }
 .g16-mcard .g16-tl-num {
@@ -358,42 +354,49 @@ a.g16-mcard {
   align-items: center !important;
   height: 24px !important;
   padding: 0 10px !important;
-  border-radius: 99px !important;
-  font: 800 11px/1 var(--f-mono, monospace) !important;
+  border-radius: 999px !important;
+  font-family: var(--f-body, -apple-system, BlinkMacSystemFont, "Google Sans", "Segoe UI", Roboto, sans-serif) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
   letter-spacing: 0.04em !important;
   text-transform: uppercase !important;
-  background: color-mix(in srgb, var(--a) 15%, #fff) !important;
+  background: color-mix(in srgb, var(--a) 12%, #ffffff) !important;
   color: var(--a) !important;
   border: 1px solid color-mix(in srgb, var(--a) 30%, transparent) !important;
   white-space: nowrap !important;
 }
 :root[data-theme="dark"] .g16-mcard .g16-tl-num {
-  background: color-mix(in srgb, var(--a) 25%, transparent) !important;
-  color: #fff !important;
-  border-color: color-mix(in srgb, var(--a) 45%, transparent) !important;
+  background: color-mix(in srgb, var(--a) 22%, transparent) !important;
+  color: #ffffff !important;
+  border-color: color-mix(in srgb, var(--a) 40%, transparent) !important;
 }
 .g16-mcard .g16-mcard-dept {
-  font: 600 12px/1 var(--f-mono, monospace) !important;
+  font-family: var(--f-body, -apple-system, BlinkMacSystemFont, "Google Sans", "Segoe UI", Roboto, sans-serif) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
   color: var(--mut, #5f6368) !important;
   white-space: nowrap !important;
+}
+:root[data-theme="dark"] .g16-mcard .g16-mcard-dept {
+  color: rgba(255, 255, 255, 0.65) !important;
 }
 
 /* Content Area */
 .g16-mcard .g16-mcard-content {
   position: relative !important;
   z-index: 3 !important;
-  margin-top: 52px !important;
+  margin-top: 16px !important;
   flex: 1 1 auto !important;
   display: flex !important;
   flex-direction: column !important;
 }
 .g16-mcard .g16-tl-title,
 .g16-mcard h3.g16-tl-title {
-  font-size: 24px !important;
-  font-weight: 800 !important;
-  letter-spacing: -0.04em !important;
-  line-height: 1.15 !important;
-  margin: 0 0 4px !important;
+  font-size: 21px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.025em !important;
+  line-height: 1.25 !important;
+  margin: 0 0 2px !important;
   font-family: var(--f-disp, var(--f-body, system-ui)) !important;
   text-shadow: none !important;
   text-decoration: none !important;
@@ -402,9 +405,11 @@ a.g16-mcard {
 :root[data-theme="dark"] .g16-mcard .g16-tl-title { color: #ffffff !important; }
 
 .g16-mcard .g16-mcard-handle {
-  font: 600 13px/1 var(--f-mono, monospace) !important;
+  font-family: var(--f-body, -apple-system, BlinkMacSystemFont, "Google Sans", "Segoe UI", Roboto, sans-serif) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
   color: var(--a) !important;
-  margin: 0 0 14px !important;
+  margin: 0 0 12px !important;
   display: block !important;
   text-decoration: none !important;
 }
@@ -416,25 +421,26 @@ a.g16-mcard {
   gap: 8px !important;
   padding: 8px 12px !important;
   border-radius: 12px !important;
-  font-size: 12.5px !important;
+  font-family: var(--f-body, -apple-system, BlinkMacSystemFont, "Google Sans", "Segoe UI", Roboto, sans-serif) !important;
+  font-size: 12px !important;
   font-weight: 600 !important;
-  margin-bottom: 14px !important;
-  background: rgba(255, 255, 255, 0.72) !important;
-  border: 1px solid color-mix(in srgb, var(--a) 24%, #e4e8ed) !important;
-  backdrop-filter: blur(8px) !important;
+  margin-bottom: 12px !important;
+  background: color-mix(in srgb, var(--a) 8%, #ffffff) !important;
+  border: 1px solid color-mix(in srgb, var(--a) 24%, #e2e8f0) !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
   text-decoration: none !important;
   color: var(--ink, #1f1f23) !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03) !important;
 }
 :root[data-theme="dark"] .g16-mcard .g16-mcard-achieve {
-  background: rgba(255, 255, 255, 0.06) !important;
-  border-color: rgba(255, 255, 255, 0.12) !important;
-  color: #f1f1f1 !important;
+  background: color-mix(in srgb, var(--a) 14%, #151c2b) !important;
+  border-color: color-mix(in srgb, var(--a) 30%, transparent) !important;
+  color: #f1f5f9 !important;
 }
 .g16-mcard .g16-mcard-achieve span:first-child {
-  font-size: 15px !important;
+  font-size: 14px !important;
   flex-shrink: 0 !important;
 }
 .g16-mcard .g16-mcard-achieve span:last-child {
@@ -444,9 +450,10 @@ a.g16-mcard {
 
 .g16-mcard .g16-tl-text,
 .g16-mcard p.g16-tl-text {
-  font-size: 13.5px !important;
+  font-family: var(--f-body, -apple-system, BlinkMacSystemFont, "Google Sans", "Segoe UI", Roboto, sans-serif) !important;
+  font-size: 13px !important;
   line-height: 1.5 !important;
-  margin: 0 0 16px !important;
+  margin: 0 0 14px !important;
   display: -webkit-box !important;
   -webkit-line-clamp: 2 !important;
   -webkit-box-orient: vertical !important;
@@ -462,21 +469,23 @@ a.g16-mcard {
   gap: 6px !important;
   flex-wrap: wrap !important;
   margin-top: auto !important;
-  margin-bottom: 18px !important;
+  margin-bottom: 16px !important;
 }
 .g16-mcard .g16-mcard-skill {
-  font: 600 11px/1 var(--f-mono, monospace) !important;
-  padding: 4px 9px !important;
-  border-radius: 6px !important;
-  background: rgba(255, 255, 255, 0.5) !important;
+  font-family: var(--f-body, -apple-system, BlinkMacSystemFont, "Google Sans", "Segoe UI", Roboto, sans-serif) !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  padding: 4px 10px !important;
+  border-radius: 999px !important;
+  background: rgba(255, 255, 255, 0.75) !important;
   border: 1px solid var(--ln, #e8eaed) !important;
   color: var(--mut, #5f6368) !important;
   text-decoration: none !important;
 }
 :root[data-theme="dark"] .g16-mcard .g16-mcard-skill {
-  background: rgba(255, 255, 255, 0.05) !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-  color: rgba(255, 255, 255, 0.7) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: rgba(255, 255, 255, 0.75) !important;
 }
 
 /* Bottom Action Bar */
@@ -486,7 +495,7 @@ a.g16-mcard {
   justify-content: space-between !important;
   position: relative !important;
   z-index: 3 !important;
-  padding-top: 14px !important;
+  padding-top: 12px !important;
   border-top: 1px solid color-mix(in srgb, var(--a) 16%, rgba(0,0,0,0.06)) !important;
 }
 :root[data-theme="dark"] .g16-mcard .g16-tl-bottom {
@@ -494,75 +503,68 @@ a.g16-mcard {
 }
 
 .g16-mcard .g16-mcard-badge-tag {
-  font: 700 11px/1 var(--f-mono, monospace) !important;
+  font-family: var(--f-body, -apple-system, BlinkMacSystemFont, "Google Sans", "Segoe UI", Roboto, sans-serif) !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
   color: var(--mut, #5f6368) !important;
-  letter-spacing: 0.06em !important;
+  letter-spacing: 0.08em !important;
   text-transform: uppercase !important;
+}
+:root[data-theme="dark"] .g16-mcard .g16-mcard-badge-tag {
+  color: rgba(255, 255, 255, 0.5) !important;
 }
 
 .g16-mcard .g16-tl-more {
+  font-family: var(--f-body, -apple-system, BlinkMacSystemFont, "Google Sans", "Segoe UI", Roboto, sans-serif) !important;
   display: inline-flex !important;
   align-items: center !important;
-  gap: 6px !important;
-  padding: 8px 16px !important;
-  border-radius: 99px !important;
-  font-size: 13px !important;
+  gap: 5px !important;
+  padding: 5px 13px !important;
+  border-radius: 999px !important;
+  font-size: 12px !important;
   font-weight: 700 !important;
-  transition: background 0.2s, color 0.2s, transform 0.2s !important;
-  text-decoration: none !important;
-}
-:root:not([data-theme="dark"]) .g16-mcard .g16-tl-more {
-  background: #fff !important;
+  background: #ffffff !important;
   border: 1px solid #e4e8ed !important;
   color: #111b2e !important;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.04) !important;
-}
-:root:not([data-theme="dark"]) .g16-mcard:hover .g16-tl-more {
-  background: var(--a) !important;
-  color: #fff !important;
-  border-color: var(--a) !important;
-  transform: translateX(2px) !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05) !important;
+  transition: transform 0.2s, background 0.2s, color 0.2s !important;
 }
 :root[data-theme="dark"] .g16-mcard .g16-tl-more {
-  background: rgba(255, 255, 255, 0.12) !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  color: #fff !important;
+  background: #1a2234 !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
 }
-:root[data-theme="dark"] .g16-mcard:hover .g16-tl-more {
-  background: var(--a) !important;
-  color: #0a0f19 !important;
-  border-color: var(--a) !important;
+.g16-mcard:hover .g16-tl-more {
   transform: translateX(2px) !important;
+  background: var(--a) !important;
+  border-color: var(--a) !important;
+  color: #ffffff !important;
 }
 .g16-mcard .g16-tl-more svg {
   width: 14px !important;
   height: 14px !important;
-  fill: none !important;
   stroke: currentColor !important;
+  fill: none !important;
   stroke-width: 2.2 !important;
   stroke-linecap: round !important;
   stroke-linejoin: round !important;
-  transition: transform 0.2s ease !important;
-}
-.g16-mcard:hover .g16-tl-more svg {
-  transform: translateX(3px) !important;
 }
 
-/* Empty State */
-.members-empty {
-  text-align: center;
-  padding: 60px 20px;
-  color: var(--mut, #5f6368);
+/* ========================================================
+   SPACIOUS NAVBAR FIX FOR LAPTOP AND DESKTOP
+   ======================================================== */
+header#hd:not(#_):not(#__):not(#___) .nv:not(#_) {
+  gap: clamp(8px, 1.4vw, 20px) !important;
 }
-.members-empty h3 {
-  font-size: 20px;
-  color: var(--ink, #1f1f23);
-  margin-bottom: 8px;
+header#hd:not(#_):not(#__):not(#___) .lk:not(#_) {
+  gap: clamp(3px, 0.5vw, 6px) !important;
+  padding: 3px 4px !important;
+  margin: 0 auto !important;
 }
-
-@media (max-width: 680px) {
-  .members-hero { padding: 20px 0 16px; }
-  .top-builders-grid,
-  .members-grid { grid-template-columns: 1fr !important; }
-  .members-sec-head { flex-direction: column; align-items: flex-start; gap: 4px; }
+header#hd:not(#_):not(#__):not(#___) .lk a:not(#_) {
+  padding: 0 clamp(9px, 1vw, 15px) !important;
+  height: 38px !important;
+  font-size: 13.5px !important;
+  font-weight: 500 !important;
+  white-space: nowrap !important;
 }
