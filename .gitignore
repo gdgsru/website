@@ -15,12 +15,16 @@ __pycache__/
 backups/
 temp_*.txt
 sections_*.txt
+tmp_chrome/
+scratch/
+
+# Member pass pipeline: never commit raw sheet exports
+verified_responses.csv
 
 # OS metadata
 .DS_Store
 Thumbs.db
 desktop.ini
-scratch/
 
 # Environment variables
 .env
