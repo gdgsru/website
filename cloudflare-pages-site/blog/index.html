@@ -30,7 +30,7 @@
   <script>try{var q=sessionStorage.getItem("gdg-pt");if(q){sessionStorage.removeItem("gdg-pt");document.documentElement.dataset.pt=q;document.documentElement.classList.add("pt-in")}}catch(e){}</script>
 <script>(function(){var t="dark";try{t=localStorage.getItem("gdg-theme")==="light"?"light":"dark"}catch(e){}document.documentElement.dataset.theme=t})()</script>
     <script src="/config.js" defer></script>
-    <script src="/assets/js/vendor/supabase.js?v=20261028-profiles1" defer></script>
+    <script src="/assets/js/vendor/supabase.js?v=20261028-members1" defer></script>
   <style>.menu-side-heading,#mo .menu-side .menu-side-heading{margin:0 0 5px!important;font:500 11px/1 var(--f-mono,monospace)!important;letter-spacing:.2em!important;text-transform:uppercase!important;color:var(--mut,#5f6368)!important}</style>
 </head>
   <body data-route="blogs" data-multipage="true">
@@ -58,7 +58,7 @@
             /></svg></span
           ><span>Google Developer Group<small>SR University</small></span></a
         >
-        <nav class="lk" id="lk"><a href="/" class="">Home</a><a href="/events/" class="">Events</a><a href="/team/" class="">Team</a><a href="/blog/" class="on">Blog</a><a href="/resources/" class="">Resource Hub</a><a href="/leaderboard/" class="">Leaderboard</a></nav>
+        <nav class="lk" id="lk"><a href="/" class="">Home</a><a href="/events/" class="">Events</a><a href="/team/" class="">Team</a><a href="/blog/" class="on">Blog</a><a href="/members/" class="">Members</a><a href="/resources/" class="">Resource Hub</a><a href="/leaderboard/" class="">Leaderboard</a></nav>
         <span class="sp2"></span>
         <a class="btn rg" href="/join/">Join<i>→</i></a
         ><button class="mn" onclick="mo(1)" type="button" aria-label="Open navigation menu" aria-expanded="false" aria-controls="mo">
@@ -88,7 +88,7 @@
           </a>
           <button class="mn menu-close" type="button" onclick="mo(0)" aria-label="Close menu">Close <span aria-hidden="true">✕</span></button>
         </div>
-        <nav class="menu-links" id="mg" aria-label="All pages"><a href="/" data-menu-page="home" onclick="mo(0)" style="--i: 0;"><span class="menu-num">01</span><span class="menu-label"><span class="menu-page-icon" aria-hidden="true">⌂</span>Home</span><span class="menu-desc">The community, what we do, and where to start</span><span class="menu-arrow" aria-hidden="true">↗</span></a><a href="/events/" data-menu-page="events" onclick="mo(0)" style="--i: 1;"><span class="menu-num">02</span><span class="menu-label"><span class="menu-page-icon" aria-hidden="true">▦</span>Events</span><span class="menu-desc">Workshops, meetups, and what’s coming up</span><span class="menu-arrow" aria-hidden="true">↗</span></a><a href="/team/" data-menu-page="team" onclick="mo(0)" style="--i: 2;"><span class="menu-num">03</span><span class="menu-label"><span class="menu-page-icon" aria-hidden="true">♧</span>Team</span><span class="menu-desc">Meet the students building the community</span><span class="menu-arrow" aria-hidden="true">↗</span></a><a href="/blog/" data-menu-page="blogs" onclick="mo(0)" aria-current="page" style="--i: 3;"><span class="menu-num">04</span><span class="menu-label"><span class="menu-page-icon" aria-hidden="true">✳</span>Blog<span class="menu-current">YOU’RE HERE</span></span><span class="menu-desc">Ideas, stories, and things worth sharing</span><span class="menu-arrow" aria-hidden="true">↗</span></a><a href="/join/" data-menu-page="join" onclick="mo(0)" style="--i: 4;"><span class="menu-num">05</span><span class="menu-label"><span class="menu-page-icon" aria-hidden="true">↗</span>Join</span><span class="menu-desc">Find your people and get involved</span><span class="menu-arrow" aria-hidden="true">↗</span></a><a href="/certificates/" data-menu-page="certificates" onclick="mo(0)" style="--i: 5;"><span class="menu-num">06</span><span class="menu-label"><span class="menu-page-icon" aria-hidden="true">✓</span>Certificates</span><span class="menu-desc">Your certificates and learning milestones</span><span class="menu-arrow" aria-hidden="true">↗</span></a><a href="/leaderboard/" data-menu-page="leaderboard" onclick="mo(0)" style="--i: 6;"><span class="menu-num">07</span><span class="menu-label"><span class="menu-page-icon" aria-hidden="true">✦</span>Leaderboard</span><span class="menu-desc">Celebrate contributions and community impact</span><span class="menu-arrow" aria-hidden="true">↗</span></a><a href="/resources/" data-menu-page="perks" onclick="mo(0)" style="--i: 7;"><span class="menu-num">08</span><span class="menu-label"><span class="menu-page-icon" aria-hidden="true">✦</span>Resource Hub</span><span class="menu-desc">Explore this part of the GDG on Campus community</span><span class="menu-arrow" aria-hidden="true">↗</span></a></nav>
+        <nav class="menu-links" id="mg" aria-label="All pages"><a href="/" data-menu-page="home" onclick="mo(0)" style="--i: 0;"><span class="menu-num">01</span><span class="menu-label"><span class="menu-page-icon" aria-hidden="true">⌂</span>Home</span><span class="menu-desc">The community, what we do, and where to start</span><span class="menu-arrow" aria-hidden="true">↗</span></a><a href="/events/" data-menu-page="events" onclick="mo(0)" style="--i: 1;"><span class="menu-num">02</span><span class="menu-label"><span class="menu-page-icon" aria-hidden="true">▦</span>Events</span><span class="menu-desc">Workshops, meetups, and what’s coming up</span><span class="menu-arrow" aria-hidden="true">↗</span></a><a href="/team/" data-menu-page="team" onclick="mo(0)" style="--i: 2;"><span class="menu-num">03</span><span class="menu-label"><span class="menu-page-icon" aria-hidden="true">♧</span>Team</span><span class="menu-desc">Meet the students building the community</span><span class="menu-arrow" aria-hidden="true">↗</span></a><a href="/blog/" data-menu-page="blogs" onclick="mo(0)" aria-current="page" style="--i: 3;"><span class="menu-num">04</span><span class="menu-label"><span class="menu-page-icon" aria-hidden="true">✳</span>Blog<span class="menu-current">YOU’RE HERE</span></span><span class="menu-desc">Ideas, stories, and things worth sharing</span><span class="menu-arrow" aria-hidden="true">↗</span></a><a href="/join/" data-menu-page="join" onclick="mo(0)" style="--i: 4;"><span class="menu-num">05</span><span class="menu-label"><span class="menu-page-icon" aria-hidden="true">↗</span>Join</span><span class="menu-desc">Find your people and get involved</span><span class="menu-arrow" aria-hidden="true">↗</span></a><a href="/certificates/" data-menu-page="certificates" onclick="mo(0)" style="--i: 5;"><span class="menu-num">06</span><span class="menu-label"><span class="menu-page-icon" aria-hidden="true">✓</span>Certificates</span><span class="menu-desc">Your certificates and learning milestones</span><span class="menu-arrow" aria-hidden="true">↗</span></a><a href="/leaderboard/" data-menu-page="leaderboard" onclick="mo(0)" style="--i: 6;"><span class="menu-num">07</span><span class="menu-label"><span class="menu-page-icon" aria-hidden="true">✦</span>Leaderboard</span><span class="menu-desc">Celebrate contributions and community impact</span><span class="menu-arrow" aria-hidden="true">↗</span></a><a href="/resources/" data-menu-page="perks" onclick="mo(0)" style="--i: 7;"><span class="menu-num">08</span><span class="menu-label"><span class="menu-page-icon" aria-hidden="true">✦</span>Resource Hub</span><span class="menu-desc">Explore this part of the GDG on Campus community</span><span class="menu-arrow" aria-hidden="true">↗</span></a><a href="/members/" data-menu-page="members" onclick="mo(0)" style="--i: 8;"><span class="menu-num">09</span><span class="menu-label"><span class="menu-page-icon" aria-hidden="true">◈</span>Members</span><span class="menu-desc">Verified passes, top builders &amp; achievements</span><span class="menu-arrow" aria-hidden="true">↗</span></a></nav>
         <aside class="menu-side">
           <div><div class="menu-side-heading">Say hello</div><a href="mailto:gdg@sru.edu.in">gdg@sru.edu.in</a></div>
           <div><div class="menu-side-heading">Elsewhere</div><a href="https://discord.gg/htSJMNcdZs" target="_blank" rel="noopener">Discord ↗</a><a href="https://www.instagram.com/gdg_sru/" target="_blank" rel="noopener">Instagram ↗</a><a href="https://www.linkedin.com/company/gdg-sru/home/" target="_blank" rel="noopener">LinkedIn ↗</a><a href="https://github.com/gdgsru" target="_blank" rel="noopener">GitHub ↗</a></div>
@@ -202,9 +202,10 @@
       <div>
         <h4>Explore</h4>
         <a href="/">Home</a>
+        <a href="/members/">Members</a>
         <a href="/events/">Events</a>
         <a href="/team/">Team</a>
-        <a href="/blog/">Blog</a>
+        <a href="/blog/">Blog</a><a href="/members/" class="">Members</a>
         <a href="/resources/">Resource Hub</a>
         <a href="/leaderboard/">Leaderboard</a>
       </div>
@@ -233,24 +234,24 @@
 </footer>
 <!-- /partial:footer -->
 
-<script src="/assets/js/card-system.js?v=20261028-profiles1" defer></script>
-<script src="/assets/js/app.js?v=20261028-profiles1" defer></script>
+<script src="/assets/js/card-system.js?v=20261028-members1" defer></script>
+<script src="/assets/js/app.js?v=20261028-members1" defer></script>
 <script src="/assets/js/config-loader.js?v=20261025-bento3" defer></script>
-<script src="/assets/js/effects.js?v=20261028-profiles1" defer></script>
-<script src="/assets/js/theme-reference.js?v=20261028-profiles1" defer></script>
-<script src="/assets/js/polish.js?v=20261028-profiles1" defer></script>
-<script src="/assets/js/title-transition.js?v=20261028-profiles1" defer></script>
-<script src="/assets/js/theme-carousel.js?v=20261028-profiles1" defer></script>
-<script src="/assets/js/nav-effects.js?v=20261028-profiles1" defer></script>
-<script src="/assets/js/menu.js?v=20261028-profiles1" defer></script>
-<script src="/assets/js/fixes.js?v=20261028-profiles1" defer></script>
-<script src="/assets/js/aurora.js?v=20261028-profiles1" defer></script>
-<script src="/assets/js/easter-eggs.js?v=20261028-profiles1" defer></script>
-    <script src="/assets/js/command-palette.js?v=20261028-profiles1" defer></script>
-    <script src="/assets/js/card-tilt.js?v=20261028-profiles1" defer></script>
-    <script src="/assets/js/pwa.js?v=20261028-profiles1" defer></script>
-    <script src="/assets/js/member-pass.js?v=20261028-profiles1" defer></script>
-<script src="/assets/js/egg-hunt-data.js?v=20261028-profiles1" defer></script>
-<script src="/assets/js/egg-triggers.js?v=20261028-profiles1" defer></script>
+<script src="/assets/js/effects.js?v=20261028-members1" defer></script>
+<script src="/assets/js/theme-reference.js?v=20261028-members1" defer></script>
+<script src="/assets/js/polish.js?v=20261028-members1" defer></script>
+<script src="/assets/js/title-transition.js?v=20261028-members1" defer></script>
+<script src="/assets/js/theme-carousel.js?v=20261028-members1" defer></script>
+<script src="/assets/js/nav-effects.js?v=20261028-members1" defer></script>
+<script src="/assets/js/menu.js?v=20261028-members1" defer></script>
+<script src="/assets/js/fixes.js?v=20261028-members1" defer></script>
+<script src="/assets/js/aurora.js?v=20261028-members1" defer></script>
+<script src="/assets/js/easter-eggs.js?v=20261028-members1" defer></script>
+    <script src="/assets/js/command-palette.js?v=20261028-members1" defer></script>
+    <script src="/assets/js/card-tilt.js?v=20261028-members1" defer></script>
+    <script src="/assets/js/pwa.js?v=20261028-members1" defer></script>
+    <script src="/assets/js/member-pass.js?v=20261028-members1" defer></script>
+<script src="/assets/js/egg-hunt-data.js?v=20261028-members1" defer></script>
+<script src="/assets/js/egg-triggers.js?v=20261028-members1" defer></script>
 </body>
 </html>

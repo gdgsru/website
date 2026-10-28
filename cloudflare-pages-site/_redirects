@@ -7,6 +7,9 @@
 /certificates /certificates/ 301
 /verify /verify/ 301
 /leaderboard /leaderboard/ 301
+/members /members/ 301
+/profiles /members/ 301
+/directory /members/ 301
 /resources /resources/ 301
 /perks /resources/ 301
 /privacy /privacy/ 301
@@ -18,7 +21,7 @@
 /mission-control /admin/ 301
 /mission-control.html /admin/ 301
 /portal /admin/ 301
-/u /profile 302
+/u /members/ 302
 
 # A single segment after these paths is a detail identifier; the bare directory
 # path continues to serve its HTML entry point above.

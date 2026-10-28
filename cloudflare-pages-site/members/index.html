@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <link rel="canonical" href="https://gdgsru.pages.dev/members/">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Member Directory &amp; Verified Passes · GDG SRU · SR University</title>
+    <meta name="description" content="Explore verified GDG on Campus SR University builders, 3D digital member passes, and learning achievements." />
+    <meta name="keywords" content="GDG SRU Members, Member Directory, GDG on Campus SR University, Student Developer Profiles, Digital Pass" />
+    <meta property="og:title" content="Member Directory &amp; Passes · GDG SRU" />
+    <meta property="og:site_name" content="GDG SRU" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/assets/brand/apple-touch-icon.png" />
+    <meta property="og:type" content="website" />
+    <meta name="theme-color" content="#0b0b0d" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta property="og:description" content="Explore verified GDG on Campus SR University builders, 3D digital member passes, and learning achievements." />
+    <meta property="og:image" content="/assets/images/hero-building.webp" />
+    <meta name="twitter:title" content="Member Directory &amp; Passes · GDG SRU" />
+    <meta name="twitter:description" content="Explore verified GDG on Campus SR University builders, 3D digital member passes, and learning achievements." />
+    <meta name="twitter:image" content="/assets/images/hero-building.webp" />
+    <link rel="preload" as="font" type="font/woff2" href="/assets/fonts/google-sans-flex-latin-400-normal.woff2" crossorigin>
+    <link rel="preload" as="font" type="font/woff2" href="/assets/fonts/google-sans-flex-latin-700-normal.woff2" crossorigin>
+    <link rel="stylesheet" href="/assets/fonts/fonts.css">
+    <link rel="stylesheet" href="/assets/css/page-members.css">
+    <script>(function(){var t="dark";try{t=localStorage.getItem("gdg-theme")==="light"?"light":"dark"}catch(e){}document.documentElement.dataset.theme=t})()</script>
+    <script src="/config.js" defer></script>
+    <script src="/assets/js/vendor/supabase.js?v=20261028-members1" defer></script>
+    <script src="/assets/js/command-palette.js?v=20261028-members1" defer></script>
+    <script src="/assets/js/members-directory.js?v=20261028-members1" defer></script>
+    <script src="/assets/js/menu.js?v=20261028-members1" defer></script>
+    <style>.menu-side-heading,#mo .menu-side .menu-side-heading{margin:0 0 5px!important;font:500 11px/1 var(--f-mono,monospace)!important;letter-spacing:.2em!important;text-transform:uppercase!important;color:var(--mut,#5f6368)!important}</style>
+  </head>
+  <body data-route="members" data-multipage="true">
+    <!-- partial:header -->
+    <header id="hd">
+      <div class="nv">
+        <a class="lg" href="/" aria-label="GDG on Campus SR University home">
+          <span id="lgs" class="gdg-header-logo" aria-hidden="true">
+            <svg viewBox="185 345 710 390" width="34" height="19" role="img" aria-label="Google Developer Group logo">
+              <line x1="279" y1="540" x2="432" y2="430" stroke="#ea4335" stroke-width="128" stroke-linecap="round"/>
+              <line x1="279" y1="540" x2="432" y2="650" stroke="#4285f4" stroke-width="128" stroke-linecap="round"/>
+              <line x1="648" y1="650" x2="801" y2="540" stroke="#fbbc04" stroke-width="128" stroke-linecap="round"/>
+              <line x1="648" y1="430" x2="801" y2="540" stroke="#34a853" stroke-width="128" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <span>Google Developer Group<small>SR University</small></span>
+        </a>
+        <nav class="lk" id="lk">
+          <a href="/" class="">Home</a>
+          <a href="/events/" class="">Events</a>
+          <a href="/team/" class="">Team</a>
+          <a href="/blog/" class="">Blog</a>
+          <a href="/members/" class="on">Members</a>
+          <a href="/leaderboard/" class="">Leaderboard</a>
+          <a href="/resources/" class="">Resource Hub</a>
+        </nav>
+        <span class="sp2"></span>
+        <a class="btn rg" href="/join/">Join<i>→</i></a>
+        <button class="mn" onclick="mo(1)" type="button" aria-label="Open navigation menu" aria-expanded="false" aria-controls="mo">
+          <span class="dts">
+            <i style="background: var(--b)"></i>
+            <i style="background: var(--r)"></i>
+            <i style="background: var(--y)"></i>
+            <i style="background: var(--g)"></i>
+          </span>
+          Menu
+        </button>
+      </div>
+    </header>
+    <!-- /partial:header -->
+
+    <!-- partial:menu -->
+    <div id="mo" aria-label="Site menu" aria-hidden="true">
+      <div class="menu-in">
+        <div class="menu-top">
+          <a class="lg menu-brand" href="/" onclick="mo(0)" aria-label="GDG on Campus SR University home">
+            <span class="menu-mark" aria-hidden="true">
+              <svg viewBox="185 345 710 390" width="36" height="20" role="img" aria-label="Google Developer Group logo">
+                <line x1="279" y1="540" x2="432" y2="430" stroke="#ea4335" stroke-width="128" stroke-linecap="round"/>
+                <line x1="279" y1="540" x2="432" y2="650" stroke="#4285f4" stroke-width="128" stroke-linecap="round"/>
+                <line x1="648" y1="650" x2="801" y2="540" stroke="#fbbc04" stroke-width="128" stroke-linecap="round"/>
+                <line x1="648" y1="430" x2="801" y2="540" stroke="#34a853" stroke-width="128" stroke-linecap="round"/>
+              </svg>
+            </span>
+            <span>Google Developer Group<small>SR University</small></span>
+          </a>
+          <button class="mn menu-close" type="button" onclick="mo(0)" aria-label="Close menu">Close <span aria-hidden="true">✕</span></button>
+        </div>
+        <nav class="menu-links" id="mg" aria-label="All pages">
+          <a href="/" data-menu-page="home" onclick="mo(0)" style="--i: 0;"><span class="menu-num">01</span><span class="menu-label"><span class="menu-page-icon" aria-hidden="true">⌂</span>Home</span><span class="menu-desc">The community, what we do, and where to start</span><span class="menu-arrow" aria-hidden="true">↗</span></a>
+          <a href="/events/" data-menu-page="events" onclick="mo(0)" style="--i: 1;"><span class="menu-num">02</span><span class="menu-label"><span class="menu-page-icon" aria-hidden="true">▦</span>Events</span><span class="menu-desc">Workshops, meetups, and what’s coming up</span><span class="menu-arrow" aria-hidden="true">↗</span></a>
+          <a href="/team/" data-menu-page="team" onclick="mo(0)" style="--i: 2;"><span class="menu-num">03</span><span class="menu-label"><span class="menu-page-icon" aria-hidden="true">♧</span>Team</span><span class="menu-desc">Meet the students building the community</span><span class="menu-arrow" aria-hidden="true">↗</span></a>
+          <a href="/blog/" data-menu-page="blogs" onclick="mo(0)" style="--i: 3;"><span class="menu-num">04</span><span class="menu-label"><span class="menu-page-icon" aria-hidden="true">✳</span>Blog</span><span class="menu-desc">Ideas, stories, and things worth sharing</span><span class="menu-arrow" aria-hidden="true">↗</span></a>
+          <a href="/members/" data-menu-page="members" onclick="mo(0)" aria-current="page" style="--i: 4;"><span class="menu-num">05</span><span class="menu-label"><span class="menu-page-icon" aria-hidden="true">◈</span>Members<span class="menu-current">YOU’RE HERE</span></span><span class="menu-desc">Verified passes, top builders &amp; achievements</span><span class="menu-arrow" aria-hidden="true">↗</span></a>
+          <a href="/join/" data-menu-page="join" onclick="mo(0)" style="--i: 5;"><span class="menu-num">06</span><span class="menu-label"><span class="menu-page-icon" aria-hidden="true">↗</span>Join</span><span class="menu-desc">Find your people and get involved</span><span class="menu-arrow" aria-hidden="true">↗</span></a>
+          <a href="/certificates/" data-menu-page="certificates" onclick="mo(0)" style="--i: 6;"><span class="menu-num">07</span><span class="menu-label"><span class="menu-page-icon" aria-hidden="true">✓</span>Certificates</span><span class="menu-desc">Your certificates and learning milestones</span><span class="menu-arrow" aria-hidden="true">↗</span></a>
+          <a href="/leaderboard/" data-menu-page="leaderboard" onclick="mo(0)" style="--i: 7;"><span class="menu-num">08</span><span class="menu-label"><span class="menu-page-icon" aria-hidden="true">✦</span>Leaderboard</span><span class="menu-desc">Celebrate contributions and community impact</span><span class="menu-arrow" aria-hidden="true">↗</span></a>
+          <a href="/resources/" data-menu-page="perks" onclick="mo(0)" style="--i: 8;"><span class="menu-num">09</span><span class="menu-label"><span class="menu-page-icon" aria-hidden="true">✦</span>Resource Hub</span><span class="menu-desc">Explore roadmaps, perks, and kits</span><span class="menu-arrow" aria-hidden="true">↗</span></a>
+        </nav>
+        <aside class="menu-side">
+          <div><div class="menu-side-heading">Say hello</div><a href="mailto:gdg@sru.edu.in">gdg@sru.edu.in</a></div>
+          <div><div class="menu-side-heading">Elsewhere</div><a href="https://discord.gg/htSJMNcdZs" target="_blank" rel="noopener">Discord ↗</a><a href="https://www.instagram.com/gdg_sru/" target="_blank" rel="noopener">Instagram ↗</a><a href="https://www.linkedin.com/company/gdg-sru/home/" target="_blank" rel="noopener">LinkedIn ↗</a><a href="https://github.com/gdgsru" target="_blank" rel="noopener">GitHub ↗</a></div>
+          <div><div class="menu-side-heading">Stay connected</div><p>Explore the chapter, find your people, and build something meaningful.</p><p class="menu-shortcut"><kbd>Esc</kbd> close menu</p></div>
+        </aside>
+        <div class="menu-base"><span>Google Developer Group · SR University</span></div>
+      </div>
+    </div>
+    <!-- /partial:menu -->
+
+    <main class="members-container" id="app">
+      <!-- Hero -->
+      <section class="members-hero">
+        <div class="members-pill">
+          <span class="members-pill-dot" aria-hidden="true"></span>
+          Verified Community Directory · Season 2026
+        </div>
+        <h1 class="members-title">Member <em>Directory</em></h1>
+        <p class="members-lead">
+          Meet verified student developers, designers, and innovators at GDG on Campus SR University. Tap any member to view their interactive 3D pass and verified credentials.
+        </p>
+
+        <!-- Search & Category Filters -->
+        <div class="members-controls">
+          <div class="members-search-wrap">
+            <svg class="members-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+              <circle cx="11" cy="11" r="7"/>
+              <path d="m20 20-3.5-3.5"/>
+            </svg>
+            <input type="search" id="members-search-input" class="members-search-input" placeholder="Search by name, @handle, skill, or branch…" aria-label="Search members" autocomplete="off">
+            <span class="members-search-count" id="members-count-badge">10 verified</span>
+          </div>
+
+          <div class="members-chips" role="group" aria-label="Filter by department">
+            <button type="button" class="members-chip active" data-filter="All">All Members</button>
+            <button type="button" class="members-chip" data-filter="Top XP">★ Top Builders</button>
+            <button type="button" class="members-chip" data-filter="AI & ML">AI &amp; ML</button>
+            <button type="button" class="members-chip" data-filter="CSE">CSE</button>
+            <button type="button" class="members-chip" data-filter="Data Science">Data Science</button>
+            <button type="button" class="members-chip" data-filter="ECE">ECE</button>
+            <button type="button" class="members-chip" data-filter="IT">IT</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Spotlight: Top Profiles & Recent Achievements -->
+      <section aria-labelledby="top-builders-title">
+        <div class="members-sec-head">
+          <h2 class="members-sec-title" id="top-builders-title">
+            <span style="color: var(--y, #fbbc04);">★</span> Top Profiles &amp; Achievements
+          </h2>
+          <p class="members-sec-sub">Spotlight members with recognized community impact &amp; milestones</p>
+        </div>
+
+        <div class="top-builders-grid" id="top-builders-list">
+          <!-- Dynamically populated -->
+        </div>
+      </section>
+
+      <!-- All Members Grid -->
+      <section aria-labelledby="all-members-title">
+        <div class="members-sec-head">
+          <h2 class="members-sec-title" id="all-members-title">
+            <span style="color: var(--b, #4285f4);">👥</span> Verified Member Passes
+          </h2>
+          <p class="members-sec-sub">Click any card to inspect their 3D pass and credentials</p>
+        </div>
+
+        <div class="members-grid" id="members-directory-grid">
+          <!-- Dynamically populated -->
+        </div>
+      </section>
+
+      <!-- CTA Box -->
+      <section style="margin-top: 56px; border-radius: 28px; padding: clamp(28px, 5vw, 48px); background: linear-gradient(135deg, rgba(66, 133, 244, 0.08), rgba(52, 168, 83, 0.08)); border: 1.5px solid var(--ln, #e8eaed); text-align: center;">
+        <h3 style="font-size: clamp(22px, 3.5vw, 32px); font-weight: 800; letter-spacing: -0.03em; margin: 0 0 10px;">Want your own official Member Pass?</h3>
+        <p style="color: var(--mut, #5f6368); max-width: 580px; margin: 0 auto 22px; font-size: 15.5px; line-height: 1.5;">
+          Member passes are unlocked when your attendance is verified at any GDG SRU workshop or hackathon. Join our chapter to get started.
+        </p>
+        <a href="/join/" class="btn" style="background: var(--b, #4285f4); color: #fff; border-color: var(--b, #4285f4); margin: 0;">Join the Chapter <i>→</i></a>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="v18-cols" style="max-width: 1180px; margin: 0 auto; padding: 48px 20px 28px;">
+      <div class="v18-brand">
+        <div class="row">
+          <span class="v18-dots" aria-hidden="true">
+            <svg viewBox="185 345 710 390" width="34" height="19" role="img" aria-label="Google Developer Group logo">
+              <line x1="279" y1="540" x2="432" y2="430" stroke="#ea4335" stroke-width="128" stroke-linecap="round"/>
+              <line x1="279" y1="540" x2="432" y2="650" stroke="#4285f4" stroke-width="128" stroke-linecap="round"/>
+              <line x1="648" y1="650" x2="801" y2="540" stroke="#fbbc04" stroke-width="128" stroke-linecap="round"/>
+              <line x1="648" y1="430" x2="801" y2="540" stroke="#34a853" stroke-width="128" stroke-linecap="round"/>
+            </svg>
+          </span>
+          Google Developer Group · SR University
+        </div>
+        <p>A student-led community for curious minds, builders and future problem solvers. Learn, build and grow together on campus.</p>
+      </div>
+      <div>
+        <h4>Explore</h4>
+        <a href="/">Home</a>
+        <a href="/events/">Events</a>
+        <a href="/team/">Team</a>
+        <a href="/blog/">Blog</a>
+        <a href="/members/">Members</a>
+        <a href="/leaderboard/">Leaderboard</a>
+        <a href="/resources/">Resource Hub</a>
+      </div>
+      <div>
+        <h4>Community</h4>
+        <a class="gdg-discord-link gdg-social-discord" href="https://discord.gg/htSJMNcdZs" target="_blank" rel="noopener">Discord ↗</a>
+        <a class="gdg-social-github" href="https://github.com/gdgsru" target="_blank" rel="noopener">GitHub ↗</a>
+        <a class="gdg-social-linkedin" href="https://www.linkedin.com/company/gdg-sru/home/" target="_blank" rel="noopener">LinkedIn ↗</a>
+        <a class="gdg-social-instagram" href="https://www.instagram.com/gdg_sru/" target="_blank" rel="noopener">Instagram ↗</a>
+        <a class="gdg-social-x" href="https://x.com/gdgsru" target="_blank" rel="noopener">X ↗</a>
+      </div>
+      <div>
+        <h4>Get in touch</h4>
+        <a class="gdg-contact-email" href="mailto:gdg@sru.edu.in">gdg@sru.edu.in</a>
+        <a href="/join/">Join</a>
+        <a href="/certificates/">Certificates</a>
+        <a href="https://gdg.community.dev/gdg-on-campus-sr-university-warangal-india/" target="_blank" rel="noopener">Official GDG chapter ↗</a>
+      </div>
+    </footer>
+    <div class="v18-mega" aria-hidden="true">GDG SRU</div>
+  </body>
+</html>

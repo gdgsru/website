@@ -313,7 +313,7 @@ def main() -> int:
         "v": 1,
         "generated": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
         # u = handle, n = name, d = department, c = cohort
-        "profiles": [{"u": p["handle"], "n": p["name"], "d": p["department"], "c": p["cohort"]} for p in profiles],
+        "profiles": [{"u": p["handle"], "n": p["name"], "d": p["department"], "c": p["cohort"], "a": p["avatar"], "t": p["theme"], "s": p["skills"][:3], "b": p["bio"]} for p in profiles],
     }
     index_path.write_text(json.dumps(index, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
 
