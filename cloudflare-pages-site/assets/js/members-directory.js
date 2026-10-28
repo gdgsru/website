@@ -1,5 +1,8 @@
-/* GDG SRU · Member Directory & Top Profiles Showcase
-   Zero-auth: reads static /data/profiles_index.json + live Supabase RPC layer
+/* GDG SRU · Member Directory & Multi-Design Showcase
+   Zero-auth: static profiles_index.json + optional Supabase live layer
+   Supports:
+     - Design 1: Official Digital Pass Badge (mini CR80 lanyard pass with Google skins)
+     - Design 2: Developer Holo-Card (interactive 3D flippable collector card)
 */
 (() => {
   'use strict';
@@ -7,7 +10,6 @@
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 
-  // Preset notable achievements for pre-launch showcase (and fallback when offline)
   const FALLBACK_ACHIEVEMENTS = {
     'narayan': { icon: '🏆', text: 'Chapter Organizer & Web Architect · 500+ XP', level: 'Innovator', lvlNum: 3 },
     'alexk': { icon: '🚀', text: 'Flutter & Firebase Bootcamp · Certified', level: 'Builder', lvlNum: 2 },
@@ -21,12 +23,12 @@
     'rahulv': { icon: '📦', text: 'Full-Stack Web Sprint · Built & Deployed', level: 'Explorer', lvlNum: 1 }
   };
 
-  // Featured top profiles handles in priority order
   const TOP_HANDLES = ['narayan', 'alexk', 'ananya', 'vikram-n'];
 
   let allMembers = [];
   let activeFilter = 'All';
   let searchQuery = '';
+  let cardDesign = localStorage.getItem('gdg-member-card-design') || 'holo'; // 'pass' or 'holo'
 
   const esc = (s) => String(s || '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -47,15 +49,140 @@
     };
   }
 
+  function renderBarcodeSvg(seedText) {
+    let h = 2166136261;
+    for (const ch of seedText) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; }
+    const rnd = () => { h = (Math.imul(h, 1664525) + 1013904223) >>> 0; return h >>> 24; };
+    let x = 0, rects = '';
+    while (x < 130) {
+      const w = 1 + (rnd() % 3), gap = 1 + (rnd() % 2);
+      if (x + w > 130) break;
+      rects += `<rect x="${x}" y="0" width="${w}" height="16"/>`;
+      x += w + gap;
+    }
+    return `<svg viewBox="0 0 130 16" preserveAspectRatio="none" fill="currentColor" aria-hidden="true">${rects}</svg>`;
+  }
+
+  /* ---- Card Renderers ---- */
+
+  // Design 1: Digital Pass Badge (mini CR80 vertical pass)
+  function renderPassCard(m) {
+    const ach = getAchievement(m);
+    const avatarSrc = getAvatarSrc(m.a);
+    const skin = m.t || 'google-blue';
+    const roll = `2403•••${String(m.u).slice(-2)}`;
+
+    return `
+      <article class="mpass-card" data-skin="${esc(skin)}" onclick="location.href='/u/${encodeURIComponent(m.u)}'" role="link" tabindex="0" aria-label="Digital pass for ${esc(m.n)}">
+        <div class="mpass-slot" aria-hidden="true"></div>
+        <div class="mpass-head">
+          <span class="mpass-org">GDG on Campus<br>SR University</span>
+          <span class="mpass-kind">MEMBER</span>
+        </div>
+
+        <div class="mpass-avatar-wrap">
+          <img class="mpass-avatar" src="${avatarSrc}" alt="${esc(m.n)}" loading="lazy" width="76" height="76">
+          <span class="mpass-check" aria-hidden="true">✓</span>
+        </div>
+
+        <h4 class="mpass-name">${esc(m.n)}</h4>
+        <p class="mpass-handle">@${esc(m.u)}</p>
+
+        <dl class="mpass-fields">
+          <div><dt>Roll no.</dt><dd>${esc(roll)}</dd></div>
+          <div><dt>Cohort</dt><dd>${esc(m.c || '2024')}</dd></div>
+        </dl>
+
+        <div class="mpass-achieve-pill" title="${esc(ach.text)}">
+          <span>${ach.icon}</span>
+          <span>${esc(ach.text)}</span>
+        </div>
+
+        <div class="mpass-barcode" aria-hidden="true">
+          ${renderBarcodeSvg(m.u)}
+        </div>
+
+        <div class="mpass-foot">
+          <span class="mpass-foot-tag">Verified</span>
+          <span class="mpass-foot-lvl">Lvl ${ach.lvlNum} · ${esc(ach.level)}</span>
+        </div>
+      </article>
+    `;
+  }
+
+  // Design 2: Developer Holo-Card (Interactive Flippable Card)
+  function renderHoloCard(m) {
+    const ach = getAchievement(m);
+    const avatarSrc = getAvatarSrc(m.a);
+    const skills = Array.isArray(m.s) ? m.s.slice(0, 3) : [];
+    const bioText = m.b || 'Passionate student developer exploring Google technologies and building solutions at SR University.';
+
+    return `
+      <div class="mholo-card" data-handle="${esc(m.u)}" tabindex="0" role="region" aria-label="Developer card for ${esc(m.n)}. Click to flip.">
+        <div class="mholo-shell">
+          <!-- Front Face -->
+          <div class="mholo-face mholo-front">
+            <div class="mholo-head">
+              <span class="mholo-badge-id">GDG SRU // 2026</span>
+              <span class="mholo-xp-badge">Lvl ${ach.lvlNum} · ${esc(ach.level)}</span>
+            </div>
+
+            <div class="mholo-center">
+              <div class="mholo-av-aura">
+                <img class="mholo-av-img" src="${avatarSrc}" alt="${esc(m.n)}" loading="lazy" width="68" height="68">
+              </div>
+              <h4 class="mholo-name">${esc(m.n)}</h4>
+              <p class="mholo-handle">@${esc(m.u)}</p>
+              <p class="mholo-dept">${esc(m.d || 'SR University')}${m.c ? ` · '${String(m.c).slice(-2)}` : ''}</p>
+            </div>
+
+            <div class="mholo-achieve" title="${esc(ach.text)}">
+              <span>${ach.icon}</span>
+              <span>${esc(ach.text)}</span>
+            </div>
+
+            ${skills.length ? `
+              <div class="mholo-skills">
+                ${skills.map((s) => `<span class="mholo-skill">${esc(s)}</span>`).join('')}
+              </div>
+            ` : ''}
+
+            <p class="mholo-flip-hint"><span>↺</span> Click to flip</p>
+          </div>
+
+          <!-- Back Face -->
+          <div class="mholo-face mholo-back">
+            <div class="mholo-back-head">
+              <span class="mholo-back-title">Developer Profile</span>
+              <span style="font-size: 11px; opacity: 0.6;">@${esc(m.u)}</span>
+            </div>
+
+            <p class="mholo-back-bio">"${esc(bioText)}"</p>
+
+            <div class="mholo-back-meta">
+              <p>Department: <strong>${esc(m.d || 'SR University')}</strong></p>
+              <p>Status: <strong style="color: #81c995;">Verified Member</strong></p>
+              <p>Achievement: <strong>${esc(ach.text)}</strong></p>
+            </div>
+
+            <div class="mholo-back-actions">
+              <a href="/u/${encodeURIComponent(m.u)}" class="mholo-back-btn" onclick="event.stopPropagation()">
+                View 3D Pass <i>→</i>
+              </a>
+              <button type="button" class="mholo-back-flip">↺ Flip back</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   function renderTopBuilders(members) {
     const container = $('#top-builders-list');
     if (!container) return;
 
-    // Pick top handles first, fallback to first 3
     let top = members.filter((m) => TOP_HANDLES.includes(m.u));
-    if (top.length < 3) {
-      top = members.slice(0, 3);
-    }
+    if (top.length < 3) top = members.slice(0, 3);
 
     container.innerHTML = top.map((m) => {
       const ach = getAchievement(m);
@@ -97,14 +224,12 @@
 
     const q = searchQuery.trim().toLowerCase();
     const filtered = members.filter((m) => {
-      // Category filter
       if (activeFilter === 'Top XP' && !TOP_HANDLES.includes(m.u)) return false;
       if (activeFilter !== 'All' && activeFilter !== 'Top XP') {
         const dept = (m.d || '').toLowerCase();
         const target = activeFilter.toLowerCase();
         if (!dept.includes(target)) return false;
       }
-      // Text search
       if (!q) return true;
       const haystack = `${m.n} ${m.u} ${m.d || ''} ${(m.s || []).join(' ')} ${m.b || ''}`.toLowerCase();
       return haystack.includes(q);
@@ -136,36 +261,25 @@
       return;
     }
 
-    grid.innerHTML = filtered.map((m) => {
-      const ach = getAchievement(m);
-      const avatarSrc = getAvatarSrc(m.a);
-      const skills = Array.isArray(m.s) ? m.s.slice(0, 3) : [];
+    // Render based on selected design
+    grid.innerHTML = filtered.map((m) => (cardDesign === 'pass' ? renderPassCard(m) : renderHoloCard(m))).join('');
 
-      return `
-        <a href="/u/${encodeURIComponent(m.u)}" class="member-card" aria-label="Member pass for ${esc(m.n)}">
-          <div class="member-card-head">
-            <img class="member-avatar" src="${avatarSrc}" alt="${esc(m.n)}" loading="lazy" width="44" height="44">
-            <div style="min-width: 0; flex: 1;">
-              <h4 class="member-name">${esc(m.n)}</h4>
-              <p class="member-handle">@${esc(m.u)}</p>
-            </div>
-          </div>
-
-          <p class="member-dept-badge">${esc(m.d || 'SR University')}${m.c ? ` · Cohort ${esc(m.c)}` : ''}</p>
-
-          <div class="member-card-achieve">
-            <span>${ach.icon}</span>
-            <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${esc(ach.text)}</span>
-          </div>
-
-          ${skills.length ? `
-            <div class="member-tags">
-              ${skills.map((s) => `<span class="member-tag">${esc(s)}</span>`).join('')}
-            </div>
-          ` : ''}
-        </a>
-      `;
-    }).join('');
+    // Attach card flip listeners for Holo-cards
+    if (cardDesign === 'holo') {
+      $$('.mholo-card', grid).forEach((card) => {
+        card.addEventListener('click', (e) => {
+          if (e.target.closest('a')) return;
+          card.classList.toggle('is-flipped');
+        });
+        card.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            if (e.target.closest('a')) return;
+            e.preventDefault();
+            card.classList.toggle('is-flipped');
+          }
+        });
+      });
+    }
   }
 
   function bindEvents() {
@@ -182,6 +296,17 @@
         $$('.members-chip').forEach((c) => c.classList.remove('active'));
         chip.classList.add('active');
         activeFilter = chip.dataset.filter || 'All';
+        renderGrid(allMembers);
+      });
+    });
+
+    // Card Design Switcher Toggle
+    $$('[data-card-design]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        $$('[data-card-design]').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        cardDesign = btn.dataset.cardDesign;
+        try { localStorage.setItem('gdg-member-card-design', cardDesign); } catch (_) {}
         renderGrid(allMembers);
       });
     });
@@ -217,9 +342,7 @@
             renderTopBuilders(allMembers);
             renderGrid(allMembers);
           }
-        } catch (_) {
-          // Live stats optional, static stays robust
-        }
+        } catch (_) {}
       }
     } catch (err) {
       console.warn('Could not load member directory:', err);

@@ -494,3 +494,471 @@
   .members-grid { grid-template-columns: 1fr; }
   .members-sec-head { flex-direction: column; align-items: flex-start; gap: 4px; }
 }
+
+/* ========================================================
+   CARD DESIGN 1: DIGITAL PASS BADGE (MINI PASS)
+   ======================================================== */
+.mpass-card {
+  --c1: #4285f4; --c2: #1a4fb8; --c-ink: #ffffff; --c-soft: rgba(255, 255, 255, 0.78);
+  --c-chip: rgba(255, 255, 255, 0.18); --c-line: rgba(255, 255, 255, 0.28); --c-accent: #fbbc04;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 20px;
+  color: var(--c-ink);
+  background: linear-gradient(160deg, var(--c1), var(--c2));
+  box-shadow: 0 14px 34px -10px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  text-decoration: none;
+  min-height: 380px;
+  transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.28s;
+  cursor: pointer;
+}
+.mpass-card:hover {
+  transform: translateY(-6px) scale(1.01);
+  box-shadow: 0 20px 48px -12px rgba(66, 133, 244, 0.4);
+}
+
+.mpass-card[data-skin="google-red"]    { --c1: #ea4335; --c2: #a8231a; }
+.mpass-card[data-skin="google-yellow"] { --c1: #fbbc04; --c2: #e08f00; --c-ink: #1f1f23; --c-soft: rgba(31, 31, 35, 0.74); --c-chip: rgba(31, 31, 35, 0.12); --c-line: rgba(31, 31, 35, 0.25); --c-accent: #1a73e8; }
+.mpass-card[data-skin="google-green"]  { --c1: #34a853; --c2: #0f6b2e; --c-accent: #fdd663; }
+.mpass-card[data-skin="terminal-dark"] {
+  --c1: #0c110e; --c2: #050806; --c-ink: #b6ffcb; --c-soft: rgba(182, 255, 203, 0.7); --c-chip: rgba(182, 255, 203, 0.1);
+  --c-line: rgba(182, 255, 203, 0.28); --c-accent: #7cfc9a;
+  font-family: var(--f-mono, monospace);
+}
+
+.mpass-slot {
+  width: 48px;
+  height: 8px;
+  border-radius: 99px;
+  background: rgba(0, 0, 0, 0.35);
+  margin: 0 auto 12px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.mpass-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.mpass-org {
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--c-soft);
+  letter-spacing: 0.02em;
+}
+.mpass-kind {
+  font: 700 9.5px/1 var(--f-mono, monospace);
+  letter-spacing: 0.14em;
+  padding: 4px 8px;
+  border-radius: 99px;
+  background: var(--c-chip);
+  border: 1px solid var(--c-line);
+}
+
+.mpass-avatar-wrap {
+  position: relative;
+  width: 76px;
+  height: 76px;
+  margin: 0 auto 10px;
+}
+.mpass-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--c-chip);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  display: block;
+}
+.mpass-check {
+  position: absolute;
+  right: -2px;
+  bottom: 0;
+  width: 22px;
+  height: 22px;
+  padding: 3px;
+  border-radius: 50%;
+  background: #34a853;
+  color: #fff;
+  border: 2px solid #fff;
+  display: grid;
+  place-content: center;
+  font-size: 11px;
+}
+.mpass-card[data-skin="google-green"] .mpass-check { background: #1a73e8; }
+
+.mpass-name {
+  text-align: center;
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin: 0 0 2px;
+  line-height: 1.15;
+  color: var(--c-ink);
+}
+.mpass-handle {
+  text-align: center;
+  font: 500 12px/1 var(--f-mono, monospace);
+  color: var(--c-soft);
+  margin: 0 0 12px;
+}
+
+.mpass-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 10px 0;
+  border-top: 1px dashed var(--c-line);
+  border-bottom: 1px dashed var(--c-line);
+  margin-bottom: 10px;
+  font-size: 11px;
+}
+.mpass-fields dt {
+  font: 600 9.5px/1 var(--f-mono, monospace);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--c-soft);
+  margin-bottom: 2px;
+}
+.mpass-fields dd {
+  font-weight: 700;
+  font-size: 12.5px;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mpass-achieve-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border-radius: 9px;
+  background: var(--c-chip);
+  border: 1px solid var(--c-line);
+  font-size: 11.5px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: var(--c-ink);
+}
+.mpass-achieve-pill span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mpass-barcode {
+  margin-top: auto;
+  height: 16px;
+  opacity: 0.45;
+  color: var(--c-ink);
+}
+.mpass-barcode svg { width: 100%; height: 100%; }
+
+.mpass-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+.mpass-foot-tag {
+  font: 700 10px/1 var(--f-mono, monospace);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: 99px;
+  background: var(--c-chip);
+  border: 1px solid var(--c-line);
+}
+.mpass-foot-lvl {
+  font: 700 10px/1 var(--f-mono, monospace);
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: 99px;
+  background: var(--c-ink);
+  color: var(--c1);
+}
+.mpass-card[data-skin="google-yellow"] .mpass-foot-lvl { color: #fbbc04; }
+
+
+/* ========================================================
+   CARD DESIGN 2: DEVELOPER HOLO-CARD (FLIPPABLE TECH CARD)
+   ======================================================== */
+.mholo-card {
+  perspective: 1100px;
+  height: 380px;
+  cursor: pointer;
+}
+.mholo-shell {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.65s cubic-bezier(0.2, 0.8, 0.2, 1);
+  border-radius: 24px;
+}
+.mholo-card.is-flipped .mholo-shell {
+  transform: rotateY(180deg);
+}
+
+.mholo-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 24px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+/* Front Face */
+.mholo-front {
+  background: var(--cd, #ffffff);
+  border: 1.5px solid var(--ln, #e8eaed);
+  color: var(--ink, #1f1f23);
+}
+:root[data-theme='dark'] .mholo-front {
+  background: #141518;
+  border-color: #27282c;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.45);
+}
+.mholo-front::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 4px;
+  background: linear-gradient(90deg, #4285f4, #ea4335, #fbbc04, #34a853);
+}
+
+.mholo-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.mholo-badge-id {
+  font: 700 11px/1 var(--f-mono, monospace);
+  letter-spacing: 0.12em;
+  color: var(--mut, #5f6368);
+  text-transform: uppercase;
+}
+.mholo-xp-badge {
+  font: 700 11px/1 var(--f-mono, monospace);
+  padding: 4px 8px;
+  border-radius: 99px;
+  background: rgba(66, 133, 244, 0.12);
+  color: var(--b, #4285f4);
+}
+
+.mholo-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 12px;
+}
+.mholo-av-aura {
+  position: relative;
+  width: 74px;
+  height: 74px;
+  margin-bottom: 10px;
+  padding: 3px;
+  border-radius: 50%;
+  background: conic-gradient(var(--b, #4285f4), var(--r, #ea4335), var(--y, #fbbc04), var(--g, #34a853), var(--b, #4285f4));
+  box-shadow: 0 0 20px rgba(66, 133, 244, 0.25);
+}
+.mholo-av-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #fff;
+  border: 2px solid var(--cd, #ffffff);
+}
+:root[data-theme='dark'] .mholo-av-img {
+  background: #141518;
+  border-color: #141518;
+}
+
+.mholo-name {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0 0 2px;
+  color: var(--ink, #1f1f23);
+}
+.mholo-handle {
+  font: 600 12px/1 var(--f-mono, monospace);
+  color: var(--mut, #5f6368);
+  margin: 0 0 6px;
+}
+.mholo-dept {
+  font-size: 12px;
+  color: var(--mut, #5f6368);
+  margin: 0;
+}
+
+.mholo-achieve {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: #f8f9fc;
+  border: 1px solid var(--ln, #e8eaed);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink, #1f1f23);
+  margin-bottom: 10px;
+}
+:root[data-theme='dark'] .mholo-achieve {
+  background: #1b1c20;
+  border-color: #2c2e33;
+}
+.mholo-achieve span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mholo-skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+  margin-top: auto;
+}
+.mholo-skill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 99px;
+  background: var(--ln, #f1f3f4);
+  color: var(--ink, #1f1f23);
+}
+:root[data-theme='dark'] .mholo-skill { background: #25262a; }
+
+.mholo-flip-hint {
+  text-align: center;
+  font: 600 11px/1 var(--f-mono, monospace);
+  color: var(--mut, #5f6368);
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+/* Back Face */
+.mholo-back {
+  transform: rotateY(180deg);
+  background: linear-gradient(145deg, #181922, #0d0e14);
+  color: #ecebe8;
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  justify-content: space-between;
+}
+.mholo-back-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.mholo-back-title {
+  font: 700 12px/1 var(--f-mono, monospace);
+  letter-spacing: 0.14em;
+  color: #8ab4f8;
+  text-transform: uppercase;
+}
+.mholo-back-bio {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.75);
+  margin: 12px 0;
+  max-height: 140px;
+  overflow-y: auto;
+}
+.mholo-back-meta {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.4;
+}
+.mholo-back-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: auto;
+}
+.mholo-back-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: var(--b, #4285f4);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 13px;
+  text-decoration: none;
+  transition: transform 0.15s, background 0.15s;
+}
+.mholo-back-btn:hover {
+  background: #1a73e8;
+  transform: translateY(-2px);
+}
+.mholo-back-flip {
+  font: 600 11.5px/1 var(--f-mono, monospace);
+  color: rgba(255, 255, 255, 0.55);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+}
+.mholo-back-flip:hover { color: #fff; }
+
+/* Design Toggle Switcher */
+.members-design-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 99px;
+  background: var(--ln, #f1f3f4);
+  border: 1px solid var(--ln, #e8eaed);
+}
+:root[data-theme='dark'] .members-design-toggle {
+  background: #1b1c20;
+  border-color: #2b2d32;
+}
+.members-design-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 99px;
+  font: 700 12.5px/1 var(--f-body, system-ui, sans-serif);
+  color: var(--mut, #5f6368);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  user-select: none;
+}
+.members-design-btn.active {
+  background: var(--cd, #ffffff);
+  color: var(--ink, #1f1f23);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+:root[data-theme='dark'] .members-design-btn.active {
+  background: #282a30;
+  color: #ffffff;
+}
