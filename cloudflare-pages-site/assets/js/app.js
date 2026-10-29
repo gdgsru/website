@@ -445,7 +445,7 @@ const esc = (e) =>
       ) +
       '<section class="card egg-panel" id="egg-countdown" style="display:none"><span class="cap" id="egg-countdown-title">Hunt ends in</span><p class="egg-count" id="egg-countdown-value"></p></section>' +
       '<section class="card egg-panel"><span class="cap">Rules</span><p class="egg-rules" id="egg-rules">Loading rules…</p></section>' +
-      '<section class="card egg-panel"><span class="cap" id="egg-summary">0 of 8 eggs found</span><ol class="egg-grid" id="egg-grid" aria-label="Easter eggs"></ol></section>',
+      '<section class="card egg-panel"><span class="cap" id="egg-summary">0 of 12 eggs found</span><ol class="egg-grid" id="egg-grid" aria-label="Easter eggs"></ol></section>',
     privacy: () =>
       ph(
         2,

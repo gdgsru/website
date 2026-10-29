@@ -1,6 +1,5 @@
-/* GDG SRU · Live-Event Easter Eggs (8 High-Energy Interactive Secrets)
- * Optimized for 90% mobile touch users with full laptop/desktop support.
- * Zero external libraries, Web Audio API synthesis, high-performance canvas & CSS. */
+/* GDG SRU · Live-Event Easter Eggs (12 High-Energy Interactive Secrets)
+ * Double-digit points, refined mobile touch triggers, Web Audio API synthesis. */
 (() => {
   'use strict';
   if (window.__GDG_EGG_TRIGGERS__) return;
@@ -8,7 +7,7 @@
 
   const KEY = 'gdg-egg-found';
   const eggs = Array.isArray(window.GDG_EGGS) ? window.GDG_EGGS : [];
-  const getEgg = (id) => eggs.find((e) => e.id === Number(id)) || { id, name: 'Secret Egg', points: 150, icon: '✨' };
+  const getEgg = (id) => eggs.find((e) => e.id === Number(id)) || { id, name: 'Secret Egg', points: 15, icon: '✨' };
 
   /* ---------- Core Store (device local) ---------- */
   if (!window.GDGEggs) {
@@ -36,7 +35,7 @@
       found: () => [...found],
       count: () => found.length,
       total: () => eggs.length,
-      points: () => found.reduce((acc, id) => acc + (getEgg(id).points || 100), 0)
+      points: () => found.reduce((acc, id) => acc + (getEgg(id).points || 15), 0)
     };
   }
 
@@ -46,6 +45,17 @@
   const route = () => (document.body && document.body.dataset.route) || '';
   const isHome = () => route() === 'home' || location.pathname === '/' || location.pathname === '/index.html';
   const closest = (e, sel) => (e.target && e.target.closest) ? e.target.closest(sel) : null;
+
+  // Calls onDone after `n` clicks/taps within `windowMs`
+  function multiTap(n, windowMs, onDone) {
+    let times = [];
+    return () => {
+      const now = Date.now();
+      times = times.filter((t) => now - t <= windowMs);
+      times.push(now);
+      if (times.length >= n) { times = []; onDone(); }
+    };
+  }
 
   /* ---------- Web Audio Synthesizer (Zero Audio Files) ---------- */
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -138,7 +148,7 @@
     } catch (_) {}
   }
 
-  /* ---------- Modern Glass Toast Notification ---------- */
+  /* ---------- Modern Glass Toast Notification & Styles ---------- */
   const style = document.createElement('style');
   style.textContent = `
     .egg-toast {
@@ -220,7 +230,6 @@
       inset: 0;
       pointer-events: none;
       z-index: 2147483630;
-      box-shadow: inset 0 0 100px rgba(66, 133, 244, 0.6);
       animation: raveBorder 1.5s ease infinite alternate;
     }
     @keyframes raveBorder {
@@ -228,6 +237,25 @@
       33% { box-shadow: inset 0 0 80px rgba(234, 67, 53, 0.7); }
       66% { box-shadow: inset 0 0 80px rgba(251, 188, 4, 0.7); }
       100% { box-shadow: inset 0 0 80px rgba(52, 168, 83, 0.7); }
+    }
+    .crt-off {
+      animation: crtOffAnim .75s ease-in-out forwards !important;
+    }
+    @keyframes crtOffAnim {
+      0% { filter: brightness(1); transform: scale(1); }
+      50% { transform: scale(1, 0.003); filter: brightness(2.5); }
+      80% { transform: scale(0.003, 0.003); filter: brightness(4); }
+      100% { transform: scale(1, 1); filter: brightness(1); }
+    }
+    .hero-rumble {
+      animation: heroRumbleAnim .2s linear infinite;
+    }
+    @keyframes heroRumbleAnim {
+      0% { transform: translate(1px, 1px) rotate(0deg); }
+      25% { transform: translate(-1px, -1px) rotate(-0.5deg); }
+      50% { transform: translate(-1px, 1px) rotate(0.5deg); }
+      75% { transform: translate(1px, -1px) rotate(0deg); }
+      100% { transform: translate(1px, 1px) rotate(0deg); }
     }
   `;
   document.head.appendChild(style);
@@ -242,7 +270,7 @@
     setTimeout(() => el.remove(), 2900);
   }
 
-  /* ---------- Visual Effect 1: Full-Screen Confetti Cannon ---------- */
+  /* ---------- Visual Confetti Cannon ---------- */
   function fireConfetti() {
     const COLORS = ['#4285F4', '#EA4335', '#FBBC04', '#34A853'];
     const canvas = document.createElement('canvas');
@@ -253,7 +281,7 @@
     const H = (canvas.height = window.innerHeight);
 
     const particles = [];
-    for (let i = 0; i < 95; i++) {
+    for (let i = 0; i < 90; i++) {
       particles.push({
         x: W * 0.5 + (Math.random() - 0.5) * 160,
         y: H * 0.45 + (Math.random() - 0.5) * 80,
@@ -308,7 +336,9 @@
   }
 
   /* =========================================================================
-   * EGG 1: Confetti Rave (Konami Swipe on Mobile & Arrow Keys on Laptop)
+   * EGG 1: Confetti Rave (+20 pts)
+   * Mobile: 4-Way Rapid Horizontal Wiggle (← → ← →)
+   * Laptop: Konami Code (ArrowUp ArrowUp ArrowDown ArrowDown ArrowLeft ArrowRight ArrowLeft ArrowRight B A)
    * ========================================================================= */
   function triggerEgg1() {
     playFanfare();
@@ -320,45 +350,44 @@
     find(1);
   }
 
-  // Mobile Swipe Gesture: Up, Up, Down, Down, Left, Right, Left, Right
-  const KONAMI_SWIPES = ['up', 'up', 'down', 'down', 'left', 'right', 'left', 'right'];
-  let swipeSeq = [];
-  let touchStartX = 0, touchStartY = 0, touchStartTime = 0;
-
+  // Mobile 4-Stroke Horizontal Wiggle (Zero vertical scroll interference!)
+  let wiggleStartX = 0, wiggleLastDir = 0, wiggleFlips = 0, wiggleLastTime = 0;
   document.addEventListener('touchstart', (e) => {
     if (!e.touches || e.touches.length !== 1) return;
-    touchStartX = e.touches[0].clientX;
-    touchStartY = e.touches[0].clientY;
-    touchStartTime = Date.now();
+    wiggleStartX = e.touches[0].clientX;
+    wiggleLastDir = 0;
+    wiggleFlips = 0;
+    wiggleLastTime = Date.now();
   }, { passive: true });
 
-  document.addEventListener('touchend', (e) => {
-    if (!e.changedTouches || e.changedTouches.length !== 1) return;
-    const dx = e.changedTouches[0].clientX - touchStartX;
-    const dy = e.changedTouches[0].clientY - touchStartY;
-    const dt = Date.now() - touchStartTime;
-    if (dt > 1200) return; // Too slow for swipe
-
-    let dir = null;
-    if (Math.abs(dx) > 35 && Math.abs(dx) > Math.abs(dy) * 1.3) {
-      dir = dx > 0 ? 'right' : 'left';
-    } else if (Math.abs(dy) > 35 && Math.abs(dy) > Math.abs(dx) * 1.3) {
-      dir = dy > 0 ? 'down' : 'up';
+  document.addEventListener('touchmove', (e) => {
+    if (!e.touches || e.touches.length !== 1) return;
+    const now = Date.now();
+    if (now - wiggleLastTime > 1300) {
+      wiggleFlips = 0;
+      wiggleLastDir = 0;
+      wiggleStartX = e.touches[0].clientX;
     }
-    if (!dir) return;
+    wiggleLastTime = now;
 
-    if (dir === KONAMI_SWIPES[swipeSeq.length]) {
-      swipeSeq.push(dir);
-      if (swipeSeq.length === KONAMI_SWIPES.length) {
-        triggerEgg1();
-        swipeSeq = [];
+    const x = e.touches[0].clientX;
+    const dx = x - wiggleStartX;
+    if (Math.abs(dx) > 22) {
+      const curDir = dx > 0 ? 1 : -1;
+      if (wiggleLastDir !== 0 && curDir !== wiggleLastDir) {
+        wiggleFlips++;
+        if (wiggleFlips >= 3) {
+          triggerEgg1();
+          wiggleFlips = 0;
+          wiggleLastDir = 0;
+        }
       }
-    } else {
-      swipeSeq = dir === KONAMI_SWIPES[0] ? [dir] : [];
+      wiggleLastDir = curDir;
+      wiggleStartX = x;
     }
   }, { passive: true });
 
-  // Laptop Keyboard Konami Code
+  // Laptop Konami Code
   const KONAMI_KEYS = ['arrowup', 'arrowup', 'arrowdown', 'arrowdown', 'arrowleft', 'arrowright', 'arrowleft', 'arrowright', 'b', 'a'];
   let keySeq = [];
   window.addEventListener('keydown', (e) => {
@@ -376,7 +405,9 @@
   });
 
   /* =========================================================================
-   * EGG 2: Google Gravity Collapse (Cards tumble & fall with physics)
+   * EGG 2: Google Gravity (+30 pts)
+   * Mobile: Hold hero title for 1.1s (with rumble)
+   * Laptop: Press 'G' key
    * ========================================================================= */
   let gravityActive = false;
   function triggerEgg2() {
@@ -409,7 +440,6 @@
       el.style.transform = `translate(${randX}px, ${Math.max(80, dropDistance)}px) rotate(${randRot}deg)`;
       el.style.cursor = 'grab';
 
-      // Drag / fling capability on mobile touch
       let startX = 0, startY = 0, curX = randX, curY = dropDistance;
       const onMove = (me) => {
         const clientX = me.touches ? me.touches[0].clientX : me.clientX;
@@ -446,24 +476,30 @@
     document.body.appendChild(restoreBtn);
   }
 
-  // Trigger Egg 2 on double-tap & hold on home hero OR G key
-  let heroTapCount = 0, lastHeroTap = 0;
-  document.addEventListener('click', (e) => {
+  // Hold hero title for 1.1s with rumble
+  let heroHoldTimer = null;
+  document.addEventListener('pointerdown', (e) => {
     if (!isHome()) return;
-    if (closest(e, '.home-hero-title, .hero-reference-copy')) {
-      const now = Date.now();
-      if (now - lastHeroTap < 400) {
-        heroTapCount++;
-        if (heroTapCount >= 2) {
-          triggerEgg2();
-          heroTapCount = 0;
-        }
-      } else {
-        heroTapCount = 1;
-      }
-      lastHeroTap = now;
+    const heroTitle = closest(e, '.home-hero-title, .hero-reference-copy h1');
+    if (heroTitle) {
+      heroTitle.classList.add('hero-rumble');
+      heroHoldTimer = setTimeout(() => {
+        heroTitle.classList.remove('hero-rumble');
+        triggerEgg2();
+      }, 1100);
     }
-  });
+  }, { passive: true });
+
+  const cancelHeroHold = () => {
+    if (heroHoldTimer) {
+      clearTimeout(heroHoldTimer);
+      heroHoldTimer = null;
+      const hero = document.querySelector('.home-hero-title, .hero-reference-copy h1');
+      if (hero) hero.classList.remove('hero-rumble');
+    }
+  };
+  document.addEventListener('pointerup', cancelHeroHold, { passive: true });
+  document.addEventListener('pointercancel', cancelHeroHold, { passive: true });
 
   window.addEventListener('keydown', (e) => {
     if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
@@ -471,7 +507,8 @@
   });
 
   /* =========================================================================
-   * EGG 3: 8-Bit Mario Coin (Triple tap logo)
+   * EGG 3: 8-Bit Mario Coin (+15 pts)
+   * Mobile & Laptop: Rapid triple-tap on GDG bracket logo </>
    * ========================================================================= */
   function triggerEgg3(targetEl) {
     playCoinSound();
@@ -484,31 +521,24 @@
     coin.style.top = `${rect.top}px`;
     coin.innerHTML = `
       <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ffe066,#f59f00);border:2px solid #fff;display:grid;place-items:center;box-shadow:0 4px 16px rgba(245,159,0,0.6);font-size:18px;">🪙</div>
-      <b style="color:#f59f00;font-size:16px;text-shadow:0 2px 8px rgba(0,0,0,0.4);font-family:var(--f-mono,monospace);">+100</b>
+      <b style="color:#f59f00;font-size:16px;text-shadow:0 2px 8px rgba(0,0,0,0.4);font-family:var(--f-mono,monospace);">+15</b>
     `;
     document.body.appendChild(coin);
     setTimeout(() => coin.remove(), 850);
   }
 
-  let logoClicks = 0, lastLogoClick = 0;
+  const logoTapTrigger = multiTap(3, 1000, () => {
+    const logo = document.querySelector('.lg, #lgs, .hero-code');
+    triggerEgg3(logo);
+  });
   document.addEventListener('click', (e) => {
-    const logo = closest(e, '.lg, #lgs, .hero-code');
-    if (!logo) return;
-    const now = Date.now();
-    if (now - lastLogoClick < 450) {
-      logoClicks++;
-      if (logoClicks >= 3) {
-        triggerEgg3(logo);
-        logoClicks = 0;
-      }
-    } else {
-      logoClicks = 1;
-    }
-    lastLogoClick = now;
+    if (closest(e, '.lg, #lgs, .hero-code')) logoTapTrigger();
   });
 
   /* =========================================================================
-   * EGG 4: Secret Hacker Terminal (Long-press footer or press ` / ~)
+   * EGG 4: Root Hacker Terminal (+35 pts)
+   * Mobile: TRIPLE-TAP Footer Copyright (Replaced long-press! 100% reliable)
+   * Laptop: Press ` or ~ key
    * ========================================================================= */
   let terminalOpen = false;
   function openHackerTerminal() {
@@ -571,6 +601,9 @@
         logLine('⚡ Matrix hacker visual active.', '#34a853');
       } else if (c === 'roast') {
         triggerEgg8();
+      } else if (c === 'crt') {
+        triggerEgg10();
+        logLine('📺 CRT monitor power cycling...', '#fbbc04');
       } else if (c === 'cat secret') {
         logLine('🎉 CHAPTER SECRET: <i>"The best way to learn software is to ship it before you feel ready."</i> - GDG SRU Core Team', '#fbbc04');
       } else if (c === 'clear') {
@@ -600,17 +633,11 @@
     closeBtn.addEventListener('click', closeTerm);
   }
 
-  // Mobile Long-Press on Footer (1.4s)
-  let footHoldTimer = null;
-  document.addEventListener('pointerdown', (e) => {
-    if (closest(e, '.v18-foot, .v18-foot-in')) {
-      footHoldTimer = setTimeout(() => {
-        openHackerTerminal();
-      }, 1400);
-    }
-  }, { passive: true });
-  document.addEventListener('pointerup', () => { if (footHoldTimer) clearTimeout(footHoldTimer); }, { passive: true });
-  document.addEventListener('pointercancel', () => { if (footHoldTimer) clearTimeout(footHoldTimer); }, { passive: true });
+  // TRIPLE-TAP ON FOOTER COPYRIGHT (Zero mobile text-select issues!)
+  const footTapTrigger = multiTap(3, 1000, openHackerTerminal);
+  document.addEventListener('click', (e) => {
+    if (closest(e, '.v18-foot, .v18-foot-in, footer')) footTapTrigger();
+  });
 
   window.addEventListener('keydown', (e) => {
     if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
@@ -618,7 +645,8 @@
   });
 
   /* =========================================================================
-   * EGG 5: Bugdroid Runner (1-Tap Jumping Mini Game)
+   * EGG 5: Bugdroid Runner (+30 pts)
+   * Tap cloud / sun in hero art, or dino on 404
    * ========================================================================= */
   let runnerActive = false;
   function openBugdroidRunner() {
@@ -658,14 +686,14 @@
     const msgEl = overlay.querySelector('#runner-msg');
     const closeBtn = overlay.querySelector('#runner-close');
 
-    let running = true, score = 0, isJumping = false;
+    let running = true, score = 0;
     let py = 150, vy = 0, gravity = 0.65;
     let obstacles = [{ x: 420, w: 18, h: 28 }];
 
     function jump() {
       if (py >= 148) {
         vy = -11;
-        playSynthTone(587.33, 0.1); // D5 jump beep
+        playSynthTone(587.33, 0.1);
         msgEl.style.display = 'none';
       }
     }
@@ -682,7 +710,6 @@
       if (!running) return;
       ctx.clearRect(0, 0, 400, 200);
 
-      // Floor line
       ctx.strokeStyle = '#34a853';
       ctx.lineWidth = 2;
       ctx.beginPath();
@@ -690,24 +717,20 @@
       ctx.lineTo(400, 178);
       ctx.stroke();
 
-      // Physics
       vy += gravity;
       py += vy;
       if (py > 150) { py = 150; vy = 0; }
 
-      // Draw Bugdroid (Green rectangle with eyes)
       ctx.fillStyle = '#34a853';
       ctx.fillRect(40, py, 26, 26);
       ctx.fillStyle = '#fff';
       ctx.fillRect(56, py + 5, 4, 4);
 
-      // Obstacles
       obstacles.forEach((ob) => {
         ob.x -= 4.2;
         ctx.fillStyle = '#ea4335';
         ctx.fillRect(ob.x, 178 - ob.h, ob.w, ob.h);
 
-        // Collision check
         if (ob.x < 66 && ob.x + ob.w > 40 && py + 26 > 178 - ob.h) {
           msgEl.textContent = `GAME OVER · SCORE: ${score}`;
           msgEl.style.display = 'block';
@@ -740,15 +763,13 @@
     closeBtn.addEventListener('click', closeGame);
   }
 
-  // Trigger Bugdroid on tap of cloud / sun on home hero or 404
   document.addEventListener('click', (e) => {
-    if (closest(e, '.hero-art-cloud, .hero-art-sun, .pg.page-404, .page-404')) {
-      openBugdroidRunner();
-    }
+    if (closest(e, '.hero-art-cloud, .hero-art-sun')) openBugdroidRunner();
   });
 
   /* =========================================================================
-   * EGG 6: Google 4-Color Synth (Tap 4 dots in footer)
+   * EGG 6: Google 4-Color Synth (+20 pts)
+   * Tap 4 footer dots in sequence (B-R-Y-G)
    * ========================================================================= */
   const TONE_FREQS = [261.63, 329.63, 392.00, 523.25]; // C4, E4, G4, C5
   let synthTaps = [];
@@ -762,8 +783,7 @@
       if (idx === synthTaps.length) {
         synthTaps.push(idx);
         if (synthTaps.length === 4) {
-          // All 4 played in sequence: victory chord!
-          setTimeout(playFanfare, 300);
+          setTimeout(playFanfare, 250);
           find(6);
           synthTaps = [];
         }
@@ -774,7 +794,8 @@
   });
 
   /* =========================================================================
-   * EGG 7: Do a Barrel Roll (360° Viewport Rotation)
+   * EGG 7: Do a Barrel Roll (+25 pts)
+   * Search "barrel roll", double-tap navbar pill, or press 'R'
    * ========================================================================= */
   let rolling = false;
   function triggerEgg7() {
@@ -797,23 +818,11 @@
     }, 1350);
   }
 
-  // 2-Finger Rotation / Twist Gesture on Mobile
-  let touchAngles = [];
-  document.addEventListener('touchmove', (e) => {
-    if (!e.touches || e.touches.length !== 2) return;
-    const dx = e.touches[1].clientX - e.touches[0].clientX;
-    const dy = e.touches[1].clientY - e.touches[0].clientY;
-    const angle = Math.atan2(dy, dx) * (180 / Math.PI);
-    touchAngles.push(angle);
-    if (touchAngles.length > 5) {
-      const delta = Math.abs(touchAngles[touchAngles.length - 1] - touchAngles[0]);
-      if (delta > 65) {
-        touchAngles = [];
-        triggerEgg7();
-      }
-    }
-  }, { passive: true });
-  document.addEventListener('touchend', () => { touchAngles = []; }, { passive: true });
+  // Double tap floating navbar pill
+  const navTapTrigger = multiTap(2, 600, triggerEgg7);
+  document.addEventListener('click', (e) => {
+    if (closest(e, 'header#hd .nv, .nv-pill')) navTapTrigger();
+  });
 
   window.addEventListener('keydown', (e) => {
     if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
@@ -821,7 +830,8 @@
   });
 
   /* =========================================================================
-   * EGG 8: Gemini AI Roast & Fortune (Long-press spark)
+   * EGG 8: Gemini AI Roast (+20 pts)
+   * Hold the sparkle icon ✳ in hero
    * ========================================================================= */
   const ROASTS = [
     "Gemini analysis: You have 42 tabs open and 38 of them are StackOverflow answers from 2017.",
@@ -836,7 +846,7 @@
 
   function triggerEgg8() {
     find(8);
-    playSynthTone(783.99, 0.2); // G5 sparkle chime
+    playSynthTone(783.99, 0.2);
 
     const card = document.createElement('div');
     card.style.cssText = `
@@ -870,15 +880,83 @@
     card.querySelector('#oracle-close').addEventListener('click', () => card.remove());
   }
 
-  // Mobile Long-Press on Sparkle Asterisk
   let sparkTimer = null;
   document.addEventListener('pointerdown', (e) => {
     if (closest(e, '.hero-proof-spark, .art-glyph')) {
-      sparkTimer = setTimeout(triggerEgg8, 800);
+      sparkTimer = setTimeout(triggerEgg8, 700);
     }
   }, { passive: true });
   document.addEventListener('pointerup', () => { if (sparkTimer) clearTimeout(sparkTimer); }, { passive: true });
   document.addEventListener('pointercancel', () => { if (sparkTimer) clearTimeout(sparkTimer); }, { passive: true });
+
+  /* =========================================================================
+   * EGG 9: Speed Tap Combo (+15 pts) [NEW]
+   * Rapidly tap "Join the Community" 5 times
+   * ========================================================================= */
+  const joinTapTrigger = multiTap(5, 1500, () => {
+    find(9);
+    playCoinSound();
+    const btn = document.querySelector('#hero-discord-btn, .discord-promo-cta');
+    if (btn) {
+      const spark = document.createElement('span');
+      spark.textContent = '⚡ 5x COMBO!';
+      spark.style.cssText = `
+        position:absolute;top:-26px;left:50%;transform:translateX(-50%);
+        background:#fbbc04;color:#000;font-weight:800;font-size:11px;
+        padding:2px 8px;border-radius:999px;box-shadow:0 4px 12px rgba(251,188,4,0.6);
+        animation:coinHopAnim .9s ease forwards;
+      `;
+      btn.style.position = 'relative';
+      btn.appendChild(spark);
+      setTimeout(() => spark.remove(), 950);
+    }
+  });
+  document.addEventListener('click', (e) => {
+    if (closest(e, '#hero-discord-btn, .discord-promo-cta')) joinTapTrigger();
+  });
+
+  /* =========================================================================
+   * EGG 10: CRT TV Power-Down (+20 pts) [NEW]
+   * Rapidly triple-tap the Menu button, or type "crt" in search/terminal
+   * ========================================================================= */
+  function triggerEgg10() {
+    find(10);
+    playSynthTone(120, 0.4);
+    document.documentElement.classList.add('crt-off');
+    setTimeout(() => {
+      document.documentElement.classList.remove('crt-off');
+    }, 850);
+  }
+
+  const crtTapTrigger = multiTap(3, 1600, triggerEgg10);
+  document.addEventListener('click', (e) => {
+    if (closest(e, '.mn, .dts, .menu-close, [aria-label*="menu" i], #theme-toggle, .theme-toggle, [aria-label*="theme"]')) {
+      crtTapTrigger();
+    }
+  });
+
+  /* =========================================================================
+   * EGG 11: 404 Dino Discovery (+15 pts) [NEW]
+   * Visit 404 page & tap Dino
+   * ========================================================================= */
+  document.addEventListener('click', (e) => {
+    if (closest(e, '.pg.page-404, .page-404, .page-404-canvas, .dino-wrapper')) {
+      playCoinSound();
+      find(11);
+    }
+  });
+
+  /* =========================================================================
+   * EGG 12: Chapter Passcode (+10 pts) [NEW]
+   * Type "sru" or "gdg" in search
+   * ========================================================================= */
+  document.addEventListener('input', (e) => {
+    if (!e.target || !['q', 'tm-search', 'cmd-input'].includes(e.target.id)) return;
+    const v = (e.target.value || '').trim().toLowerCase();
+    if (v === 'barrel roll') triggerEgg7();
+    if (v === 'crt') triggerEgg10();
+    if (v === 'sru' || v === 'gdg') find(12);
+  });
 
   /* ---------- Footer Extras (Google 4-Dots) ---------- */
   function injectFooterExtras() {
