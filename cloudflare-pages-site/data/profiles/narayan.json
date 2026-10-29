@@ -5,18 +5,60 @@
   "roll_display": "2403••••01",
   "department": "CSE (AI & ML)",
   "cohort": "2024",
+  "university": "SR University",
   "status": "verified",
+  "active_status": "Active Member",
   "theme": "google-blue",
   "avatar": "avatar-03",
-  "github": "",
-  "portfolio": "",
-  "linkedin": "",
-  "bio": "Organizer and web developer. Passionate about building community-first products.",
+  "photo": "/assets/images/narayan-portrait.png",
+  "bio": "Organizer and web developer. Passionate about building community-first products and creating meaningful digital experiences. Always up for a good opputunity to learn and collaborate!",
+  "about_me": "I'm a third-year CSE (AI & ML) student at SR University, passionate about building community-first products and exploring the world of web technologies. I love learning new things, collaborating with amazing people and turning ideas into real things.",
   "skills": [
     "Web Dev",
     "Python",
-    "Cloud",
-    "React"
+    "React",
+    "Community",
+    "JavaScript",
+    "UI/UX"
   ],
-  "joined": "2026-10-15"
+  "interests": [
+    "Open Source",
+    "Community",
+    "AI/ML",
+    "Product Building"
+  ],
+  "github": "narayanbora",
+  "linkedin": "https://linkedin.com/in/narayanbora",
+  "portfolio": "https://narayanbora.dev",
+  "email": "narayan.b@sru.edu.in",
+  "coding_languages": "Python, JavaScript, C++",
+  "tools": "VS Code, Git, Firebase, React",
+  "hobbies": "Gaming, Photography, Music",
+  "workshops": [
+    {
+      "title": "Building Web Apps with Firebase",
+      "date": "2025-10-12",
+      "date_display": "Oct 12, 2025",
+      "location": "SR University",
+      "icon": "firebase",
+      "cred": "GDG-SRU-FB-2025-01"
+    },
+    {
+      "title": "Intro to Machine Learning",
+      "date": "2025-08-30",
+      "date_display": "Aug 30, 2025",
+      "location": "SR University",
+      "icon": "python",
+      "cred": "GDG-SRU-ML-2025-02"
+    },
+    {
+      "title": "Git & GitHub Basics",
+      "date": "2025-07-20",
+      "date_display": "Jul 20, 2025",
+      "location": "SR University",
+      "icon": "github",
+      "cred": "GDG-SRU-GIT-2025-03"
+    }
+  ],
+  "joined": "2024-09-01"
 }
