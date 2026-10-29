@@ -532,3 +532,55 @@ header#hd .mn:hover .dts {
     font-size: 12px !important;
   }
 }
+
+
+/* ==========================================================================
+   Responsive Spacing & Safe-Area Adjustments (All Pages & Browsers)
+   ========================================================================== */
+@media (max-width: 640px) {
+  /* Prevent horizontal edge clipping and balance padding on mobile devices */
+  .page-wrap, main#app, .page-intro, .v18-base, .v18-footer-top {
+    box-sizing: border-box !important;
+  }
+  
+  /* Certificate Action Buttons Grid on Mobile */
+  .gdg-cert-actions {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    width: 100% !important;
+    margin-top: 14px !important;
+  }
+  .gdg-cert-actions .btn {
+    flex: 1 1 calc(50% - 6px) !important;
+    justify-content: center !important;
+    text-align: center !important;
+    min-height: 40px !important;
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+    box-sizing: border-box !important;
+  }
+  .gdg-cert-actions #gdg-cert-pdf {
+    flex: 1 1 100% !important;
+    min-height: 44px !important;
+    font-weight: 700 !important;
+  }
+  
+  /* Prevent iOS Safari input auto-zoom by ensuring minimum 16px font-size */
+  input[type="text"],
+  input[type="search"],
+  input[type="email"],
+  select {
+    font-size: 16px !important;
+  }
+}
+
+/* Safe Area Insets for notched displays (iPhone, Pixel, Galaxy) */
+@supports (padding: env(safe-area-inset-bottom)) {
+  body {
+    padding-bottom: max(0px, env(safe-area-inset-bottom)) !important;
+  }
+  footer.v18-footer, .pf-footer {
+    padding-bottom: max(20px, calc(16px + env(safe-area-inset-bottom))) !important;
+  }
+}

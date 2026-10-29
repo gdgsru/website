@@ -1448,6 +1448,21 @@ img, svg {
 }
 
 @media (max-width: 640px) {
+  /* Container & Header Mobile Padding */
+  .pf-main-container {
+    padding: 16px 16px 48px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .pf-header-inner {
+    padding: 10px 16px !important;
+    gap: 10px !important;
+  }
+  .pf-card-box {
+    padding: 16px !important;
+    border-radius: 14px !important;
+  }
+
   .pf-search-pill {
     min-width: unset;
     padding: 7px 10px;
@@ -1456,28 +1471,70 @@ img, svg {
     display: none;
   }
 
+  .pf-hero {
+    gap: 20px !important;
+    margin-bottom: 24px !important;
+  }
+
   .pf-hero-identity {
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
     flex-direction: column;
     align-items: center;
     text-align: center;
+    gap: 16px !important;
   }
   
+  .pf-avatar-ring {
+    width: 110px !important;
+    height: 110px !important;
+  }
+  .pf-avatar-img {
+    width: 102px !important;
+    height: 102px !important;
+  }
+
+  .pf-member-name {
+    font-size: 26px !important;
+    line-height: 1.2 !important;
+    word-break: break-word !important;
+  }
+
   .pf-badge-row, .pf-meta-line, .pf-location-line, .pf-skill-tags-row {
     justify-content: center;
   }
+  
+  .pf-meta-line, .pf-location-line {
+    white-space: normal !important;
+    flex-wrap: wrap !important;
+  }
 
+  .pf-hero-actions {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    width: 100% !important;
+    gap: 8px !important;
+  }
   .pf-hero-actions .pf-btn {
-    flex: 1 1 calc(50% - 6px);
-    justify-content: center;
+    flex: 1 1 calc(50% - 6px) !important;
+    min-height: 38px !important;
+    justify-content: center !important;
+    padding: 0 8px !important;
+    box-sizing: border-box !important;
   }
   .pf-hero-actions .pf-btn-primary {
-    flex-basis: 100%;
+    flex: 1 1 100% !important;
+    min-height: 42px !important;
   }
 
   .pf-hero-meta-card {
     flex-direction: column;
     gap: 12px;
     align-items: flex-start;
+    padding: 12px 14px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
   .pf-meta-col-divider {
     display: none;
@@ -1500,9 +1557,26 @@ img, svg {
     flex-direction: column;
     text-align: center;
     gap: 14px;
+    padding: 20px 16px !important;
   }
   .pf-footer-brand, .pf-footer-right {
     justify-content: center;
+  }
+}
+
+/* Extra Compact Phones (<= 360px) */
+@media (max-width: 360px) {
+  .pf-main-container {
+    padding: 12px 10px 36px !important;
+  }
+  .pf-header-inner {
+    padding: 8px 10px !important;
+  }
+  .pf-card-box {
+    padding: 12px !important;
+  }
+  .pf-hero-actions .pf-btn {
+    flex: 1 1 100% !important;
   }
 }
 
