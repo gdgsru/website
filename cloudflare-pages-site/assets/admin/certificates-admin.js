@@ -1122,20 +1122,25 @@
                 </div>
               </div>
 
-              <div class="mc-form-row">
+              <div class="mc-form-row" style="align-items:center;margin-bottom:8px">
                 <button type="button" class="button" id="btnPullRoster" style="flex:1;background:var(--sunk,#f8f9fa);color:var(--ink);border:1px solid var(--line);font-size:12px;padding:8px">👥 Pull Event Attendees</button>
-                <label class="mc-upload-btn" style="flex:1" hidden>
-                  Upload CSV
-                  <input type="file" id="inpBulkFile" accept=".csv,.txt,text/csv,text/plain">
-                </label>
+                <button type="button" class="button-outline" id="btnToggleManualList" style="font-size:11px;padding:7px 10px">✏️ Paste / CSV</button>
               </div>
 
-              <div class="mc-form-group">
-                <div style="display:flex;justify-content:space-between;align-items:center">
-                  <label hidden>Attendees List (Name, Roll, Email)</label>
-                  <span id="bulkCountLabel" style="font-size:11px;color:var(--ink-3)">0 loaded</span>
+              <div class="mc-form-group" id="manualListWrap" style="display:none;margin-bottom:8px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+                  <label style="font-size:11px;font-weight:700">Paste Names (one per line):</label>
+                  <label class="mc-upload-btn" style="padding:2px 8px;font-size:10.5px">
+                    📁 Upload CSV
+                    <input type="file" id="inpBulkFile" accept=".csv,.txt,text/csv,text/plain">
+                  </label>
                 </div>
-                <textarea id="inpBulkText" rows="3" hidden placeholder="Asha Rao, 26BCE1001&#10;Rahul Verma, rahul@example.com&#10;Priya Sharma"></textarea>
+                <textarea id="inpBulkText" rows="3" placeholder="Asha Rao, 26BCE1001&#10;Rahul Verma, rahul@example.com&#10;Priya Sharma" style="font-size:11px;font-family:monospace"></textarea>
+              </div>
+
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                <span style="font-size:11px;color:var(--ink-2);font-weight:600">Roster Status:</span>
+                <span id="bulkCountLabel" style="font-size:11.5px;font-weight:700;color:var(--primary,#1a73e8)">0 loaded</span>
               </div>
 
               <div class="mc-progress-box" id="exportProgressWrap">
@@ -1531,6 +1536,7 @@
       renderSignatories();
       renderPartners();
       fitName();
+      loadEventRoster(true);
     }
 
 
@@ -2114,17 +2120,36 @@
       e.target.value = '';
     });
 
-    async function loadEventRoster() {
-      const evId = $('#mc-event-select').value;
-      if (!evId) return adminMessage('Choose an event first.');
-      const { data, error } = await sb.from('attendance_records').select('attendee_name,roll_no,attendee_email').eq('event_id', evId).eq('attendance_status', 'attended');
-      if (error) return adminMessage(authErrorText(error));
-      if (!data?.length) return adminMessage('No attended records found for this event. Upload attendance first in Attendance tab.');
-      $('#inpBulkText').value = data.map((r) => `${r.attendee_name}${r.roll_no ? ', ' + r.roll_no : ''}`).join('\n');
-      setRecipientsList(data.map((r) => ({ name: r.attendee_name, roll_no: r.roll_no, email: r.attendee_email })));
-      adminMessage(`${data.length} attendee(s) loaded from event roster!`, true);
+    async function loadEventRoster(silent = false) {
+      const evId = $('#mc-event-select') ? $('#mc-event-select').value : null;
+      if (!evId) {
+        if (!silent) adminMessage('Choose an event first.');
+        return;
+      }
+      try {
+        const { data, error } = await sb.from('attendance_records').select('attendee_name,roll_no,attendee_email').eq('event_id', evId).eq('attendance_status', 'attended');
+        if (error) {
+          if (!silent) adminMessage(authErrorText(error));
+          return;
+        }
+        if (!data?.length) {
+          if (!silent) adminMessage('No attended records found in database. Click "Paste / CSV" to enter names manually or upload attendance in Attendance tab.');
+          return;
+        }
+        if ($('#inpBulkText')) $('#inpBulkText').value = data.map((r) => `${r.attendee_name}${r.roll_no ? ', ' + r.roll_no : ''}`).join('\n');
+        setRecipientsList(data.map((r) => ({ name: r.attendee_name, roll_no: r.roll_no, email: r.attendee_email })));
+        if (!silent) adminMessage(`${data.length} attendee(s) loaded from event roster!`, true);
+      } catch (err) {
+        if (!silent) adminMessage('Could not load attendees: ' + err.message);
+      }
     }
-    $('#btnPullRoster').onclick = loadEventRoster;
+    if ($('#btnPullRoster')) $('#btnPullRoster').onclick = () => loadEventRoster(false);
+    if ($('#btnToggleManualList')) {
+      $('#btnToggleManualList').onclick = () => {
+        const wrap = $('#manualListWrap');
+        if (wrap) wrap.style.display = (wrap.style.display === 'none' ? 'block' : 'none');
+      };
+    }
 
     /* ------------------------------------------------------------------ Export Suite */
     async function renderCertCanvas() {
@@ -2148,7 +2173,16 @@
     }
 
     async function exportBulk(mode) {
-      if (!recipients.length) return adminMessage('Load attendees first (click "Pull Event Attendees" or paste names).');
+      if (!recipients.length) {
+        setProgress(true, 5, 'Checking attendee roster...');
+        await loadEventRoster(true);
+      }
+      if (!recipients.length) {
+        setProgress(false);
+        const wrap = $('#manualListWrap');
+        if (wrap) wrap.style.display = 'block';
+        return adminMessage('No attendees found for this event. Click "Paste / CSV" to enter names, or upload attendance in Attendance tab.');
+      }
       await loadStudioLibs();
       const prevScale = scaler.style.transform;
       scaler.style.transform = 'scale(1)';
