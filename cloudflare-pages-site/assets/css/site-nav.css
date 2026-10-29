@@ -535,15 +535,222 @@ header#hd .mn:hover .dts {
 
 
 /* ==========================================================================
-   Responsive Spacing & Safe-Area Adjustments (All Pages & Browsers)
+   UNIVERSAL RESPONSIVE SPACING & SAFE-AREA SYSTEM (ALL PAGES & BROWSERS)
+   Applies across: Home, Events, Team, Blogs, Join, Members, Leaderboard,
+   Certificates, Verify, Resources/Perks, Privacy, Member Badge, Wheel.
    ========================================================================== */
+
+/* 1. Global Box-Sizing & Viewport Containment */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  overflow-x: clip !important;
+  max-width: 100vw !important;
+}
+
+/* 2. Desktop & Wide Screens (> 1200px) */
+@media (min-width: 1201px) {
+  main#app,
+  .page-wrap,
+  .members-container,
+  .v18-foot-in {
+    max-width: 1180px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+}
+
+/* 3. Tablet & Medium Screens (641px - 1024px) */
+@media (max-width: 1024px) and (min-width: 641px) {
+  main#app {
+    padding-inline: 24px !important;
+  }
+  .grid {
+    gap: 16px !important;
+  }
+  .editorial-feature {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 20px !important;
+  }
+  .v18-cols {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 28px !important;
+  }
+}
+
+/* 4. Mobile Screens (<= 640px) - ALL PAGES */
 @media (max-width: 640px) {
-  /* Prevent horizontal edge clipping and balance padding on mobile devices */
-  .page-wrap, main#app, .page-intro, .v18-base, .v18-footer-top {
+  /* Main Container Gutter Padding across all pages */
+  main#app {
+    padding: 10px 14px 44px !important;
+    width: 100% !important;
+    max-width: 100vw !important;
     box-sizing: border-box !important;
   }
-  
-  /* Certificate Action Buttons Grid on Mobile */
+
+  .page-wrap,
+  .members-container,
+  .v18-foot-in,
+  .v18-base {
+    width: 100% !important;
+    max-width: 100vw !important;
+    padding-inline: 14px !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Section Spacing & Margins */
+  .sc {
+    margin: 36px 0 16px !important;
+    padding-bottom: 12px !important;
+    gap: 12px !important;
+  }
+  .sc > span {
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 18px !important;
+  }
+  .sc h2 {
+    font-size: clamp(20px, 5.5vw, 26px) !important;
+    line-height: 1.2 !important;
+  }
+  .sc p {
+    font-size: 13px !important;
+  }
+
+  /* Page Intros (Events, Team, Blogs, Join, Leaderboard, Resources) */
+  .page-intro {
+    padding: 22px 0 16px !important;
+    margin-bottom: 18px !important;
+  }
+  .page-intro h1 {
+    font-size: clamp(28px, 7.5vw, 42px) !important;
+    line-height: 1.05 !important;
+    word-break: break-word !important;
+  }
+  .page-intro .lead {
+    font-size: 14px !important;
+    line-height: 1.55 !important;
+    margin-top: 10px !important;
+  }
+
+  /* Cards & Grids Spacing */
+  .grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+  .card {
+    padding: 14px !important;
+    border-radius: 18px !important;
+  }
+  .card p {
+    font-size: 13.5px !important;
+    line-height: 1.5 !important;
+  }
+
+  /* Home Tracks & Format Cards */
+  #home-tracks .g16-row,
+  .event-format-grid {
+    gap: 10px !important;
+  }
+
+  /* Blog & Editorial Pages */
+  .editorial-feature {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+    padding: 16px !important;
+    border-radius: 20px !important;
+  }
+  .editorial-feature-copy h2 {
+    font-size: clamp(24px, 6.5vw, 34px) !important;
+    line-height: 1.1 !important;
+    margin: 10px 0 !important;
+  }
+  .editorial-feature-art {
+    min-height: 200px !important;
+  }
+  .editorial-grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+  .blog-card {
+    padding: 14px !important;
+  }
+
+  /* Events Page & Ticket Cards */
+  .g16-tk {
+    margin-bottom: 12px !important;
+  }
+  .event-feature {
+    grid-template-columns: 1fr !important;
+    padding: 16px !important;
+    gap: 14px !important;
+  }
+
+  /* Team Page & Radar */
+  .tm-sec {
+    width: 100% !important;
+    padding-inline: 0 !important;
+    margin-top: 28px !important;
+    gap: 14px !important;
+  }
+  .tm-head {
+    padding-top: 14px !important;
+  }
+  .tm-domain-tabs {
+    display: flex !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-bottom: 8px !important;
+    gap: 8px !important;
+    scrollbar-width: none !important;
+  }
+  .tm-domain-tabs::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  /* Leaderboard Page */
+  .page-leaderboard .stats,
+  .stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+    margin: 16px 0 !important;
+  }
+  .stats > div,
+  .stats .stat-card {
+    padding: 8px 6px !important;
+    text-align: center !important;
+  }
+  .stats strong {
+    font-size: clamp(14px, 4vw, 20px) !important;
+  }
+  .stats span {
+    font-size: 10px !important;
+  }
+  .ctl {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+  .find {
+    width: 100% !important;
+  }
+  .find input {
+    width: 100% !important;
+  }
+
+  /* Join Page & Discord Callout */
+  .discord-hub-card {
+    padding: 18px 14px !important;
+    margin: 24px 0 !important;
+    border-radius: 18px !important;
+  }
+  .step {
+    padding: 14px !important;
+  }
+
+  /* Certificate Actions Grid */
   .gdg-cert-actions {
     display: flex !important;
     flex-wrap: wrap !important;
@@ -556,8 +763,8 @@ header#hd .mn:hover .dts {
     justify-content: center !important;
     text-align: center !important;
     min-height: 40px !important;
-    padding: 8px 12px !important;
-    font-size: 13px !important;
+    padding: 8px 10px !important;
+    font-size: 12.5px !important;
     box-sizing: border-box !important;
   }
   .gdg-cert-actions #gdg-cert-pdf {
@@ -565,22 +772,97 @@ header#hd .mn:hover .dts {
     min-height: 44px !important;
     font-weight: 700 !important;
   }
-  
-  /* Prevent iOS Safari input auto-zoom by ensuring minimum 16px font-size */
+
+  /* Footer Spacing */
+  .v18-foot {
+    margin-top: 40px !important;
+  }
+  .v18-cta {
+    padding: 20px 14px !important;
+    border-radius: 20px !important;
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+  .v18-cta h3 {
+    font-size: clamp(24px, 6.5vw, 34px) !important;
+    max-width: 100% !important;
+  }
+  .v18-cta .go {
+    height: 48px !important;
+    padding: 0 8px 0 18px !important;
+    font-size: 14px !important;
+    width: fit-content !important;
+  }
+  .v18-cta .go i {
+    width: 34px !important;
+    height: 34px !important;
+    font-size: 15px !important;
+  }
+  .v18-cols {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+    margin-top: 24px !important;
+  }
+  .v18-mega {
+    font-size: clamp(48px, 16vw, 96px) !important;
+    line-height: 0.88 !important;
+    margin: 18px 0 10px !important;
+  }
+  .v18-base {
+    padding: 14px 0 !important;
+    font-size: 12px !important;
+    gap: 8px !important;
+    text-align: center !important;
+  }
+
+  /* Mobile Touch Target & Tap Safety */
+  button, .btn, .button, a.btn {
+    touch-action: manipulation;
+  }
   input[type="text"],
   input[type="search"],
   input[type="email"],
   select {
-    font-size: 16px !important;
+    font-size: 16px !important; /* Prevents iOS auto-zoom */
   }
 }
 
-/* Safe Area Insets for notched displays (iPhone, Pixel, Galaxy) */
+/* 5. Ultra-Compact Phones (<= 360px - iPhone SE, Galaxy Fold, Small Androids) */
+@media (max-width: 360px) {
+  main#app,
+  .members-container,
+  .v18-foot-in {
+    padding-inline: 8px !important;
+  }
+  .card, .step, .blog-card, .discord-hub-card {
+    padding: 10px !important;
+    border-radius: 14px !important;
+  }
+  .sc {
+    gap: 8px !important;
+  }
+  .sc > span {
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 15px !important;
+  }
+  .gdg-cert-actions .btn {
+    flex: 1 1 100% !important;
+  }
+  .stats {
+    grid-template-columns: 1fr !important;
+    gap: 6px !important;
+  }
+}
+
+/* 6. Safe Area Insets for notched displays */
 @supports (padding: env(safe-area-inset-bottom)) {
   body {
     padding-bottom: max(0px, env(safe-area-inset-bottom)) !important;
   }
-  footer.v18-footer, .pf-footer {
-    padding-bottom: max(20px, calc(16px + env(safe-area-inset-bottom))) !important;
+  footer.v18-foot,
+  footer.v18-footer,
+  .pf-footer {
+    padding-bottom: max(16px, calc(12px + env(safe-area-inset-bottom))) !important;
   }
 }
