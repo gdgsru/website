@@ -113,7 +113,7 @@
     return { html: '<!doctype html>\n' + doc.documentElement.outerHTML, removed: [...removed] };
   }
 
-  const FRAME_CSP = "default-src 'none'; img-src 'self' data: blob: https:; style-src 'unsafe-inline'; font-src data:; connect-src 'none';";
+  const FRAME_CSP = "default-src 'none'; img-src 'self' data: blob: https:; style-src 'unsafe-inline'; font-src data:; connect-src 'self' https: data: blob:;";
   const withFrameCsp = (html) => html.replace(/<head>/i, `<head><meta http-equiv="Content-Security-Policy" content="${FRAME_CSP}">`);
 
   /* ---------- Fields ---------- */
@@ -206,8 +206,23 @@
       curriculum_bullets: curriculumBullets,
       cohosts,
       sponsors,
-      partners,
-      signatories: Array.isArray(f.signatories) ? f.signatories : [],
+      partners: partners.map((p) => ({
+        ...p,
+        logo: p.logo || p.path || '',
+        style: p.style || `--partner-scale: ${(Number(p.scale) || 100) / 100};`
+      })),
+      signatories: (Array.isArray(f.signatories) ? f.signatories : []).map((s) => {
+        const scale = Number(s.scale) || 100;
+        const nameSize = Number(s.nameSize) || 100;
+        const roleSize = Number(s.roleSize) || 100;
+        const x = Number(s.x) || 0;
+        const y = Number(s.y) || 0;
+        return {
+          ...s,
+          img: s.img || s.path || s.signature_url || '',
+          style: s.style || `--sig-scale: ${scale / 100}; --sig-name-scale: ${nameSize / 100}; --sig-role-scale: ${roleSize / 100}; --sig-x: ${x}px; --sig-y: ${y}px;`
+        };
+      }),
     };
   }
 
@@ -352,6 +367,23 @@
       if (document.fonts?.ready) await Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 2500))]);
       if (frame.contentDocument?.fonts?.ready) await Promise.race([frame.contentDocument.fonts.ready, new Promise((r) => setTimeout(r, 2500))]);
     } catch (_) {}
+
+    // Ensure all images inside the iframe are fully loaded and decoded before rendering canvas
+    try {
+      const doc = frame.contentDocument;
+      const imgs = doc ? [...doc.images] : [];
+      if (imgs.length) {
+        await Promise.all(imgs.map((img) => {
+          if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+          return new Promise((res) => {
+            img.addEventListener('load', res, { once: true });
+            img.addEventListener('error', res, { once: true });
+            setTimeout(res, 2500);
+          });
+        }));
+      }
+    } catch (_) {}
+
     await loadScript('html2canvas');
     const doc = frame.contentDocument, el = doc.getElementById('certificate') || doc.body.firstElementChild;
     return window.html2canvas(el, {

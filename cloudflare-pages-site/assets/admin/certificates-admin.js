@@ -1363,6 +1363,63 @@
       };
       img.src = url;
     });
+
+    const processSignatureFile = (file, maxWidth = 500, maxHeight = 200) => new Promise((resolve) => {
+      if (!file) return resolve({ blob: null, dataUrl: '' });
+      if (typeof Image === 'undefined') {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve({ blob: file, dataUrl: e.target.result });
+        reader.readAsDataURL(file);
+        return;
+      }
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        let { width, height } = img;
+        if (width > maxWidth || height > maxHeight) {
+          const ratio = Math.min(maxWidth / width, maxHeight / height);
+          width = Math.max(1, Math.round(width * ratio));
+          height = Math.max(1, Math.round(height * ratio));
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, width);
+        canvas.height = Math.max(1, height);
+        const ctx2d = canvas.getContext('2d');
+        ctx2d.drawImage(img, 0, 0, width, height);
+
+        // Transparent background conversion for photographed/scanned signatures on paper
+        try {
+          const imgData = ctx2d.getImageData(0, 0, width, height);
+          const data = imgData.data;
+          for (let i = 0; i < data.length; i += 4) {
+            const r = data[i], g = data[i + 1], b = data[i + 2];
+            const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
+            if (brightness > 215) {
+              if (brightness >= 240) {
+                data[i + 3] = 0; // Transparent
+              } else {
+                const factor = (240 - brightness) / 25;
+                data[i + 3] = Math.round(data[i + 3] * factor);
+              }
+            }
+          }
+          ctx2d.putImageData(imgData, 0, 0);
+        } catch (_) {}
+
+        canvas.toBlob((blob) => {
+          const dataUrl = canvas.toDataURL('image/png');
+          resolve({ blob: blob || file, dataUrl, width, height });
+        }, 'image/png');
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        const reader = new FileReader();
+        reader.onload = (e) => resolve({ blob: file, dataUrl: e.target.result });
+        reader.readAsDataURL(file);
+      };
+      img.src = url;
+    });
     let currentEvent = events.find((e) => e.id === selectedEventId) || events[0] || null;
     let currentConfig = (currentEvent ? configs[currentEvent.id] : null) || {};
 
@@ -1745,14 +1802,42 @@
         };
       });
       $$('[data-p-file]', inputList).forEach((inp) => {
-        inp.onchange = (e) => {
+        inp.onchange = async (e) => {
           const f = e.target.files?.[0]; if (!f) return;
-          const reader = new FileReader();
-          reader.onload = (ev) => {
-            const t = partners.find((x) => x.id === inp.dataset.pFile);
-            if (t) { t.logo = ev.target.result; renderPartners(); }
-          };
-          reader.readAsDataURL(f);
+          const t = partners.find((x) => x.id === inp.dataset.pFile);
+          if (!t) return;
+          adminMessage('Optimizing partner logo...', true);
+          const { blob, dataUrl } = await compressImageFile(f, 400, 160, 0.9);
+          t.logo = dataUrl;
+          renderPartners();
+
+          try {
+            const evId = $('#mc-event-select') ? $('#mc-event-select').value : 'common';
+            const ext = (f.type && f.type.includes('png')) ? 'png' : 'webp';
+            const path = `partners/${evId}/partner_${t.id}_${Date.now()}.${ext}`;
+            const targetBucket = 'site-assets';
+            if (window.MC?.uploadStorage) {
+              const up = await window.MC.uploadStorage(targetBucket, path, blob || f, { isPublic: true, contentType: blob?.type || 'image/png' });
+              if (up?.publicUrl) {
+                t.logo = up.publicUrl;
+                t.path = up.publicUrl;
+                renderPartners();
+              }
+            } else if (sb?.storage) {
+              const up = await sb.storage.from(targetBucket).upload(path, blob || f, { upsert: true });
+              if (up?.data?.path) {
+                const { data } = sb.storage.from(targetBucket).getPublicUrl(up.data.path);
+                if (data?.publicUrl) {
+                  t.logo = data.publicUrl;
+                  t.path = data.publicUrl;
+                  renderPartners();
+                }
+              }
+            }
+            adminMessage('Partner logo uploaded.', true);
+          } catch (err) {
+            console.warn('Partner logo background upload notice:', err);
+          }
         };
       });
       $$('[data-p-del]', inputList).forEach((btn) => {
@@ -1854,7 +1939,7 @@
         blk.style.setProperty('--sig-y', (s.y || 0) + 'px');
         blk.innerHTML = `
           <div class="sig-img-container">
-            ${s.img ? `<img class="sig-img" src="${esc(s.img)}" alt="">` : `<div class="sig-fallback">${esc(s.name)}</div>`}
+            ${s.img ? `<img class="sig-img" src="${esc(s.img)}" alt="" crossorigin="anonymous">` : `<div class="sig-fallback">${esc(s.name)}</div>`}
           </div>
           <div class="sig-line"></div>
           <div class="sig-name" contenteditable="true" spellcheck="false">${esc(s.name)}</div>
@@ -1879,14 +1964,43 @@
         };
       });
       $$('[data-s-file]', box).forEach((inp) => {
-        inp.onchange = (e) => {
+        inp.onchange = async (e) => {
           const f = e.target.files?.[0]; if (!f) return;
-          const reader = new FileReader();
-          reader.onload = (ev) => {
-            const t = signatories.find((x) => x.id === inp.dataset.sFile);
-            if (t) { t.img = ev.target.result; renderSignatories(); }
-          };
-          reader.readAsDataURL(f);
+          const t = signatories.find((x) => x.id === inp.dataset.sFile);
+          if (!t) return;
+
+          adminMessage('Optimizing signature (removing paper background)...', true);
+          const { blob, dataUrl } = await processSignatureFile(f);
+          t.img = dataUrl;
+          renderSignatories();
+
+          try {
+            const evId = $('#mc-event-select') ? $('#mc-event-select').value : 'common';
+            const path = `signatures/${evId}/sig_${t.id}_${Date.now()}.png`;
+            const targetBucket = 'site-assets';
+            if (window.MC?.uploadStorage) {
+              const up = await window.MC.uploadStorage(targetBucket, path, blob || f, { isPublic: true, contentType: 'image/png' });
+              if (up?.publicUrl) {
+                t.img = up.publicUrl;
+                t.path = up.publicUrl;
+                renderSignatories();
+              }
+            } else if (sb?.storage) {
+              const up = await sb.storage.from(targetBucket).upload(path, blob || f, { upsert: true });
+              if (up?.data?.path) {
+                const { data } = sb.storage.from(targetBucket).getPublicUrl(up.data.path);
+                if (data?.publicUrl) {
+                  t.img = data.publicUrl;
+                  t.path = data.publicUrl;
+                  renderSignatories();
+                }
+              }
+            }
+            adminMessage('Signature uploaded and optimized.', true);
+          } catch (err) {
+            console.warn('Signature storage background upload notice:', err);
+            adminMessage('Signature optimized.', true);
+          }
         };
       });
       $$('[data-s-range]', box).forEach((rng) => {
@@ -2138,6 +2252,37 @@
       }
       const gdgLogoUrl = cleanGdgLogo.path || cleanGdgLogo.dataUrl || '';
 
+      // Prepare signatories with computed style and ensure paths/dataUrls are intact
+      const preparedSignatories = signatories.map((s) => {
+        const scale = Number(s.scale) || 100;
+        const nameSize = Number(s.nameSize) || 100;
+        const roleSize = Number(s.roleSize) || 100;
+        const x = Number(s.x) || 0;
+        const y = Number(s.y) || 0;
+        return {
+          id: s.id || uid(),
+          name: (s.name || '').trim(),
+          role: (s.role || '').trim(),
+          img: s.path || s.img || '',
+          path: s.path || '',
+          scale,
+          nameSize,
+          roleSize,
+          x,
+          y,
+          style: `--sig-scale: ${scale / 100}; --sig-name-scale: ${nameSize / 100}; --sig-role-scale: ${roleSize / 100}; --sig-x: ${x}px; --sig-y: ${y}px;`
+        };
+      });
+
+      const preparedPartners = partners.map((p) => ({
+        id: p.id || uid(),
+        name: (p.name || '').trim(),
+        logo: p.path || p.logo || '',
+        path: p.path || '',
+        scale: Number(p.scale) || 100,
+        style: `--partner-scale: ${(Number(p.scale) || 100) / 100};`
+      }));
+
       const payload = {
         event_name: $('#inpEventName').value.trim(),
         chapter_name: $('#inpChapterName').value.trim() || 'GDG on Campus SR University',
@@ -2154,28 +2299,28 @@
         node_pill: $('#inpNodePill') ? $('#inpNodePill').value.trim() : 'NODE_ACTIVE // 2026',
         dossier_tag: $('#inpDossierTag') ? $('#inpDossierTag').value.trim() : 'BUILD_WITH_AI',
         partner_sticker: $('#inpPartnerSticker') ? $('#inpPartnerSticker').value.trim() : '#SRU_ACM // CO-HOST',
-        signatories,
-        partners,
+        signatories: preparedSignatories,
+        partners: preparedPartners,
         gdg_logo: cleanGdgLogo,
         gdg_custom_logo: gdgLogoUrl,
         gdg_logo_style: `height:${cleanGdgLogo.size || 60}px;max-height:${cleanGdgLogo.size || 60}px;max-width:${Math.max(320, Math.round((cleanGdgLogo.size || 60) * 5))}px;object-fit:contain;display:block;transform:translate(${cleanGdgLogo.x || 0}px,${cleanGdgLogo.y || 0}px);`,
         hide_chapter_text: !!cleanGdgLogo.hide_chapter_text
       };
 
-      // Safeguard against column size limit (< 200,000 bytes)
+      // Safeguard against column size limit (< 200,000 bytes) without wiping images
       if (JSON.stringify(payload).length > 180000) {
-        if (cleanGdgLogo.dataUrl && cleanGdgLogo.dataUrl.length > 5000) {
+        if (cleanGdgLogo.dataUrl && cleanGdgLogo.path) {
           cleanGdgLogo.dataUrl = '';
           payload.gdg_logo = cleanGdgLogo;
-          if (payload.gdg_custom_logo.startsWith('data:')) payload.gdg_custom_logo = cleanGdgLogo.path || '';
+          if (payload.gdg_custom_logo.startsWith('data:')) payload.gdg_custom_logo = cleanGdgLogo.path;
         }
         payload.signatories = payload.signatories.map((s) => ({
           ...s,
-          img: s.img && s.img.startsWith('data:') && s.img.length > 10000 ? '' : s.img
+          img: s.path || (s.img && s.img.length > 50000 ? '' : s.img)
         }));
         payload.partners = payload.partners.map((p) => ({
           ...p,
-          logo: p.logo && p.logo.startsWith('data:') && p.logo.length > 10000 ? '' : p.logo
+          logo: p.path || (p.logo && p.logo.length > 50000 ? '' : p.logo)
         }));
       }
 

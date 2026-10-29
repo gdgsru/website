@@ -316,11 +316,12 @@
     width: 100%;
     position: relative;
     z-index: 5;
+    overflow: visible;
   }
   .sig-img {
     height: calc(42px * var(--sig-scale, 1));
     width: auto;
-    max-width: none;
+    max-width: 100%;
     flex: none;
     object-fit: contain;
     mix-blend-mode: multiply;
@@ -546,7 +547,7 @@
     <div class="header-row">
       <div class="main-logo-area" style="{{pos_gdg}}">
         {{#gdg_custom_logo}}
-          <img src="{{gdg_custom_logo}}" alt="Google Developer Groups" class="gdg-custom-logo-img" style="{{#gdg_logo_style}}{{gdg_logo_style}}{{/gdg_logo_style}}{{^gdg_logo_style}}max-height:60px;max-width:320px;object-fit:contain;display:block;{{/gdg_logo_style}}">
+          <img src="{{gdg_custom_logo}}" alt="Google Developer Groups" class="gdg-custom-logo-img" crossorigin="anonymous" style="{{#gdg_logo_style}}{{gdg_logo_style}}{{/gdg_logo_style}}{{^gdg_logo_style}}max-height:60px;max-width:320px;object-fit:contain;display:block;{{/gdg_logo_style}}">
         {{/gdg_custom_logo}}
         {{^gdg_custom_logo}}
           <svg id="defLogo" viewBox="0 0 100 60">
@@ -565,19 +566,19 @@
       <div class="partners-cluster">
         {{#cohosts}}
         <div class="partner-item" style="{{style}}">
-          {{#logo}}<img src="{{logo}}" alt="{{name}}">{{/logo}}
+          {{#logo}}<img src="{{logo}}" alt="{{name}}" crossorigin="anonymous">{{/logo}}
           <span class="partner-title-badge">{{name}}</span>
         </div>
         {{/cohosts}}
         {{#sponsors}}
         <div class="partner-item" style="{{style}}">
-          {{#logo}}<img src="{{logo}}" alt="{{name}}">{{/logo}}
+          {{#logo}}<img src="{{logo}}" alt="{{name}}" crossorigin="anonymous">{{/logo}}
           <span class="partner-title-badge">{{name}}</span>
         </div>
         {{/sponsors}}
         {{#partners}}
         <div class="partner-item" style="{{style}}">
-          {{#logo}}<img src="{{logo}}" alt="{{name}}">{{/logo}}
+          {{#logo}}<img src="{{logo}}" alt="{{name}}" crossorigin="anonymous">{{/logo}}
           <span class="partner-title-badge">{{name}}</span>
         </div>
         {{/partners}}
@@ -625,7 +626,7 @@
           {{#signatories}}
           <div class="sig-block" style="{{style}}">
             <div class="sig-img-container">
-              {{#img}}<img class="sig-img" src="{{img}}" alt="">{{/img}}
+              {{#img}}<img class="sig-img" src="{{img}}" alt="" crossorigin="anonymous">{{/img}}
               {{^img}}<div class="sig-fallback">{{name}}</div>{{/img}}
             </div>
             <div class="sig-line"></div>
