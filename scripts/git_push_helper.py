@@ -49,11 +49,12 @@ def push(commit_message='update site'):
     else:
         print('No staged changes to commit.')
 
-    # 3. Push to origin main using token
+    # 3. Push to current branch using token
+    branch = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).decode().strip()
     push_url = f'https://{user}:{token}@github.com/gdgsru/website.git'
-    res = subprocess.run(['git', 'push', push_url, 'main'])
+    res = subprocess.run(['git', 'push', push_url, f'{branch}:{branch}'])
     if res.returncode == 0:
-        print('\n[SUCCESS] Successfully pushed changes to origin/main!')
+        print(f'\n[SUCCESS] Successfully pushed changes to origin/{branch}!')
     else:
         print(f'\n[ERROR] Git push failed with code {res.returncode}')
         sys.exit(res.returncode)
