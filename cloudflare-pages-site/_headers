@@ -94,7 +94,7 @@
 /assets/vendor/*
   Cache-Control: public, max-age=2592000, immutable
 /assets/css/*
-  Cache-Control: public, max-age=0, must-revalidate
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
 /assets/js/*
   Cache-Control: public, max-age=0, must-revalidate
 /assets/admin/*

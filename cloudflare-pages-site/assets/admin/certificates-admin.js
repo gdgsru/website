@@ -248,6 +248,8 @@
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:12px">
           <h2 style="margin:0">Attendance records (<span id="att-count">${(allRows || []).length}</span>)</h2>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <button type="button" class="button" id="btn-live-qr-scan" style="background:#137333;border-color:#137333;font-size:12px;padding:5px 12px;display:inline-flex;align-items:center;gap:6px">📷 Live QR Check-in</button>
+            <button type="button" class="button-outline" id="btn-email-dispatch" style="font-size:12px;padding:5px 12px;display:inline-flex;align-items:center;gap:6px">✉️ Email Links</button>
             <input type="search" id="att-search" placeholder="Search name, roll, email…" style="font-size:12px;padding:4px 8px;width:180px">
             <button type="button" class="button-outline" id="att-clear-event" style="font-size:12px;padding:4px 10px;color:#d93025;border-color:#fad2cf;display:none">Clear event records</button>
           </div>
@@ -315,6 +317,355 @@
     attEventSelect.addEventListener('change', updateView);
     searchInp.addEventListener('input', updateView);
     bindDeleteButtons();
+
+    // ---------------------------------------------------------------
+    // 1. Live Door QR Check-in Scanner
+    // ---------------------------------------------------------------
+    const qrScanBtn = $('#btn-live-qr-scan');
+    if (qrScanBtn) {
+      qrScanBtn.addEventListener('click', () => {
+        const evId = attEventSelect.value;
+        if (!evId) return adminMessage('Please select an event in the dropdown first.');
+        const evTitle = title[evId] || 'Selected Event';
+        openLiveQrScanner(evId, evTitle);
+      });
+    }
+
+    function playSuccessBeep() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1760, ctx.currentTime + 0.12);
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.22);
+      } catch (_) {}
+    }
+
+    function openLiveQrScanner(eventId, eventTitle) {
+      let stream = null;
+      let activeTrack = null;
+      let isScanning = true;
+      let lastScannedText = '';
+      let scanCooldown = 0;
+      let sessionCheckinCount = 0;
+
+      const modal = document.createElement('div');
+      modal.id = 'qr-scanner-modal';
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(6px);';
+      
+      modal.innerHTML = `
+        <div style="background:#131722;color:#fff;border-radius:16px;border:1px solid #2d3748;width:100%;max-width:480px;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,0.6);display:flex;flex-direction:column">
+          <div style="padding:16px 20px;border-bottom:1px solid #232a3b;display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <b style="font-size:16px;display:flex;align-items:center;gap:6px">📷 Door Check-in Scanner</b>
+              <div style="font-size:12px;color:#94a3b8;margin-top:2px">${esc(eventTitle)}</div>
+            </div>
+            <button type="button" id="btn-close-scanner" style="background:none;border:none;color:#94a3b8;font-size:22px;cursor:pointer;padding:4px 8px">✕</button>
+          </div>
+
+          <div style="position:relative;width:100%;aspect-ratio:4/3;background:#000;overflow:hidden;display:flex;align-items:center;justify-content:center">
+            <video id="scanner-video" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover"></video>
+            <div style="position:absolute;width:200px;height:200px;border:2.5px solid #34a853;border-radius:16px;box-shadow:0 0 0 4000px rgba(0,0,0,0.45);pointer-events:none">
+              <div style="position:absolute;top:0;left:0;right:0;height:2px;background:#34a853;box-shadow:0 0 10px #34a853;animation:scanAnim 1.8s ease-in-out infinite alternate"></div>
+            </div>
+            <div id="scanner-fallback" style="display:none;position:absolute;inset:0;background:#131722;padding:24px;flex-direction:column;align-items:center;justify-content:center;text-align:center">
+              <p style="color:#e2e8f0;font-size:14px;margin-bottom:12px">Camera access not available or denied. You can check in by typing below:</p>
+              <input type="text" id="manual-scan-input" placeholder="Type roll no, email, or @handle" style="width:100%;padding:10px;background:#1e293b;border:1px solid #334155;color:#fff;border-radius:8px">
+              <button type="button" id="btn-manual-checkin" class="button" style="margin-top:10px;width:100%">Check In</button>
+            </div>
+          </div>
+
+          <div style="padding:16px 20px;background:#0f121a">
+            <div id="scanner-status" style="font-size:13px;color:#cbd5e1;min-height:36px;display:flex;align-items:center;gap:6px">
+              <span>Point camera at student's Member Pass QR code...</span>
+            </div>
+            <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid #1e2638;padding-top:12px">
+              <span style="font-size:12px;color:#64748b">Verified this session: <b id="session-checkin-count" style="color:#34a853;font-size:14px">0</b></span>
+              <button type="button" id="btn-flip-camera" class="button-outline" style="font-size:11px;padding:4px 10px;color:#94a3b8;border-color:#334155">🔄 Flip Camera</button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(modal);
+
+      const videoEl = modal.querySelector('#scanner-video');
+      const statusEl = modal.querySelector('#scanner-status');
+      const countEl = modal.querySelector('#session-checkin-count');
+      const fallbackEl = modal.querySelector('#scanner-fallback');
+      let currentFacingMode = 'environment';
+
+      const closeScanner = () => {
+        isScanning = false;
+        if (stream) {
+          stream.getTracks().forEach((t) => t.stop());
+        }
+        modal.remove();
+        rerender();
+      };
+
+      modal.querySelector('#btn-close-scanner').onclick = closeScanner;
+
+      async function startCamera(facingMode = 'environment') {
+        if (stream) stream.getTracks().forEach((t) => t.stop());
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { ideal: facingMode }, width: { ideal: 1280 }, height: { ideal: 720 } }
+          });
+          videoEl.srcObject = stream;
+          videoEl.style.display = 'block';
+          fallbackEl.style.display = 'none';
+          initDetector();
+        } catch (err) {
+          console.warn('[QR Scanner] Camera error:', err);
+          videoEl.style.display = 'none';
+          fallbackEl.style.display = 'flex';
+          statusEl.innerHTML = '<span style="color:#ea4335">Camera unavailable. Use manual check-in.</span>';
+        }
+      }
+
+      modal.querySelector('#btn-flip-camera').onclick = () => {
+        currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
+        startCamera(currentFacingMode);
+      };
+
+      // Manual input fallback
+      modal.querySelector('#btn-manual-checkin')?.addEventListener('click', () => {
+        const val = modal.querySelector('#manual-scan-input').value.trim();
+        if (val) handleScannedPayload(val);
+      });
+
+      async function handleScannedPayload(rawText) {
+        const now = Date.now();
+        if (rawText === lastScannedText && now - scanCooldown < 3000) return;
+        lastScannedText = rawText;
+        scanCooldown = now;
+
+        statusEl.innerHTML = '<span style="color:#fbbc04">Verifying attendee record…</span>';
+
+        // Extract identifier from URL or raw text
+        let identifier = rawText.trim();
+        try {
+          if (identifier.startsWith('http')) {
+            const u = new URL(identifier);
+            if (u.pathname.startsWith('/u/')) {
+              identifier = u.pathname.slice(3).replace(/\/$/, '');
+            } else if (u.searchParams.has('u')) {
+              identifier = u.searchParams.get('u');
+            } else if (u.searchParams.has('code')) {
+              identifier = u.searchParams.get('code');
+            }
+          }
+        } catch (_) {}
+
+        identifier = identifier.replace(/['"]/g, '').trim();
+
+        // Check if attendee is already on roster for this event
+        const idLower = identifier.toLowerCase();
+        let match = (allRows || []).find((r) =>
+          r.event_id === eventId && (
+            (r.roll_no && r.roll_no.toLowerCase() === idLower) ||
+            (r.attendee_email && r.attendee_email.toLowerCase() === idLower) ||
+            (r.attendee_name && r.attendee_name.toLowerCase().includes(idLower))
+          )
+        );
+
+        try {
+          if (match) {
+            // Mark as attended if not already
+            if (match.attendance_status !== 'attended') {
+              await sb.from('attendance_records').update({ attendance_status: 'attended' }).eq('id', match.id);
+              match.attendance_status = 'attended';
+            }
+            playSuccessBeep();
+            sessionCheckinCount++;
+            countEl.textContent = sessionCheckinCount;
+            statusEl.innerHTML = `<span style="color:#34a853;font-weight:700">✓ Checked In: ${esc(match.attendee_name)} (${esc(match.roll_no || 'Attendee')})</span>`;
+          } else {
+            // Insert walk-in record with identifier
+            const cleanName = identifier.charAt(0).toUpperCase() + identifier.slice(1);
+            const isEmail = identifier.includes('@');
+            const newRecord = {
+              event_id: eventId,
+              attendee_name: isEmail ? cleanName.split('@')[0] : cleanName,
+              roll_no: !isEmail ? identifier.toUpperCase() : null,
+              attendee_email: isEmail ? identifier.toLowerCase() : null,
+              attendance_status: 'attended',
+              created_by: c.adminUser?.id || null
+            };
+            const { data: inserted, error: insErr } = await sb.from('attendance_records').insert(newRecord).select().single();
+            if (insErr) throw insErr;
+            if (inserted) allRows.unshift(inserted);
+            playSuccessBeep();
+            sessionCheckinCount++;
+            countEl.textContent = sessionCheckinCount;
+            statusEl.innerHTML = `<span style="color:#34a853;font-weight:700">✓ Registered & Checked In: ${esc(newRecord.attendee_name)}</span>`;
+          }
+        } catch (err) {
+          console.error('[QR Checkin] Error:', err);
+          statusEl.innerHTML = `<span style="color:#ea4335">Check-in error: ${esc(err.message || 'Could not save')}</span>`;
+        }
+      }
+
+      function initDetector() {
+        if (!('BarcodeDetector' in window)) {
+          console.info('[QR Scanner] Native BarcodeDetector not found, fallback enabled.');
+          return;
+        }
+        const barcodeDetector = new window.BarcodeDetector({ formats: ['qr_code'] });
+        const scanFrame = async () => {
+          if (!isScanning) return;
+          if (videoEl.readyState >= 2) {
+            try {
+              const barcodes = await barcodeDetector.detect(videoEl);
+              if (barcodes.length && barcodes[0].rawValue) {
+                await handleScannedPayload(barcodes[0].rawValue);
+              }
+            } catch (_) {}
+          }
+          requestAnimationFrame(scanFrame);
+        };
+        requestAnimationFrame(scanFrame);
+      }
+
+      startCamera(currentFacingMode);
+    }
+
+    // ---------------------------------------------------------------
+    // 2. Email Certificate Links Dispatcher
+    // ---------------------------------------------------------------
+    const emailDispatchBtn = $('#btn-email-dispatch');
+    if (emailDispatchBtn) {
+      emailDispatchBtn.addEventListener('click', () => {
+        const evId = attEventSelect.value;
+        if (!evId) return adminMessage('Please select an event in the dropdown first.');
+        const evTitle = title[evId] || 'Selected Event';
+        openEmailDispatcher(evId, evTitle);
+      });
+    }
+
+    function openEmailDispatcher(eventId, eventTitle) {
+      const evAttendees = (allRows || []).filter((r) => r.event_id === eventId);
+      const withEmail = evAttendees.filter((r) => r.attendee_email);
+
+      const modal = document.createElement('div');
+      modal.id = 'email-dispatch-modal';
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(6px);';
+
+      modal.innerHTML = `
+        <div style="background:#131722;color:#fff;border-radius:16px;border:1px solid #2d3748;width:100%;max-width:540px;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,0.6);display:flex;flex-direction:column">
+          <div style="padding:16px 20px;border-bottom:1px solid #232a3b;display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <b style="font-size:16px;display:flex;align-items:center;gap:6px">✉️ Email Certificate Links</b>
+              <div style="font-size:12px;color:#94a3b8;margin-top:2px">${esc(eventTitle)} · <b>${withEmail.length}</b> attendees with email</div>
+            </div>
+            <button type="button" id="btn-close-dispatcher" style="background:none;border:none;color:#94a3b8;font-size:22px;cursor:pointer;padding:4px 8px">✕</button>
+          </div>
+
+          <div style="padding:20px;display:flex;flex-direction:column;gap:14px;font-size:13px;color:#cbd5e1;max-height:70vh;overflow-y:auto">
+            <div style="background:#1a2234;border:1px solid #2d3a54;border-radius:10px;padding:12px 16px">
+              <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;font-weight:700;margin-bottom:6px">Email Template Preview</div>
+              <div style="font-weight:700;color:#fff;margin-bottom:8px">Subject: 🎓 Your Official Certificate for "${esc(eventTitle)}" · GDG on Campus SR University</div>
+              <p style="margin:0;line-height:1.6;color:#cbd5e1;white-space:pre-wrap;font-size:12px">Hi {Attendee Name},
+
+Thank you for participating in "${esc(eventTitle)}" hosted by Google Developer Group on Campus SR University!
+
+Your official Certificate of Participation is ready to claim and verify:
+
+🔗 Certificate Portal: ${location.origin}/certificates/
+Verify Credential: ${location.origin}/verify/
+
+Keep building and learning!
+— GDG on Campus · SR University</p>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;gap:10px;flex-wrap:wrap">
+                <button type="button" id="btn-copy-emails" class="button" style="flex:1;min-width:180px;display:inline-flex;align-items:center;justify-content:center;gap:6px">📋 Copy BCC Email List (${withEmail.length})</button>
+                <button type="button" id="btn-export-mailmerge" class="button-outline" style="flex:1;min-width:180px;display:inline-flex;align-items:center;justify-content:center;gap:6px">📥 Export Mail-Merge CSV</button>
+              </div>
+              <button type="button" id="btn-cloud-dispatch" class="button-outline" style="width:100%;border-color:#4285f4;color:#8ab4f8;display:inline-flex;align-items:center;justify-content:center;gap:6px">⚡ Send via Cloud Function (Resend / Supabase)</button>
+            </div>
+            <div id="dispatch-status" style="font-size:12px;color:#94a3b8;text-align:center;min-height:20px"></div>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(modal);
+
+      modal.querySelector('#btn-close-dispatcher').onclick = () => modal.remove();
+
+      const statusEl = modal.querySelector('#dispatch-status');
+
+      // 1. Copy BCC List
+      modal.querySelector('#btn-copy-emails').onclick = async () => {
+        const emails = withEmail.map((r) => r.attendee_email).filter(Boolean);
+        if (!emails.length) {
+          statusEl.innerHTML = '<span style="color:#ea4335">No email addresses found for this event roster.</span>';
+          return;
+        }
+        try {
+          await navigator.clipboard.writeText(emails.join(', '));
+          statusEl.innerHTML = `<span style="color:#34a853">✓ Copied ${emails.length} email addresses to clipboard for Gmail BCC!</span>`;
+        } catch (_) {
+          statusEl.innerHTML = '<span style="color:#ea4335">Could not copy to clipboard.</span>';
+        }
+      };
+
+      // 2. Export Mail-Merge CSV
+      modal.querySelector('#btn-export-mailmerge').onclick = () => {
+        if (!withEmail.length) {
+          statusEl.innerHTML = '<span style="color:#ea4335">No attendee records with email to export.</span>';
+          return;
+        }
+        const headers = ['Attendee_Name', 'Attendee_Email', 'Roll_No', 'Event_Title', 'Certificate_Claim_Url'];
+        const rows = withEmail.map((r) => [
+          `"${(r.attendee_name || '').replace(/"/g, '""')}"`,
+          `"${(r.attendee_email || '').replace(/"/g, '""')}"`,
+          `"${(r.roll_no || '').replace(/"/g, '""')}"`,
+          `"${eventTitle.replace(/"/g, '""')}"`,
+          `"${location.origin}/certificates/"`
+        ]);
+        const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `GDG_Certificates_Roster_${eventTitle.replace(/[^a-zA-Z0-9_-]/g, '_')}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        statusEl.innerHTML = `<span style="color:#34a853">✓ Downloaded mail-merge CSV (${withEmail.length} rows).</span>`;
+      };
+
+      // 3. Cloud Function Dispatch
+      modal.querySelector('#btn-cloud-dispatch').onclick = async (ev) => {
+        const btn = ev.currentTarget;
+        btn.disabled = true;
+        statusEl.innerHTML = '<span style="color:#fbbc04">Invoking send-certificate-emails function…</span>';
+        try {
+          const { data, error } = await sb.functions.invoke('send-certificate-emails', {
+            body: { event_id: eventId }
+          }).catch((err) => ({ data: null, error: err }));
+
+          if (error) {
+            statusEl.innerHTML = `<span style="color:#ea4335">Cloud Function notice: Edge function 'send-certificate-emails' is not yet deployed. Use the Mail-Merge CSV or BCC list above to send via Gmail.</span>`;
+          } else {
+            statusEl.innerHTML = `<span style="color:#34a853">✓ Dispatched ${data?.sentCount || withEmail.length} certificate emails successfully!</span>`;
+          }
+        } catch (err) {
+          statusEl.innerHTML = `<span style="color:#ea4335">Dispatch error: ${esc(err.message)}</span>`;
+        } finally {
+          btn.disabled = false;
+        }
+      };
+    }
 
     // Clear event attendance
     if (clearBtn) {

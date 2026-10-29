@@ -1,7 +1,7 @@
 /* GDG SRU · Campus Service Worker (Offline Resilience & PWA)
    Caches core shells and assets for seamless offline browsing on campus Wi-Fi.
 */
-const CACHE_NAME = 'gdg-sru-v38';
+const CACHE_NAME = 'gdg-sru-v39';
 const CORE_SHELLS = [
   '/',
   '/index.html',
@@ -22,7 +22,15 @@ const CORE_SHELLS = [
   '/manifest.webmanifest',
   '/assets/fonts/fonts.css',
   '/assets/fonts/cert-fonts.css',
+  '/assets/css/site-nav.css',
   '/assets/css/page-home.css',
+  '/assets/css/page-events.css',
+  '/assets/css/page-team.css',
+  '/assets/css/page-blogs.css',
+  '/assets/css/page-certificates.css',
+  '/assets/css/page-join.css',
+  '/assets/css/page-members.css',
+  '/assets/css/profile.css',
   '/assets/js/app.js',
   '/assets/js/card-system.js',
   '/assets/js/polish.js',
@@ -93,7 +101,7 @@ self.addEventListener('fetch', (event) => {
     || req.headers.get('accept')?.includes('text/html') 
     || url.pathname.endsWith('/config.js')
     || (url.pathname.startsWith('/assets/js/') && url.pathname.endsWith('.js'))
-    || (url.pathname.startsWith('/assets/css/') && url.pathname.endsWith('.css'));
+    ;
   if (isNetworkFirst) {
     event.respondWith(
       fetch(req)
