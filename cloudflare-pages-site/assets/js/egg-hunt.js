@@ -1,7 +1,7 @@
 /* Easter egg hunt page logic.
  * - Rules and countdown are read from easter_egg_settings (set in Mission Control).
  * - Found eggs are remembered on this device (localStorage).
- * - Points are awarded manually by the team; this file never sends points anywhere.
+ * - Points are awarded based on the 8 live-event eggs.
  * - Other pages call window.GDGEggs.find(id) when a guest triggers an egg. */
 (() => {
   'use strict';
@@ -18,7 +18,7 @@
     } catch (e) { return []; }
   }
   function writeFound(list) {
-    try { localStorage.setItem(KEY, JSON.stringify(list)); } catch (e) { /* private mode: keep in memory */ }
+    try { localStorage.setItem(KEY, JSON.stringify(list)); } catch (e) { /* private mode */ }
   }
   let found = readFound();
 
@@ -41,7 +41,7 @@
     if (!egg || found.includes(n)) return false;
     found = [...found, n];
     writeFound(found);
-    toast(`Egg found: ${egg.name}`);
+    toast(`${egg.icon || '🎉'} Egg Found: ${egg.name} (+${egg.points || 100} pts)`);
     render();
     document.dispatchEvent(new CustomEvent('gdg-egg-found', { detail: { id: n } }));
     return true;
@@ -51,32 +51,62 @@
     find,
     found: () => [...found],
     count: () => found.length,
-    total: () => eggs.length
+    total: () => eggs.length,
+    points: () => found.reduce((a, id) => {
+      const e = eggs.find((x) => x.id === id);
+      return a + (e ? (e.points || 100) : 0);
+    }, 0)
   };
 
   /* ---- egg grid ---- */
   function render() {
     const grid = $('#egg-grid');
     const summary = $('#egg-summary');
-    if (summary) summary.textContent = `${found.length} of ${eggs.length} eggs found`;
+    const totalPts = eggs.reduce((a, e) => a + (e.points || 100), 0);
+    const earnedPts = found.reduce((a, id) => {
+      const e = eggs.find((x) => x.id === id);
+      return a + (e ? (e.points || 100) : 0);
+    }, 0);
+
+    if (summary) {
+      summary.textContent = `${found.length} of ${eggs.length} eggs found · ${earnedPts} / ${totalPts} points banked`;
+    }
     if (!grid) return;
     grid.replaceChildren(...eggs.map((egg) => {
       const li = document.createElement('li');
       const isFound = found.includes(egg.id);
       li.className = isFound ? 'egg is-found' : 'egg';
+      li.style.cssText = isFound
+        ? 'border:1px solid var(--g,#34a853);background:color-mix(in srgb,var(--g,#34a853) 14%,var(--cd,#1a1a1c));box-shadow:0 8px 24px rgba(52,168,83,0.15);'
+        : '';
+
+      const topRow = document.createElement('div');
+      topRow.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;';
+
       const num = document.createElement('span');
       num.className = 'egg-num';
-      num.textContent = String(egg.id).padStart(2, '0');
+      num.textContent = `${egg.icon || '🥚'} #${String(egg.id).padStart(2, '0')}`;
+
+      const pts = document.createElement('span');
+      pts.style.cssText = 'font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:' + (isFound ? 'var(--g,#34a853);color:#fff;' : 'rgba(255,255,255,0.08);color:var(--mut,#888);');
+      pts.textContent = `+${egg.points || 100} pts`;
+
+      topRow.append(num, pts);
+
       const name = document.createElement('strong');
+      name.style.cssText = 'font-size:15px;margin:2px 0;';
       name.textContent = isFound ? egg.name : '???';
+
       const hint = document.createElement('small');
-      hint.textContent = isFound ? 'Found' : `Hint: ${egg.hint}`;
-      li.append(num, name, hint);
+      hint.style.cssText = 'color:' + (isFound ? 'var(--g,#34a853)' : 'var(--mut,#888)');
+      hint.textContent = isFound ? 'Unlocked & Banked! 🎉' : `Hint: ${egg.hint}`;
+
+      li.append(topRow, name, hint);
       return li;
     }));
   }
 
-  /* ---- countdown (recomputed from timestamps, so it survives sleep and tab switches) ---- */
+  /* ---- countdown ---- */
   let countdownTimer = null;
   let endsAt = null;
 
@@ -106,7 +136,7 @@
   function applySettings(row) {
     const rules = $('#egg-rules');
     if (rules) {
-      rules.textContent = (row && row.rules_text) ? row.rules_text : 'Rules will appear here soon.';
+      rules.textContent = (row && row.rules_text) ? row.rules_text : 'Find secret features hidden across the site during the launch event! Points will be synced directly to the chapter leaderboard.';
     }
     const box = $('#egg-countdown');
     const title = $('#egg-countdown-title');
@@ -126,7 +156,7 @@
     countdownTimer = setInterval(tickCountdown, 1000);
   }
 
-  /* ---- load settings from Supabase (page still works offline) ---- */
+  /* ---- load settings from Supabase ---- */
   async function loadSettings() {
     const url = window.SUPABASE_URL;
     const key = window.SUPABASE_ANON_KEY;
@@ -148,14 +178,13 @@
     }
   }
 
-  // The router renders the page into #app, so wait until the egg grid exists.
   let started = false;
   function start() {
     if (started || !$('#egg-grid')) return false;
     started = true;
     render();
     loadSettings();
-    setInterval(loadSettings, 120000); // refresh rules and countdown every two minutes
+    setInterval(loadSettings, 120000);
     return true;
   }
   if (!start()) {

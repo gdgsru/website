@@ -1,7 +1,6 @@
-/* Easter egg triggers, loaded on every public page.
- * Each egg is detected from normal use of the site and recorded with GDGEggs.find(id).
- * Points are checked and entered by the team in Mission Control; this file never sends points.
- * All 30 eggs wired with full mobile touchscreen & desktop support. */
+/* GDG SRU · Live-Event Easter Eggs (8 High-Energy Interactive Secrets)
+ * Optimized for 90% mobile touch users with full laptop/desktop support.
+ * Zero external libraries, Web Audio API synthesis, high-performance canvas & CSS. */
 (() => {
   'use strict';
   if (window.__GDG_EGG_TRIGGERS__) return;
@@ -9,9 +8,9 @@
 
   const KEY = 'gdg-egg-found';
   const eggs = Array.isArray(window.GDG_EGGS) ? window.GDG_EGGS : [];
-  const eggName = (id) => (eggs.find((e) => e.id === id) || {}).name || 'Easter egg';
+  const getEgg = (id) => eggs.find((e) => e.id === Number(id)) || { id, name: 'Secret Egg', points: 150, icon: '✨' };
 
-  /* ---------- core store: used unless the hunt page has already provided its own ---------- */
+  /* ---------- Core Store (device local) ---------- */
   if (!window.GDGEggs) {
     const readFound = () => {
       try {
@@ -23,41 +22,123 @@
     window.GDGEggs = {
       find(id) {
         const n = Number(id);
-        if (!eggs.some((e) => e.id === n) || found.includes(n)) return false;
+        const egg = getEgg(n);
+        if (found.includes(n)) return false;
         found = [...found, n];
-        try { localStorage.setItem(KEY, JSON.stringify(found)); } catch (e) { /* private mode */ }
-        toast(`Egg found: ${eggName(n)}`);
-        document.dispatchEvent(new CustomEvent('gdg-egg-found', { detail: { id: n } }));
+        try { localStorage.setItem(KEY, JSON.stringify(found)); } catch (e) {}
+        toast(`${egg.icon || '🎉'} Egg #${n} Found: ${egg.name} (+${egg.points} pts)`);
+        if (navigator.vibrate) {
+          try { navigator.vibrate([40, 50, 40]); } catch (_) {}
+        }
+        document.dispatchEvent(new CustomEvent('gdg-egg-found', { detail: { id: n, egg } }));
         return true;
       },
       found: () => [...found],
       count: () => found.length,
-      total: () => eggs.length
+      total: () => eggs.length,
+      points: () => found.reduce((acc, id) => acc + (getEgg(id).points || 100), 0)
     };
   }
 
   const find = (id) => { try { return window.GDGEggs.find(id); } catch (e) { return false; } };
 
-  /* ---------- helpers ---------- */
+  /* ---------- Helpers ---------- */
   const route = () => (document.body && document.body.dataset.route) || '';
   const isHome = () => route() === 'home' || location.pathname === '/' || location.pathname === '/index.html';
-  // Allow 160px buffer for mobile dynamic browser bars (URL bar & bottom nav)
-  const atBottom = () => (window.innerHeight + Math.ceil(window.scrollY)) >= (document.documentElement.scrollHeight - 160);
-  const pathNoSlash = () => location.pathname.replace(/\/+$/, '') || '/';
   const closest = (e, sel) => (e.target && e.target.closest) ? e.target.closest(sel) : null;
 
-  // Calls onDone after `n` taps inside `windowMs`.
-  function tapCounter(n, windowMs, onDone) {
-    let times = [];
-    return () => {
-      const now = Date.now();
-      times = times.filter((t) => now - t <= windowMs);
-      times.push(now);
-      if (times.length >= n) { times = []; onDone(); }
-    };
+  /* ---------- Web Audio Synthesizer (Zero Audio Files) ---------- */
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  let audioCtx = null;
+  function getAudio() {
+    if (!audioCtx && AudioCtx) {
+      try { audioCtx = new AudioCtx(); } catch (_) {}
+    }
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume().catch(() => {});
+    }
+    return audioCtx;
   }
 
-  /* ---------- styles for the toast and footer additions ---------- */
+  function playCoinSound() {
+    const ctx = getAudio();
+    if (!ctx) return;
+    try {
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(987.77, now); // B5
+      osc.frequency.setValueAtTime(1318.51, now + 0.08); // E6
+      gain.gain.setValueAtTime(0.2, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.35);
+    } catch (_) {}
+  }
+
+  function playFanfare() {
+    const ctx = getAudio();
+    if (!ctx) return;
+    try {
+      const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+      notes.forEach((freq, i) => {
+        const now = ctx.currentTime + i * 0.09;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now);
+        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.24);
+      });
+    } catch (_) {}
+  }
+
+  function playSynthTone(freq, dur = 0.25) {
+    const ctx = getAudio();
+    if (!ctx) return;
+    try {
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now);
+      gain.gain.setValueAtTime(0.2, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + dur);
+    } catch (_) {}
+  }
+
+  function playWhoosh() {
+    const ctx = getAudio();
+    if (!ctx) return;
+    try {
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(160, now);
+      osc.frequency.exponentialRampToValueAtTime(440, now + 0.35);
+      osc.frequency.exponentialRampToValueAtTime(120, now + 0.85);
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.85);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.85);
+    } catch (_) {}
+  }
+
+  /* ---------- Modern Glass Toast Notification ---------- */
   const style = document.createElement('style');
   style.textContent = `
     .egg-toast {
@@ -65,30 +146,30 @@
       left: 50%;
       bottom: calc(24px + env(safe-area-inset-bottom, 0px));
       transform: translateX(-50%) translateY(0);
-      background: rgba(31, 31, 35, 0.94);
+      background: rgba(22, 23, 27, 0.95);
       -webkit-backdrop-filter: blur(16px);
       backdrop-filter: blur(16px);
       color: #fff;
-      border: 1px solid rgba(255, 255, 255, 0.16);
+      border: 1px solid rgba(255, 255, 255, 0.18);
       padding: 12px 22px;
       border-radius: 999px;
       font-weight: 600;
       font-size: 14px;
       letter-spacing: -0.01em;
-      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
-      z-index: 1000;
+      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.45);
+      z-index: 2147483640;
       max-width: calc(100% - 32px);
       text-align: center;
       pointer-events: none;
-      animation: eggToastIn .3s cubic-bezier(.16, 1, .3, 1);
+      animation: eggToastIn .32s cubic-bezier(.16, 1, .3, 1);
       transition: opacity .35s ease, transform .35s ease;
     }
     .egg-toast.out {
       opacity: 0;
-      transform: translateX(-50%) translateY(10px);
+      transform: translateX(-50%) translateY(12px);
     }
     @keyframes eggToastIn {
-      from { opacity: 0; transform: translateX(-50%) translateY(14px); }
+      from { opacity: 0; transform: translateX(-50%) translateY(16px); }
       to { opacity: 1; transform: translateX(-50%) translateY(0); }
     }
     .egg-dots {
@@ -106,453 +187,721 @@
       border: 0;
       padding: 0;
       cursor: pointer;
-      opacity: .9;
+      opacity: .92;
       touch-action: manipulation;
-      transition: transform .15s ease, opacity .15s ease;
+      transition: transform .18s ease, filter .18s ease;
     }
-    /* Generous 40px invisible touch target for mobile fingertips */
     .egg-dot::before {
       content: '';
       position: absolute;
       inset: -14px;
     }
     .egg-dot:active {
-      transform: scale(1.4);
-      opacity: 1;
+      transform: scale(1.45);
+      filter: brightness(1.3);
     }
-    .egg-share {
-      font: inherit;
-      font-size: 12px;
-      background: none;
-      border: 1px solid currentColor;
-      border-radius: 999px;
-      padding: 5px 12px;
-      margin-left: 12px;
-      color: inherit;
-      opacity: .85;
-      cursor: pointer;
-      touch-action: manipulation;
-      transition: opacity .15s ease, transform .15s ease;
+    .egg-coin-hop {
+      position: fixed;
+      pointer-events: none;
+      z-index: 2147483640;
+      animation: coinHopAnim .8s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
     }
-    .egg-share:active {
-      transform: scale(.96);
+    @keyframes coinHopAnim {
+      0% { transform: translateY(0) scale(0.6); opacity: 1; }
+      50% { transform: translateY(-75px) scale(1.15); opacity: 1; }
+      100% { transform: translateY(-110px) scale(1); opacity: 0; }
     }
-    #hero-discord-btn, .hero-blue-word {
-      -webkit-touch-callout: none;
-      -webkit-user-select: none;
-      user-select: none;
-      touch-action: manipulation;
+    .rave-overlay {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 2147483630;
+      box-shadow: inset 0 0 100px rgba(66, 133, 244, 0.6);
+      animation: raveBorder 1.5s ease infinite alternate;
     }
-    @media (prefers-reduced-motion: reduce) {
-      .egg-toast { animation: none; transition: none; }
+    @keyframes raveBorder {
+      0% { box-shadow: inset 0 0 80px rgba(66, 133, 244, 0.7); }
+      33% { box-shadow: inset 0 0 80px rgba(234, 67, 53, 0.7); }
+      66% { box-shadow: inset 0 0 80px rgba(251, 188, 4, 0.7); }
+      100% { box-shadow: inset 0 0 80px rgba(52, 168, 83, 0.7); }
     }
   `;
   document.head.appendChild(style);
 
   function toast(text) {
-    if (navigator.vibrate) {
-      try { navigator.vibrate([35, 45, 35]); } catch (_) {}
-    }
     const el = document.createElement('div');
     el.className = 'egg-toast';
     el.setAttribute('role', 'status');
     el.textContent = text;
     document.body.appendChild(el);
-    setTimeout(() => el.classList.add('out'), 2400);
+    setTimeout(() => el.classList.add('out'), 2500);
     setTimeout(() => el.remove(), 2900);
   }
 
-  /* ---------- 1. Android Shake: silent background accelerometer & mobile touch wiggle fallback ---------- */
-  let shakeListening = false;
-  function startShakeListener() {
-    if (shakeListening || !('DeviceMotionEvent' in window)) return;
-    shakeListening = true;
-    let spikes = [];
-    let last = 0;
-    const onMotion = (e) => {
-      if (!isHome()) return;
-      const a = e.accelerationIncludingGravity || e.acceleration;
-      if (!a) return;
-      const mag = Math.hypot(a.x || 0, a.y || 0, a.z || 0);
-      const now = Date.now();
-      if (Math.abs(mag - 9.8) > 13 && now - last > 180) {
-        last = now;
-        spikes = spikes.filter((t) => now - t < 1500);
-        spikes.push(now);
-        if (spikes.length >= 3) {
-          window.removeEventListener('devicemotion', onMotion);
-          find(1);
-        }
-      }
-    };
-    window.addEventListener('devicemotion', onMotion, { passive: true });
-  }
+  /* ---------- Visual Effect 1: Full-Screen Confetti Cannon ---------- */
+  function fireConfetti() {
+    const COLORS = ['#4285F4', '#EA4335', '#FBBC04', '#34A853'];
+    const canvas = document.createElement('canvas');
+    canvas.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:2147483635';
+    document.body.appendChild(canvas);
+    const ctx = canvas.getContext('2d');
+    const W = (canvas.width = window.innerWidth);
+    const H = (canvas.height = window.innerHeight);
 
-  function setupShake() {
-    if (!('DeviceMotionEvent' in window)) return;
-    // Android / modern browsers without permission gate: listen immediately
-    if (typeof DeviceMotionEvent.requestPermission !== 'function') {
-      startShakeListener();
-    } else {
-      // iOS Safari requires a user gesture for permission
-      const reqOnce = () => {
-        try {
-          DeviceMotionEvent.requestPermission().then((res) => {
-            if (res === 'granted') startShakeListener();
-          }).catch(() => {});
-        } catch (_) {}
-      };
-      window.addEventListener('pointerdown', reqOnce, { once: true, passive: true });
+    const particles = [];
+    for (let i = 0; i < 95; i++) {
+      particles.push({
+        x: W * 0.5 + (Math.random() - 0.5) * 160,
+        y: H * 0.45 + (Math.random() - 0.5) * 80,
+        vx: (Math.random() - 0.5) * 18,
+        vy: -Math.random() * 15 - 4,
+        size: Math.random() * 9 + 5,
+        color: COLORS[Math.floor(Math.random() * COLORS.length)],
+        rotation: Math.random() * 360,
+        rSpeed: (Math.random() - 0.5) * 12,
+        shape: Math.random() > 0.4 ? 'rect' : 'circle',
+        life: 1,
+        decay: Math.random() * 0.009 + 0.009
+      });
     }
+
+    let raf = 0;
+    function render() {
+      ctx.clearRect(0, 0, W, H);
+      let alive = false;
+      particles.forEach((p) => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.42;
+        p.vx *= 0.985;
+        p.rotation += p.rSpeed;
+        p.life -= p.decay;
+        if (p.life > 0) {
+          alive = true;
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate((p.rotation * Math.PI) / 180);
+          ctx.fillStyle = p.color;
+          ctx.globalAlpha = Math.max(0, p.life);
+          if (p.shape === 'rect') {
+            ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.7);
+          } else {
+            ctx.beginPath();
+            ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.restore();
+        }
+      });
+      if (alive) {
+        raf = requestAnimationFrame(render);
+      } else {
+        cancelAnimationFrame(raf);
+        canvas.remove();
+      }
+    }
+    render();
   }
 
-  /* Touch Gesture Shake / Wiggle fallback (rapid back-and-forth swipe on home screen) */
-  let touchShakeStartX = 0;
-  let touchShakeLastDir = 0;
-  let touchShakeReversals = 0;
-  let touchShakeLastTime = 0;
+  /* =========================================================================
+   * EGG 1: Confetti Rave (Konami Swipe on Mobile & Arrow Keys on Laptop)
+   * ========================================================================= */
+  function triggerEgg1() {
+    playFanfare();
+    fireConfetti();
+    const rave = document.createElement('div');
+    rave.className = 'rave-overlay';
+    document.body.appendChild(rave);
+    setTimeout(() => rave.remove(), 3200);
+    find(1);
+  }
+
+  // Mobile Swipe Gesture: Up, Up, Down, Down, Left, Right, Left, Right
+  const KONAMI_SWIPES = ['up', 'up', 'down', 'down', 'left', 'right', 'left', 'right'];
+  let swipeSeq = [];
+  let touchStartX = 0, touchStartY = 0, touchStartTime = 0;
 
   document.addEventListener('touchstart', (e) => {
     if (!e.touches || e.touches.length !== 1) return;
-    touchShakeStartX = e.touches[0].clientX;
-    touchShakeLastDir = 0;
-    touchShakeReversals = 0;
-    touchShakeLastTime = Date.now();
-  }, { passive: true });
-
-  document.addEventListener('touchmove', (e) => {
-    if (!isHome() || !e.touches || e.touches.length !== 1) return;
-    const now = Date.now();
-    if (now - touchShakeLastTime > 1400) {
-      touchShakeReversals = 0;
-      touchShakeLastDir = 0;
-      touchShakeStartX = e.touches[0].clientX;
-    }
-    touchShakeLastTime = now;
-
-    const x = e.touches[0].clientX;
-    const dx = x - touchShakeStartX;
-
-    if (Math.abs(dx) > 24) {
-      const currentDir = dx > 0 ? 1 : -1;
-      if (touchShakeLastDir !== 0 && currentDir !== touchShakeLastDir) {
-        touchShakeReversals++;
-        if (touchShakeReversals >= 3) {
-          find(1);
-          touchShakeReversals = 0;
-          touchShakeLastDir = 0;
-        }
-      }
-      touchShakeLastDir = currentDir;
-      touchShakeStartX = x;
-    }
-  }, { passive: true });
-
-  /* ---------- 2. Inspect Element: five taps on the logo ---------- */
-  const logoTaps = tapCounter(5, 2200, () => find(2));
-
-  /* ---------- 3, 5, 12: long presses with mobile finger tolerance ---------- */
-  let hold = null;
-  let swallowNextClick = false;
-
-  function startHold(egg, ms, x, y, maxMove = 52) {
-    cancelHold();
-    hold = {
-      egg, x, y, maxMove,
-      timer: setTimeout(() => {
-        find(egg);
-        swallowNextClick = true;
-        setTimeout(() => { swallowNextClick = false; }, 600);
-        hold = null;
-      }, ms)
-    };
-  }
-
-  function cancelHold() {
-    if (hold) { clearTimeout(hold.timer); hold = null; }
-  }
-
-  document.addEventListener('pointerdown', (e) => {
-    if (e.button > 0) return;
-    const maxMove = e.pointerType === 'touch' ? 52 : 28;
-    if (closest(e, '.hero-blue-word')) { startHold(3, 1200, e.clientX, e.clientY, maxMove); return; }
-    if (closest(e, '#hero-discord-btn')) { startHold(12, 1300, e.clientX, e.clientY, maxMove); return; }
-    if (isHome() && atBottom()) startHold(5, 1300, e.clientX, e.clientY, maxMove);
-  }, { passive: true });
-
-  document.addEventListener('pointerup', cancelHold, { passive: true });
-  document.addEventListener('pointercancel', cancelHold, { passive: true });
-  document.addEventListener('pointermove', (e) => {
-    if (hold && Math.hypot(e.clientX - hold.x, e.clientY - hold.y) > hold.maxMove) cancelHold();
-  }, { passive: true });
-
-  document.addEventListener('selectstart', (e) => { if (hold) e.preventDefault(); }, true);
-  document.addEventListener('contextmenu', (e) => { if (hold) e.preventDefault(); }, true);
-
-  /* ---------- 9. Swipe Sprint: rapid horizontal swipe on Events page ---------- */
-  let swipeStartX = 0;
-  let swipeStartY = 0;
-  let swipeCount = 0;
-  let swipeWindowStart = 0;
-
-  document.addEventListener('touchstart', (e) => {
-    if (!e.touches || e.touches.length !== 1) return;
-    swipeStartX = e.touches[0].clientX;
-    swipeStartY = e.touches[0].clientY;
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+    touchStartTime = Date.now();
   }, { passive: true });
 
   document.addEventListener('touchend', (e) => {
     if (!e.changedTouches || e.changedTouches.length !== 1) return;
-    const isEvents = route() === 'events' || pathNoSlash().startsWith('/events');
-    if (!isEvents) return;
-    const dx = e.changedTouches[0].clientX - swipeStartX;
-    const dy = e.changedTouches[0].clientY - swipeStartY;
-    const now = Date.now();
-    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.2) {
-      if (now - swipeWindowStart > 2200) {
-        swipeCount = 0;
-        swipeWindowStart = now;
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    const dt = Date.now() - touchStartTime;
+    if (dt > 1200) return; // Too slow for swipe
+
+    let dir = null;
+    if (Math.abs(dx) > 35 && Math.abs(dx) > Math.abs(dy) * 1.3) {
+      dir = dx > 0 ? 'right' : 'left';
+    } else if (Math.abs(dy) > 35 && Math.abs(dy) > Math.abs(dx) * 1.3) {
+      dir = dy > 0 ? 'down' : 'up';
+    }
+    if (!dir) return;
+
+    if (dir === KONAMI_SWIPES[swipeSeq.length]) {
+      swipeSeq.push(dir);
+      if (swipeSeq.length === KONAMI_SWIPES.length) {
+        triggerEgg1();
+        swipeSeq = [];
       }
-      swipeCount++;
-      if (swipeCount >= 2) {
-        find(9);
-        swipeCount = 0;
-      }
+    } else {
+      swipeSeq = dir === KONAMI_SWIPES[0] ? [dir] : [];
     }
   }, { passive: true });
 
-  /* ---------- click-based eggs ---------- */
-  const heroBuild = tapCounter(3, 1500, () => find(19));
-  const heroLearn = tapCounter(3, 1500, () => find(25));
-  const avatarTaps = tapCounter(3, 1500, () => find(23));
+  // Laptop Keyboard Konami Code
+  const KONAMI_KEYS = ['arrowup', 'arrowup', 'arrowdown', 'arrowdown', 'arrowleft', 'arrowright', 'arrowleft', 'arrowright', 'b', 'a'];
+  let keySeq = [];
+  window.addEventListener('keydown', (e) => {
+    if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
+    const key = e.key.toLowerCase();
+    if (key === KONAMI_KEYS[keySeq.length]) {
+      keySeq.push(key);
+      if (keySeq.length === KONAMI_KEYS.length) {
+        triggerEgg1();
+        keySeq = [];
+      }
+    } else {
+      keySeq = key === KONAMI_KEYS[0] ? [key] : [];
+    }
+  });
 
-  // Four colours: tap blue, red, yellow, green in order (footer dots).
-  const dotOrder = [0, 1, 2, 3];
-  let dotSeq = [];
-  let discordOpenedAt = 0;
+  /* =========================================================================
+   * EGG 2: Google Gravity Collapse (Cards tumble & fall with physics)
+   * ========================================================================= */
+  let gravityActive = false;
+  function triggerEgg2() {
+    if (gravityActive || !isHome()) return;
+    gravityActive = true;
+    find(2);
+
+    const elements = document.querySelectorAll(
+      '.hero-reference-copy h1, .hero-reference-lead, .home-hero-actions, .hero-social-proof, .hero-art-label, .card'
+    );
+    const restoreBtn = document.createElement('button');
+    restoreBtn.type = 'button';
+    restoreBtn.innerHTML = '↺ Restore Gravity';
+    restoreBtn.style.cssText = `
+      position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+      z-index:2147483640;background:#4285f4;color:#fff;font-weight:700;
+      padding:12px 24px;border:0;border-radius:999px;box-shadow:0 10px 30px rgba(66,133,244,0.4);
+      cursor:pointer;font-family:inherit;font-size:14px;animation:eggToastIn .3s ease;
+    `;
+
+    const originalStyles = new Map();
+    elements.forEach((el) => {
+      const rect = el.getBoundingClientRect();
+      originalStyles.set(el, el.style.cssText);
+      const randX = (Math.random() - 0.5) * 60;
+      const randRot = (Math.random() - 0.5) * 28;
+      const dropDistance = window.innerHeight - rect.bottom + (Math.random() * 40 - 20);
+
+      el.style.transition = 'transform 0.9s cubic-bezier(0.25, 1.4, 0.5, 1)';
+      el.style.transform = `translate(${randX}px, ${Math.max(80, dropDistance)}px) rotate(${randRot}deg)`;
+      el.style.cursor = 'grab';
+
+      // Drag / fling capability on mobile touch
+      let startX = 0, startY = 0, curX = randX, curY = dropDistance;
+      const onMove = (me) => {
+        const clientX = me.touches ? me.touches[0].clientX : me.clientX;
+        const clientY = me.touches ? me.touches[0].clientY : me.clientY;
+        const nx = curX + (clientX - startX);
+        const ny = curY + (clientY - startY);
+        el.style.transform = `translate(${nx}px, ${ny}px) rotate(${randRot}deg)`;
+      };
+      const onEnd = () => {
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onEnd);
+      };
+      el.addEventListener('pointerdown', (pe) => {
+        startX = pe.clientX;
+        startY = pe.clientY;
+        el.style.transition = 'none';
+        window.addEventListener('pointermove', onMove);
+        window.addEventListener('pointerup', onEnd);
+      }, { passive: true });
+    });
+
+    restoreBtn.addEventListener('click', () => {
+      elements.forEach((el) => {
+        el.style.transition = 'transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)';
+        el.style.transform = 'none';
+        setTimeout(() => {
+          el.style.cssText = originalStyles.get(el) || '';
+        }, 650);
+      });
+      restoreBtn.remove();
+      gravityActive = false;
+    });
+
+    document.body.appendChild(restoreBtn);
+  }
+
+  // Trigger Egg 2 on double-tap & hold on home hero OR G key
+  let heroTapCount = 0, lastHeroTap = 0;
+  document.addEventListener('click', (e) => {
+    if (!isHome()) return;
+    if (closest(e, '.home-hero-title, .hero-reference-copy')) {
+      const now = Date.now();
+      if (now - lastHeroTap < 400) {
+        heroTapCount++;
+        if (heroTapCount >= 2) {
+          triggerEgg2();
+          heroTapCount = 0;
+        }
+      } else {
+        heroTapCount = 1;
+      }
+      lastHeroTap = now;
+    }
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
+    if (e.key === 'g' || e.key === 'G') triggerEgg2();
+  });
+
+  /* =========================================================================
+   * EGG 3: 8-Bit Mario Coin (Triple tap logo)
+   * ========================================================================= */
+  function triggerEgg3(targetEl) {
+    playCoinSound();
+    find(3);
+
+    const rect = targetEl ? targetEl.getBoundingClientRect() : { left: window.innerWidth / 2, top: 120 };
+    const coin = document.createElement('div');
+    coin.className = 'egg-coin-hop';
+    coin.style.left = `${rect.left + (rect.width ? rect.width / 2 : 0) - 20}px`;
+    coin.style.top = `${rect.top}px`;
+    coin.innerHTML = `
+      <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#ffe066,#f59f00);border:2px solid #fff;display:grid;place-items:center;box-shadow:0 4px 16px rgba(245,159,0,0.6);font-size:18px;">🪙</div>
+      <b style="color:#f59f00;font-size:16px;text-shadow:0 2px 8px rgba(0,0,0,0.4);font-family:var(--f-mono,monospace);">+100</b>
+    `;
+    document.body.appendChild(coin);
+    setTimeout(() => coin.remove(), 850);
+  }
+
+  let logoClicks = 0, lastLogoClick = 0;
+  document.addEventListener('click', (e) => {
+    const logo = closest(e, '.lg, #lgs, .hero-code');
+    if (!logo) return;
+    const now = Date.now();
+    if (now - lastLogoClick < 450) {
+      logoClicks++;
+      if (logoClicks >= 3) {
+        triggerEgg3(logo);
+        logoClicks = 0;
+      }
+    } else {
+      logoClicks = 1;
+    }
+    lastLogoClick = now;
+  });
+
+  /* =========================================================================
+   * EGG 4: Secret Hacker Terminal (Long-press footer or press ` / ~)
+   * ========================================================================= */
+  let terminalOpen = false;
+  function openHackerTerminal() {
+    if (terminalOpen) return;
+    terminalOpen = true;
+    find(4);
+
+    const term = document.createElement('div');
+    term.id = 'gdg-hacker-term';
+    term.style.cssText = `
+      position:fixed;inset:0;background:rgba(8,10,14,0.96);z-index:2147483645;
+      display:flex;flex-direction:column;font-family:var(--f-mono,monospace);color:#34a853;
+      padding:calc(16px + env(safe-area-inset-top,0px)) 16px calc(16px + env(safe-area-inset-bottom,0px));
+      box-sizing:border-box;animation:eggToastIn .3s ease;
+    `;
+
+    term.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(52,168,83,0.3);padding-bottom:10px;">
+        <span style="font-weight:700;letter-spacing:1px;font-size:13px;">● ● ● GDG SRU ROOT SHELL ~ v2.4</span>
+        <button id="term-close-btn" style="background:#ea4335;color:#fff;border:0;border-radius:999px;padding:4px 12px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;">EXIT</button>
+      </div>
+      <div id="term-body" style="flex:1;overflow-y:auto;padding:12px 0;font-size:13px;line-height:1.6;color:#a8f0b4;">
+        <p style="color:#4285f4;margin:0 0 6px;">[SYSTEM READY] Welcome, developer. Unauthorized curiosity encouraged.</p>
+        <p style="color:#fbbc04;margin:0 0 12px;">Type commands or tap quick pills below:</p>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;padding:8px 0;border-top:1px solid rgba(52,168,83,0.2);">
+        <button class="term-pill" data-cmd="help" style="background:#173b25;color:#a8f0b4;border:1px solid #34a853;border-radius:6px;padding:6px 10px;font:inherit;font-size:12px;cursor:pointer;">help</button>
+        <button class="term-pill" data-cmd="matrix" style="background:#173b25;color:#a8f0b4;border:1px solid #34a853;border-radius:6px;padding:6px 10px;font:inherit;font-size:12px;cursor:pointer;">matrix</button>
+        <button class="term-pill" data-cmd="roast" style="background:#173b25;color:#a8f0b4;border:1px solid #34a853;border-radius:6px;padding:6px 10px;font:inherit;font-size:12px;cursor:pointer;">roast</button>
+        <button class="term-pill" data-cmd="cat secret" style="background:#173b25;color:#a8f0b4;border:1px solid #34a853;border-radius:6px;padding:6px 10px;font:inherit;font-size:12px;cursor:pointer;">cat secret</button>
+        <button class="term-pill" data-cmd="clear" style="background:#173b25;color:#a8f0b4;border:1px solid #34a853;border-radius:6px;padding:6px 10px;font:inherit;font-size:12px;cursor:pointer;">clear</button>
+      </div>
+      <form id="term-form" style="display:flex;gap:8px;margin-top:6px;">
+        <span style="color:#34a853;font-weight:700;">&gt;</span>
+        <input id="term-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="type command..." style="flex:1;background:transparent;border:0;color:#fff;font:inherit;font-size:14px;outline:none;" />
+      </form>
+    `;
+    document.body.appendChild(term);
+
+    const bodyEl = term.querySelector('#term-body');
+    const inputEl = term.querySelector('#term-input');
+    const closeBtn = term.querySelector('#term-close-btn');
+
+    function logLine(msg, color = '#a8f0b4') {
+      const p = document.createElement('p');
+      p.style.margin = '4px 0';
+      p.style.color = color;
+      p.innerHTML = msg;
+      bodyEl.appendChild(p);
+      bodyEl.scrollTop = bodyEl.scrollHeight;
+    }
+
+    function execCommand(cmd) {
+      const c = (cmd || '').trim().toLowerCase();
+      logLine(`guest@gdgsru:~$ ${c}`, '#fff');
+      if (c === 'help') {
+        logLine('Available commands:<br>  help       - show this manual<br>  matrix     - toggle phosphor matrix filter<br>  roast      - get roasted by AI<br>  cat secret - unveil launch secrets<br>  clear      - wipe output<br>  exit       - close root terminal');
+      } else if (c === 'matrix') {
+        window.gdg && window.gdg.matrix ? window.gdg.matrix() : null;
+        logLine('⚡ Matrix hacker visual active.', '#34a853');
+      } else if (c === 'roast') {
+        triggerEgg8();
+      } else if (c === 'cat secret') {
+        logLine('🎉 CHAPTER SECRET: <i>"The best way to learn software is to ship it before you feel ready."</i> - GDG SRU Core Team', '#fbbc04');
+      } else if (c === 'clear') {
+        bodyEl.innerHTML = '';
+      } else if (c === 'exit') {
+        closeTerm();
+      } else {
+        logLine(`bash: ${c}: command not found. Type <b>help</b> for command list.`, '#ea4335');
+      }
+    }
+
+    term.querySelectorAll('.term-pill').forEach((btn) => {
+      btn.addEventListener('click', () => execCommand(btn.dataset.cmd));
+    });
+
+    term.querySelector('#term-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const val = inputEl.value;
+      inputEl.value = '';
+      execCommand(val);
+    });
+
+    function closeTerm() {
+      term.remove();
+      terminalOpen = false;
+    }
+    closeBtn.addEventListener('click', closeTerm);
+  }
+
+  // Mobile Long-Press on Footer (1.4s)
+  let footHoldTimer = null;
+  document.addEventListener('pointerdown', (e) => {
+    if (closest(e, '.v18-foot, .v18-foot-in')) {
+      footHoldTimer = setTimeout(() => {
+        openHackerTerminal();
+      }, 1400);
+    }
+  }, { passive: true });
+  document.addEventListener('pointerup', () => { if (footHoldTimer) clearTimeout(footHoldTimer); }, { passive: true });
+  document.addEventListener('pointercancel', () => { if (footHoldTimer) clearTimeout(footHoldTimer); }, { passive: true });
+
+  window.addEventListener('keydown', (e) => {
+    if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
+    if (e.key === '`' || e.key === '~') openHackerTerminal();
+  });
+
+  /* =========================================================================
+   * EGG 5: Bugdroid Runner (1-Tap Jumping Mini Game)
+   * ========================================================================= */
+  let runnerActive = false;
+  function openBugdroidRunner() {
+    if (runnerActive) return;
+    runnerActive = true;
+    find(5);
+
+    const overlay = document.createElement('div');
+    overlay.id = 'gdg-runner-modal';
+    overlay.style.cssText = `
+      position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:2147483645;
+      display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;
+      backdrop-filter:blur(12px);animation:eggToastIn .25s ease;
+    `;
+
+    overlay.innerHTML = `
+      <div style="background:var(--cd,#1a1a1c);border:1px solid rgba(255,255,255,0.15);border-radius:24px;width:min(440px,100%);overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.5);display:flex;flex-direction:column;">
+        <div style="padding:14px 18px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,0.08);">
+          <b style="font-size:15px;color:var(--ink,#fff);">🤖 Bugdroid Jump</b>
+          <button id="runner-close" style="background:none;border:0;color:var(--mut,#888);font-size:20px;cursor:pointer;padding:0 4px;">✕</button>
+        </div>
+        <div style="position:relative;background:#0d0e12;height:200px;display:grid;place-items:center;">
+          <canvas id="runner-canvas" width="400" height="200" style="width:100%;height:100%;display:block;"></canvas>
+          <div id="runner-msg" style="position:absolute;font-size:14px;font-weight:700;color:#fff;background:rgba(0,0,0,0.65);padding:6px 14px;border-radius:999px;pointer-events:none;">TAP SCREEN TO JUMP</div>
+        </div>
+        <div style="padding:12px 18px;display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--mut,#888);">
+          <span>Score: <b id="runner-score" style="color:var(--g,#34a853);">0</b></span>
+          <span style="font-size:12px;">Controls: Tap anywhere or Space</span>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const canvas = overlay.querySelector('#runner-canvas');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = overlay.querySelector('#runner-score');
+    const msgEl = overlay.querySelector('#runner-msg');
+    const closeBtn = overlay.querySelector('#runner-close');
+
+    let running = true, score = 0, isJumping = false;
+    let py = 150, vy = 0, gravity = 0.65;
+    let obstacles = [{ x: 420, w: 18, h: 28 }];
+
+    function jump() {
+      if (py >= 148) {
+        vy = -11;
+        playSynthTone(587.33, 0.1); // D5 jump beep
+        msgEl.style.display = 'none';
+      }
+    }
+
+    overlay.addEventListener('pointerdown', (e) => {
+      if (e.target !== closeBtn) jump();
+    });
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') { e.preventDefault(); jump(); }
+    });
+
+    let animId = 0;
+    function loop() {
+      if (!running) return;
+      ctx.clearRect(0, 0, 400, 200);
+
+      // Floor line
+      ctx.strokeStyle = '#34a853';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, 178);
+      ctx.lineTo(400, 178);
+      ctx.stroke();
+
+      // Physics
+      vy += gravity;
+      py += vy;
+      if (py > 150) { py = 150; vy = 0; }
+
+      // Draw Bugdroid (Green rectangle with eyes)
+      ctx.fillStyle = '#34a853';
+      ctx.fillRect(40, py, 26, 26);
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(56, py + 5, 4, 4);
+
+      // Obstacles
+      obstacles.forEach((ob) => {
+        ob.x -= 4.2;
+        ctx.fillStyle = '#ea4335';
+        ctx.fillRect(ob.x, 178 - ob.h, ob.w, ob.h);
+
+        // Collision check
+        if (ob.x < 66 && ob.x + ob.w > 40 && py + 26 > 178 - ob.h) {
+          msgEl.textContent = `GAME OVER · SCORE: ${score}`;
+          msgEl.style.display = 'block';
+          playSynthTone(180, 0.3);
+          setTimeout(() => {
+            obstacles = [{ x: 420, w: 18, h: 28 }];
+            score = 0;
+            scoreEl.textContent = '0';
+          }, 1400);
+        }
+      });
+
+      if (obstacles[0].x < -30) {
+        obstacles.shift();
+        obstacles.push({ x: 400 + Math.random() * 120, w: 18, h: 24 + Math.random() * 14 });
+        score += 10;
+        scoreEl.textContent = score;
+      }
+
+      animId = requestAnimationFrame(loop);
+    }
+    loop();
+
+    function closeGame() {
+      running = false;
+      cancelAnimationFrame(animId);
+      overlay.remove();
+      runnerActive = false;
+    }
+    closeBtn.addEventListener('click', closeGame);
+  }
+
+  // Trigger Bugdroid on tap of cloud / sun on home hero or 404
+  document.addEventListener('click', (e) => {
+    if (closest(e, '.hero-art-cloud, .hero-art-sun, .pg.page-404, .page-404')) {
+      openBugdroidRunner();
+    }
+  });
+
+  /* =========================================================================
+   * EGG 6: Google 4-Color Synth (Tap 4 dots in footer)
+   * ========================================================================= */
+  const TONE_FREQS = [261.63, 329.63, 392.00, 523.25]; // C4, E4, G4, C5
+  let synthTaps = [];
 
   document.addEventListener('click', (e) => {
-    // Hold eggs: swallow click following completed hold
-    if (swallowNextClick && (closest(e, '.hero-blue-word') || closest(e, '#hero-discord-btn'))) {
-      e.preventDefault();
-      e.stopPropagation();
-      swallowNextClick = false;
-      return;
-    }
-
-    const logo = closest(e, 'a.lg');
-    if (logo) {
-      logoTaps();
-      if (isHome()) { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
-    }
-
-    if (closest(e, '.hero-proof-spark')) find(18);
-    if (closest(e, '.home-hero-title > span:first-child')) heroBuild();
-    if (closest(e, '.label-learn') || closest(e, '.home-hero-title > span:nth-child(2)')) heroLearn();
-    if (closest(e, '.avatar-stack')) avatarTaps();
-
-    // 16. Calendar Reminder: tapping countdown on /easter-eggs/ or home
-    if (closest(e, '#egg-countdown, #egg-countdown-value, #egg-countdown-title, #countdown-cell, #cd, .info-coming-soon')) {
-      find(16);
-    }
-
-    // 17. Launch Hour: tapping season badge, live session label, or launch/summary badge
-    if (closest(e, '.event-side-index, #ef-meta-label, #next-event-label, .event-live-dot, .event-feature-side, #egg-summary')) {
-      find(17);
-    }
-
-    const teamCard = closest(e, '.tm-card');
-    if (teamCard && route() === 'team') {
-      flippedCards.add(teamCard);
-      if (flippedCards.size >= 3) find(8);
-    }
-    if (closest(e, '.tm-ecosystem-icon')) find(27);
-
     const dot = closest(e, '.egg-dot');
-    if (dot) {
-      const idx = Number(dot.dataset.i);
-      if (idx === dotOrder[dotSeq.length]) {
-        dotSeq = [...dotSeq, idx];
-        if (dotSeq.length === dotOrder.length) { find(7); dotSeq = []; }
+    if (!dot) return;
+    const idx = Number(dot.dataset.i);
+    if (Number.isInteger(idx) && idx >= 0 && idx < 4) {
+      playSynthTone(TONE_FREQS[idx], 0.3);
+      if (idx === synthTaps.length) {
+        synthTaps.push(idx);
+        if (synthTaps.length === 4) {
+          // All 4 played in sequence: victory chord!
+          setTimeout(playFanfare, 300);
+          find(6);
+          synthTaps = [];
+        }
       } else {
-        dotSeq = idx === dotOrder[0] ? [idx] : [];
+        synthTaps = idx === 0 ? [0] : [];
       }
     }
-
-    if (closest(e, '.egg-share')) {
-      const data = { title: document.title, url: location.href };
-      if (navigator.share) navigator.share(data).catch(() => {});
-      else if (navigator.clipboard) navigator.clipboard.writeText(location.href).catch(() => {});
-      find(15);
-    }
-
-    if (closest(e, '.discord-promo-cta') || closest(e, 'a[href*="discord.gg"]')) {
-      discordOpenedAt = Date.now();
-    }
-
-    // Version Tap: two taps on footer copyright text
-    const foot = closest(e, '.v18-foot');
-    if (foot && e.target.children && e.target.children.length === 0 && (e.target.textContent || '').includes('©')) {
-      versionTaps();
-    }
-  }, true);
-
-  const flippedCards = new Set();
-  const versionTaps = tapCounter(2, 1000, () => find(20));
-
-  // Hello World and SRU: typing in team search / leaderboard search box
-  document.addEventListener('input', (e) => {
-    if (!e.target || !['q', 'tm-search'].includes(e.target.id)) return;
-    if (route() !== 'leaderboard' && route() !== 'team') return;
-    const v = (e.target.value || '').trim();
-    if (v.toLowerCase() === 'hello') find(14);
-    if (v.toUpperCase() === 'SRU') find(29);
   });
 
-  // Dark Mode Toggle: switch theme five times within a minute
-  (() => {
-    const themeTaps = tapCounter(5, 60000, () => find(13));
-    let lastTheme = document.documentElement.dataset.theme || '';
-    new MutationObserver(() => {
-      const now = document.documentElement.dataset.theme || '';
-      if (now !== lastTheme) { lastTheme = now; themeTaps(); }
-    }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-  })();
-
-  // Context Switch: return to site after opening Discord
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState !== 'visible' || !discordOpenedAt) return;
-    if (Date.now() - discordOpenedAt <= 60000) find(28);
-    discordOpenedAt = 0;
-  });
-
-  /* ---------- scroll-based eggs ---------- */
-  let topAt = window.scrollY <= 5 ? Date.now() : 0;
-  let pageSpeedDone = false;
-  let blogDone = false;
-  let privacyDone = false;
-
-  // Loading Bar: scroll past halfway on any page, then back to the top
-  let passedHalf = false;
-  window.addEventListener('scroll', () => {
-    const range = document.documentElement.scrollHeight - window.innerHeight;
-    if (range > 0 && window.scrollY >= range / 2) passedHalf = true;
-    if (passedHalf && window.scrollY <= 5) { passedHalf = false; find(21); }
-  }, { passive: true });
-
-  window.addEventListener('scroll', () => {
-    if (window.scrollY <= 5) topAt = Date.now();
-    if (!atBottom()) return;
-
-    if (isHome() && !pageSpeedDone && topAt && Date.now() - topAt <= 15000) {
-      pageSpeedDone = true;
-      find(26);
+  /* =========================================================================
+   * EGG 7: Do a Barrel Roll (360° Viewport Rotation)
+   * ========================================================================= */
+  let rolling = false;
+  function triggerEgg7() {
+    if (rolling) return;
+    rolling = true;
+    find(7);
+    playWhoosh();
+    if (navigator.vibrate) {
+      try { navigator.vibrate([30, 40, 50, 60, 70]); } catch (_) {}
     }
-    if (route() === 'blogs' && pathNoSlash() !== '/blog' && !blogDone) {
-      blogDone = true;
-      find(10);
-    }
-    if (route() === 'privacy' && !privacyDone) {
-      privacyDone = true;
-      find(30);
-    }
-  }, { passive: true });
 
-  /* ---------- Pull to Refresh: pull down > 80px from top of home ---------- */
-  let pullStartY = null;
-  document.addEventListener('touchstart', (e) => {
-    pullStartY = isHome() && window.scrollY <= 0 ? e.touches[0].clientY : null;
-  }, { passive: true });
+    const app = document.querySelector('#app') || document.body;
+    app.style.transition = 'transform 1.3s cubic-bezier(0.25, 1, 0.5, 1)';
+    app.style.transform = 'rotate(360deg)';
+
+    setTimeout(() => {
+      app.style.transition = 'none';
+      app.style.transform = 'none';
+      rolling = false;
+    }, 1350);
+  }
+
+  // 2-Finger Rotation / Twist Gesture on Mobile
+  let touchAngles = [];
   document.addEventListener('touchmove', (e) => {
-    if (pullStartY === null) return;
-    const threshold = Math.max(80, window.innerHeight * 0.15);
-    if (e.touches[0].clientY - pullStartY > threshold) { pullStartY = null; find(4); }
+    if (!e.touches || e.touches.length !== 2) return;
+    const dx = e.touches[1].clientX - e.touches[0].clientX;
+    const dy = e.touches[1].clientY - e.touches[0].clientY;
+    const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+    touchAngles.push(angle);
+    if (touchAngles.length > 5) {
+      const delta = Math.abs(touchAngles[touchAngles.length - 1] - touchAngles[0]);
+      if (delta > 65) {
+        touchAngles = [];
+        triggerEgg7();
+      }
+    }
   }, { passive: true });
-  document.addEventListener('touchend', () => { pullStartY = null; }, { passive: true });
+  document.addEventListener('touchend', () => { touchAngles = []; }, { passive: true });
 
-  /* ---------- 6. Landscape Mode on home (phones) ---------- */
-  function checkLandscape() {
-    if (!isHome()) return;
-    if (matchMedia('(orientation: landscape)').matches && matchMedia('(pointer: coarse)').matches) find(6);
+  window.addEventListener('keydown', (e) => {
+    if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
+    if (e.key === 'r' || e.key === 'R') triggerEgg7();
+  });
+
+  /* =========================================================================
+   * EGG 8: Gemini AI Roast & Fortune (Long-press spark)
+   * ========================================================================= */
+  const ROASTS = [
+    "Gemini analysis: You have 42 tabs open and 38 of them are StackOverflow answers from 2017.",
+    "Your code compiles on the first try... in another multiverse.",
+    "A legendary developer once said: 'It worked on localhost.' Today, that developer is you.",
+    "Gemini predicts: You will spend 3 hours debugging today, only to find a missing semicolon.",
+    "Your commit message 'fixed stuff' has officially been logged into Google Cloud.",
+    "404: Motivation not found. Have you tried coffee and turning yourself off and on again?",
+    "You don't need tests if your users test it directly in production.",
+    "Gemini insight: 99% of web development is centering a div and praying it stays there."
+  ];
+
+  function triggerEgg8() {
+    find(8);
+    playSynthTone(783.99, 0.2); // G5 sparkle chime
+
+    const card = document.createElement('div');
+    card.style.cssText = `
+      position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:2147483645;
+      display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;
+      backdrop-filter:blur(14px);animation:eggToastIn .3s ease;
+    `;
+
+    function getQuote() {
+      return ROASTS[Math.floor(Math.random() * ROASTS.length)];
+    }
+
+    card.innerHTML = `
+      <div style="background:var(--cd,#1a1a1c);border:1px solid rgba(66,133,244,0.3);border-radius:24px;width:min(420px,100%);padding:24px;box-shadow:0 24px 70px rgba(66,133,244,0.25);position:relative;text-align:center;">
+        <span style="font-size:36px;display:block;margin-bottom:8px;">✨</span>
+        <b style="font-size:18px;color:#4285f4;letter-spacing:-0.02em;display:block;">Gemini Chapter Oracle</b>
+        <p id="oracle-quote" style="margin:16px 0 20px;font-size:15px;line-height:1.55;color:var(--ink,#fff);font-style:italic;">"${getQuote()}"</p>
+        <div style="display:flex;gap:8px;justify-content:center;">
+          <button id="oracle-next" style="background:#4285f4;color:#fff;border:0;border-radius:999px;padding:9px 18px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;">🎲 Another</button>
+          <button id="oracle-close" style="background:rgba(255,255,255,0.1);color:#fff;border:0;border-radius:999px;padding:9px 18px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;">Close</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(card);
+
+    const quoteEl = card.querySelector('#oracle-quote');
+    card.querySelector('#oracle-next').addEventListener('click', () => {
+      quoteEl.textContent = `"${getQuote()}"`;
+      playSynthTone(880, 0.15);
+    });
+    card.querySelector('#oracle-close').addEventListener('click', () => card.remove());
   }
 
-  /* ---------- Offline Dino helpers ---------- */
-  const KNOWN_FIRST = ['', 'index.html', 'events', 'event', 'event.html', 'team', 'blog', 'blogs', 'join', 'contact',
-    'certificates', 'verify', 'leaderboard', 'resources', 'perks', 'privacy', 'member-badge', 'member-badge.html',
-    'easter-eggs', 'wheel', 'admin', 'mission-control', 'portal', 'about', 'gallery', 'hello'];
-  function isUnknownAddress() {
-    const first = location.pathname.split('/').filter(Boolean)[0] || '';
-    return !KNOWN_FIRST.includes(first.toLowerCase());
-  }
+  // Mobile Long-Press on Sparkle Asterisk
+  let sparkTimer = null;
+  document.addEventListener('pointerdown', (e) => {
+    if (closest(e, '.hero-proof-spark, .art-glyph')) {
+      sparkTimer = setTimeout(triggerEgg8, 800);
+    }
+  }, { passive: true });
+  document.addEventListener('pointerup', () => { if (sparkTimer) clearTimeout(sparkTimer); }, { passive: true });
+  document.addEventListener('pointercancel', () => { if (sparkTimer) clearTimeout(sparkTimer); }, { passive: true });
 
-  function watchFor404() {
-    const check = () => {
-      if (document.querySelector('.pg.page-404, .page-404')) { find(11); return true; }
-      return false;
-    };
-    if (check()) return;
-    const observer = new MutationObserver(() => { if (check()) observer.disconnect(); });
-    observer.observe(document.body, { childList: true, subtree: true });
-  }
-
-  /* ---------- on page load ---------- */
-  function onLoad() {
-    // 24. Late Night Coding: visit between midnight and 5 AM
-    const hour = new Date().getHours();
-    if (hour >= 0 && hour < 5) find(24);
-
-    // 17. Launch Hour: visit during launch hour (10:00 or 18:00)
-    if (hour === 10 || hour === 18) find(17);
-
-    // 22. Route Found: the /hello address
-    if (pathNoSlash() === '/hello') find(22);
-
-    // 11. Offline Dino: unknown page address
-    if (isUnknownAddress() || /page not found/i.test(document.title) || route() === '404') find(11);
-    watchFor404();
-
-    // Home page overscroll behavior
-    if (isHome()) document.documentElement.style.overscrollBehaviorY = 'contain';
-
-    checkLandscape();
-    window.addEventListener('orientationchange', checkLandscape, { passive: true });
-    window.addEventListener('resize', checkLandscape, { passive: true });
-
-    setupShake();
-    injectFooterExtras();
-  }
-
-  // Four colours dots and share button, added to footer
+  /* ---------- Footer Extras (Google 4-Dots) ---------- */
   function injectFooterExtras() {
     const inner = document.querySelector('.v18-foot-in');
     if (!inner || inner.querySelector('.egg-dots')) return;
     const colours = ['#4285f4', '#ea4335', '#fbbc04', '#34a853'];
     const wrap = document.createElement('span');
     wrap.className = 'egg-dots';
-    wrap.setAttribute('aria-hidden', 'true');
+    wrap.setAttribute('aria-label', 'Google colours synth piano');
     colours.forEach((c, i) => {
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'egg-dot';
-      b.tabIndex = -1;
       b.dataset.i = String(i);
       b.style.background = c;
       wrap.appendChild(b);
     });
-    const share = document.createElement('button');
-    share.type = 'button';
-    share.className = 'egg-share';
-    share.textContent = 'Share GDG SRU';
-    const row = document.createElement('div');
-    row.className = 'egg-row';
-    row.style.cssText = 'display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px';
-    row.append(wrap, share);
-    inner.appendChild(row);
+    inner.appendChild(wrap);
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', onLoad, { once: true });
+    document.addEventListener('DOMContentLoaded', injectFooterExtras, { once: true });
   } else {
-    onLoad();
+    injectFooterExtras();
   }
 })();
