@@ -33,13 +33,13 @@
     eyebrow: "GDG SRU '26 · GDG ON CAMPUS",
     title_top: 'The crew',
     title_accent: 'behind the day.',
-    lead: 'GDG on Campus SR University is powered by the student community. These are the people putting everything together, and the crew grows as the community gets closer.',
+    lead: 'GDG on Campus SR University is powered by the student community. These are the people putting the 3rd edition together, and the crew grows as the community gets closer.',
     cta_label: 'Meet the crew',
     map_label: 'THE CREW',
     core_small: 'GDG SRU',
     core_big: 'The crew.',
-    edition: '1st',
-    community_count: '1,800+'
+    edition: '3rd',
+    community_count: '2,000+'
   };
   const KICKER = { leadership: 'THE CORE TEAM', advisory: 'GUIDANCE & SUPPORT', department: 'DEPARTMENT' };
 
@@ -239,8 +239,8 @@
     const p = { ...PAGE_DEFAULTS, ...page };
     const list = Array.isArray(members) ? members : [];
     const count = list.length || 18;
-    const edition = p.edition || '1st';
-    const community = p.community_count || '1,800+';
+    const edition = p.edition || '3rd';
+    const community = p.community_count || '2,000+';
 
     return `<section class="crew-hero" aria-labelledby="crew-title">
       <div class="crew-hero__copy">
@@ -256,7 +256,7 @@
             <span class="crew-hero__line">behind the day.</span>
           </span>
         </h1>
-        <p class="crew-hero__lede">${esc(p.lead || "GDG on Campus SR University is powered by the student community. These are the people putting the 1st edition together, and the crew grows as the community gets closer.")}</p>
+        <p class="crew-hero__lede">${esc(p.lead || "GDG on Campus SR University is powered by the student community. These are the people putting the 3rd edition together, and the crew grows as the community gets closer.")}</p>
         <dl class="crew-hero__stats">
           <div>
             <dt class="sr-only">Crew</dt>
@@ -264,11 +264,11 @@
           </div>
           <div>
             <dt class="sr-only">Edition</dt>
-            <dd><strong>${esc(edition)}</strong><span>edition</span></dd>
+            <dd><strong class="stat-highlight stat-edition">${esc(edition)}</strong><span>edition</span></dd>
           </div>
           <div>
             <dt class="sr-only">Community</dt>
-            <dd><strong>${esc(community)}</strong><span>in the community</span></dd>
+            <dd><strong class="stat-highlight stat-community">${esc(community)}</strong><span>verified in community</span></dd>
           </div>
         </dl>
         <div class="crew-hero__ctas">

@@ -51,7 +51,10 @@ def push(commit_message='update site'):
 
     # 3. Push to origin main using token
     push_url = f'https://{user}:{token}@github.com/gdgsru/website.git'
-    res = subprocess.run(['git', 'push', push_url, 'main'])
+    push_args = ['git', 'push', push_url, 'main']
+    if '--force' in sys.argv or '-f' in sys.argv:
+        push_args.append('--force')
+    res = subprocess.run(push_args)
     if res.returncode == 0:
         print('\n[SUCCESS] Successfully pushed changes to origin/main!')
     else:
@@ -59,5 +62,6 @@ def push(commit_message='update site'):
         sys.exit(res.returncode)
 
 if __name__ == '__main__':
-    msg = sys.argv[1] if len(sys.argv) > 1 else 'feat(admin): enhance workbench UX and test claim'
+    args = [a for a in sys.argv[1:] if a not in ('--force', '-f')]
+    msg = args[0] if args else 'feat(admin): enhance workbench UX and test claim'
     push(msg)

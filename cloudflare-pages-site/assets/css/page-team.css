@@ -656,3 +656,344 @@
     width: min(100%, 540px) !important;
   }
 }
+
+
+/* ==========================================================================
+   TOP HERO STATS - ANIMATED TEXT SHIMMER & HOVER
+   ========================================================================== */
+.crew-hero__stats > div {
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.crew-hero__stats > div:hover {
+  transform: translateY(-2px) !important;
+}
+
+.crew-hero__stats strong.stat-highlight {
+  display: inline-block !important;
+  background-size: 200% auto !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  animation: statShimmer 4s ease-in-out infinite alternate !important;
+}
+
+.crew-hero__stats strong.stat-edition {
+  background-image: linear-gradient(120deg, #f9ab00 0%, #ea4335 48%, #f9ab00 100%) !important;
+}
+
+.crew-hero__stats strong.stat-community {
+  background-image: linear-gradient(120deg, #34a853 0%, #4285f4 50%, #34a853 100%) !important;
+}
+
+:root[data-theme="dark"] .crew-hero__stats strong.stat-edition {
+  background-image: linear-gradient(120deg, #fdd663 0%, #f28b82 48%, #fdd663 100%) !important;
+}
+
+:root[data-theme="dark"] .crew-hero__stats strong.stat-community {
+  background-image: linear-gradient(120deg, #81c995 0%, #8ab4f8 50%, #81c995 100%) !important;
+}
+
+@keyframes statShimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crew-hero__stats strong.stat-highlight {
+    animation: none !important;
+    background-position: 0% 50% !important;
+  }
+  .crew-hero__stats > div:hover {
+    transform: none !important;
+  }
+}
+
+/* ==========================================================================
+   TEAM MEMBER CARDS - BALANCED PROPORTIONS & OVERLAP PREVENTION
+   ========================================================================== */
+
+/* Universal Section & Card Container Rules */
+.page-team .tm-sec,
+.page-team .tm-sec-leadership,
+.page-team .tm-sec-advisory,
+.page-team .tm-sec[data-team-section] {
+  width: min(1200px, calc(100% - 32px)) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  box-sizing: border-box !important;
+}
+
+/* Card Base Geometry: Always maintain crisp collectible card ratio */
+html:root body .page-team .tm-card.tm-riso-card:not(#_),
+html:root body .page-team .tm-card.tm-riso-card.tm-riso-featured:not(#_),
+html:root body .page-team .tm-sec-leadership .tm-card.tm-riso-card.is-lead-organizer:not(#_),
+html:root body .page-team .tm-sec-leadership .tm-card.tm-riso-card.is-lead-organizer.is-wide:not(#_) {
+  aspect-ratio: 3 / 4.35 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  grid-column: span 1 !important;
+  box-sizing: border-box !important;
+}
+
+/* Flip Shell & Faces inside Card */
+html:root body .page-team .tm-riso-card:not(#_) .tm-flip-shell {
+  width: 100% !important;
+  height: 100% !important;
+  position: relative !important;
+}
+
+html:root body .page-team .tm-riso-card:not(#_) .tm-face {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* 1. Desktop Screens (min-width: 1024px) */
+@media (min-width: 1024px) {
+  html:root body .page-team .tm-sec-leadership,
+  html:root body .page-team .tm-sec-advisory,
+  html:root body .page-team .tm-sec[data-team-section] {
+    display: grid !important;
+    grid-template-columns: minmax(220px, 260px) 1fr !important;
+    column-gap: 36px !important;
+    align-items: start !important;
+    margin-top: 64px !important;
+  }
+
+  html:root body .page-team .tm-sec-leadership > .tm-grid,
+  html:root body .page-team .tm-sec-advisory > .tm-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 240px)) !important;
+    gap: 20px !important;
+    justify-content: start !important;
+    width: 100% !important;
+  }
+
+  html:root body .page-team .tm-sec[data-team-section]:not(.tm-sec-leadership):not(.tm-sec-advisory) > .tm-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 240px)) !important;
+    gap: 20px !important;
+    width: 100% !important;
+  }
+
+  html:root body .page-team .tm-card.tm-riso-card:not(#_),
+  html:root body .page-team .tm-card.tm-riso-card.tm-riso-featured:not(#_),
+  html:root body .page-team .tm-sec-leadership .tm-card.tm-riso-card.is-lead-organizer:not(#_) {
+    max-width: 240px !important;
+    width: 100% !important;
+  }
+}
+
+/* 2. Tablet & Medium Screens (641px - 1023px) */
+@media (min-width: 641px) and (max-width: 1023px) {
+  html:root body .page-team .tm-sec,
+  html:root body .page-team .tm-sec-leadership,
+  html:root body .page-team .tm-sec-advisory,
+  html:root body .page-team .tm-sec[data-team-section] {
+    display: block !important;
+    width: calc(100% - 32px) !important;
+    margin-top: 52px !important;
+    clear: both !important;
+  }
+
+  html:root body .page-team .tm-sec > .tm-head,
+  html:root body .page-team .tm-sec-leadership > .tm-head,
+  html:root body .page-team .tm-sec-advisory > .tm-head,
+  html:root body .page-team .tm-sec[data-team-section] > .tm-head {
+    display: block !important;
+    width: 100% !important;
+    margin-bottom: 20px !important;
+  }
+
+  html:root body .page-team .tm-grid,
+  html:root body .page-team .tm-sec-leadership .tm-grid,
+  html:root body .page-team .tm-sec-advisory .tm-grid,
+  html:root body .page-team .tm-sec[data-team-section] > .tm-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 230px)) !important;
+    gap: 16px !important;
+    width: 100% !important;
+  }
+
+  html:root body .page-team .tm-card.tm-riso-card:not(#_) {
+    max-width: 230px !important;
+    width: 100% !important;
+  }
+}
+
+/* 3. Mobile Screens (<= 640px) - TWO COMPACT COLLECTIBLE COLUMNS */
+@media (max-width: 640px) {
+  body.page-team main,
+  .page-team main,
+  body[data-route="team"] main {
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+
+  html:root body .page-team .tm-sec,
+  html:root body .page-team .tm-sec-leadership,
+  html:root body .page-team .tm-sec-advisory,
+  html:root body .page-team .tm-sec[data-team-section] {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 40px auto 0 !important;
+    clear: both !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  html:root body .page-team .tm-sec > .tm-head,
+  html:root body .page-team .tm-sec-leadership > .tm-head,
+  html:root body .page-team .tm-sec-advisory > .tm-head,
+  html:root body .page-team .tm-sec[data-team-section] > .tm-head {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 0 14px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    min-width: 0 !important;
+  }
+
+  html:root body .page-team .tm-sec > .tm-head h2,
+  html:root body .page-team .tm-sec-leadership > .tm-head h2,
+  html:root body .page-team .tm-sec-advisory > .tm-head h2,
+  html:root body .page-team .tm-sec[data-team-section] > .tm-head h2 {
+    font-size: clamp(26px, 7vw, 36px) !important;
+    line-height: 1.05 !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+  }
+
+  html:root body .page-team .tm-sec > .tm-head p,
+  html:root body .page-team .tm-sec-leadership > .tm-head p,
+  html:root body .page-team .tm-sec-advisory > .tm-head p,
+  html:root body .page-team .tm-sec[data-team-section] > .tm-head p {
+    font-size: 13.5px !important;
+    line-height: 1.4 !important;
+    max-width: 100% !important;
+    margin: 6px 0 0 !important;
+  }
+
+  html:root body .page-team .tm-grid,
+  html:root body .page-team .tm-sec-leadership .tm-grid,
+  html:root body .page-team .tm-sec-advisory .tm-grid,
+  html:root body .page-team .tm-sec[data-team-section] > .tm-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    align-items: stretch !important;
+    justify-items: stretch !important;
+  }
+
+  html:root body .page-team .tm-card.tm-riso-card:not(#_),
+  html:root body .page-team .tm-card.tm-riso-card.tm-riso-featured:not(#_),
+  html:root body .page-team .tm-sec-leadership .tm-card.tm-riso-card.is-lead-organizer:not(#_),
+  html:root body .page-team .tm-sec-leadership .tm-card.tm-riso-card.is-lead-organizer.is-wide:not(#_) {
+    width: 100% !important;
+    max-width: 100% !important;
+    aspect-ratio: 3 / 4.35 !important;
+    height: auto !important;
+    grid-column: span 1 !important;
+    margin: 0 !important;
+    justify-self: stretch !important;
+  }
+
+  /* Refined typography & spacing inside mobile cards */
+  .page-team .tm-riso-paper {
+    padding: 6px !important;
+  }
+
+  .page-team .tm-riso-info {
+    padding: 6px 8px 10px !important;
+  }
+
+  .page-team .tm-riso-number {
+    font-size: 8px !important;
+    top: 6px !important;
+    right: 8px !important;
+  }
+
+  .page-team .tm-riso-name {
+    font-size: clamp(12px, 3.4vw, 14.5px) !important;
+    line-height: 1.12 !important;
+  }
+
+  .page-team .tm-riso-role {
+    font-size: 9.5px !important;
+    margin-top: 3px !important;
+    line-height: 1.25 !important;
+  }
+
+  .page-team .tm-chips {
+    gap: 4px !important;
+    margin-top: 4px !important;
+  }
+
+  .page-team .tm-chip {
+    font-size: 8px !important;
+    padding: 2px 5px !important;
+  }
+
+  .page-team .tm-stats {
+    display: none !important;
+  }
+
+  .page-team .tm-riso-flipmark {
+    font-size: 12px !important;
+  }
+
+  .page-team .tm-riso-hint {
+    display: none !important;
+  }
+
+  .page-team .tm-riso-card .tm-face-back {
+    padding: 10px 10px 14px !important;
+  }
+
+  .page-team .tm-riso-card .tm-face-back h3 {
+    font-size: clamp(13px, 3.8vw, 16px) !important;
+    line-height: 1.15 !important;
+  }
+
+  .page-team .tm-riso-card .tm-face-back .tm-role {
+    font-size: 10px !important;
+  }
+
+  .page-team .tm-riso-card .tm-face-back .tm-bio {
+    font-size: 9.5px !important;
+    line-height: 1.35 !important;
+    -webkit-line-clamp: 2 !important;
+  }
+
+  .page-team .tm-return {
+    font-size: 10px !important;
+    padding: 5px 8px !important;
+  }
+}
+
+/* 4. Ultra-narrow Mobile (<= 340px) */
+@media (max-width: 340px) {
+  html:root body .page-team .tm-grid,
+  html:root body .page-team .tm-sec-leadership .tm-grid,
+  html:root body .page-team .tm-sec-advisory .tm-grid,
+  html:root body .page-team .tm-sec[data-team-section] > .tm-grid {
+    gap: 6px !important;
+  }
+  .page-team .tm-riso-info {
+    padding: 4px 6px 8px !important;
+  }
+}
