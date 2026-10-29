@@ -30,8 +30,16 @@
     ['discord', 'Discord', '◉'], ['googleDeveloper', 'Google Dev', 'G'], ['x', 'X', '𝕏'], ['website', 'Website', '↗']
   ];
   const PAGE_DEFAULTS = {
-    eyebrow: 'GDG SRU / TEAM', title_top: 'Meet the', title_accent: 'team.', lead: 'The people behind the community.',
-    cta_label: 'Meet everyone', map_label: 'THE TEAM', core_small: 'GDG SRU', core_big: 'One team.'
+    eyebrow: "GDG SRU '26 · GDG ON CAMPUS",
+    title_top: 'The crew',
+    title_accent: 'behind the day.',
+    lead: 'GDG on Campus SR University is powered by the student community. These are the people putting everything together, and the crew grows as the community gets closer.',
+    cta_label: 'Meet the crew',
+    map_label: 'THE CREW',
+    core_small: 'GDG SRU',
+    core_big: 'The crew.',
+    edition: '1st',
+    community_count: '1,800+'
   };
   const KICKER = { leadership: 'THE CORE TEAM', advisory: 'GUIDANCE & SUPPORT', department: 'DEPARTMENT' };
 
@@ -120,17 +128,151 @@
     return `<section class="tm-sec tm-sec-${id}" id="${id}" data-team-section><div class="tm-head"><div class="tm-head-main"><span class="tm-kicker">${KICKER[d.kind] || KICKER.department}</span><h2>${esc(d.heading || d.name)}</h2>${d.description ? `<p>${esc(d.description)}</p>` : ''}</div><span class="tm-count" data-total="${n}">${n} ${n === 1 ? 'person' : 'people'}</span></div><div class="tm-grid" data-count="${n}">${members.map((m, i) => cardHTML(m, { kind: d.kind, index: i })).join('')}</div><p class="tm-empty" hidden>No team members match your search.</p></section>`;
   }
 
-  function heroHTML(page, nodes) {
+  function renderAvatarNode(raw, x, y, idx) {
+    const m = normalise(raw);
+    const leftPct = ((x / 540) * 100).toFixed(2);
+    const topPct = ((y / 540) * 100).toFixed(2);
+    const ini = initials(m.name);
+    const color = m.accent || ACCENTS[idx % 4];
+    const portrait = m.photo
+      ? `<img class="tm-riso-photo-image" src="${esc(m.photo)}" alt="${esc(m.name)}" loading="lazy" decoding="async" style="object-position:${esc(m.pos)}">`
+      : `<span class="crew-avatar-fallback c-${color}" aria-hidden="true">${esc(ini)}</span>`;
+
+    return `<button type="button" class="crew-avatar-node" data-name="${esc(m.name)}" data-role="${esc(m.role)}" data-dept="${esc(m.department || '')}" data-code="${esc(m.code || '')}" data-x="${x.toFixed(1)}" data-y="${y.toFixed(1)}" style="left:${leftPct}%;top:${topPct}%;" aria-label="View profile for ${esc(m.name)}, ${esc(m.role)}">${portrait}</button>`;
+  }
+
+  function buildRadarConstellation(members) {
+    const list = Array.isArray(members) ? members : [];
+    const count = list.length || 33;
+    const cx = 270, cy = 270;
+
+    // Generate outer decorative tick ring (radius 252)
+    const ticksSvg = [];
+    const totalTicks = 72;
+    for (let i = 0; i < totalTicks; i++) {
+      const angle = (i / totalTicks) * 2 * Math.PI;
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+      if (i % 4 === 0) {
+        const dotX = cx + 252 * cos;
+        const dotY = cy + 252 * sin;
+        const color = INKS[(i / 4) % 4];
+        ticksSvg.push(`<circle cx="${dotX.toFixed(1)}" cy="${dotY.toFixed(1)}" r="2.8" fill="${color}" class="radar-tick-dot"/>`);
+      } else {
+        const x1 = cx + 248 * cos;
+        const y1 = cy + 248 * sin;
+        const x2 = cx + 254 * cos;
+        const y2 = cy + 254 * sin;
+        ticksSvg.push(`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="currentColor" stroke-opacity="0.2" stroke-width="1.2" stroke-linecap="round"/>`);
+      }
+    }
+
+    // Generate 12 radial faint spoke lines
+    const spokesSvg = [];
+    for (let s = 0; s < 12; s++) {
+      const sAngle = (s / 12) * 2 * Math.PI;
+      const cos = Math.cos(sAngle);
+      const sin = Math.sin(sAngle);
+      const x1 = cx + 76 * cos;
+      const y1 = cy + 76 * sin;
+      const x2 = cx + 234 * cos;
+      const y2 = cy + 234 * sin;
+      spokesSvg.push(`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="currentColor" stroke-opacity="0.14" stroke-width="1" stroke-dasharray="2 4"/>`);
+    }
+
+    // Distribute members across 2 concentric rings
+    let avatarNodesHtml = '';
+    if (list.length > 0) {
+      const n = list.length;
+      const countInner = n <= 8 ? n : Math.max(5, Math.round(n * 0.38));
+      const countOuter = n <= 8 ? 0 : n - countInner;
+
+      const innerList = list.slice(0, countInner);
+      const outerList = list.slice(countInner);
+
+      // Inner ring placement (R = 132)
+      innerList.forEach((m, idx) => {
+        const angle = (idx / countInner) * 2 * Math.PI - Math.PI / 2;
+        const x = cx + 132 * Math.cos(angle);
+        const y = cy + 132 * Math.sin(angle);
+        avatarNodesHtml += renderAvatarNode(m, x, y, idx);
+      });
+
+      // Outer ring placement (R = 196, staggered)
+      outerList.forEach((m, idx) => {
+        const offset = Math.PI / countOuter;
+        const angle = (idx / countOuter) * 2 * Math.PI - Math.PI / 2 + offset;
+        const x = cx + 196 * Math.cos(angle);
+        const y = cy + 196 * Math.sin(angle);
+        avatarNodesHtml += renderAvatarNode(m, x, y, countInner + idx);
+      });
+    }
+
+    return `<div class="crew-constellation-wrap" aria-label="Interactive crew constellation radar">
+      <div class="crew-radar" id="crew-radar">
+        <svg class="crew-radar-svg" viewBox="0 0 540 540" aria-hidden="true">
+          <circle cx="270" cy="270" r="234" class="radar-orbit orbit-boundary" />
+          <circle cx="270" cy="270" r="196" class="radar-orbit orbit-outer" />
+          <circle cx="270" cy="270" r="132" class="radar-orbit orbit-inner" />
+          <circle cx="270" cy="270" r="74" class="radar-orbit orbit-hub" />
+          <g class="radar-spokes">${spokesSvg.join('')}</g>
+          <line id="radar-active-ray" class="radar-active-ray" x1="270" y1="270" x2="270" y2="270" />
+          <g class="radar-ticks">${ticksSvg.join('')}</g>
+        </svg>
+        <div class="crew-radar-hub" aria-hidden="true">
+          <span class="crew-hub-num">${count}</span>
+          <span class="crew-hub-lbl">IN THE CREW</span>
+        </div>
+        <div class="crew-avatar-field">${avatarNodesHtml}</div>
+        <div class="crew-tooltip" id="crew-tooltip" role="tooltip" aria-hidden="true">
+          <b class="crew-tooltip-name"></b>
+          <span class="crew-tooltip-role"></span>
+        </div>
+      </div>
+      <div class="crew-picker-hint" aria-hidden="true">
+        <span class="hint-icon">👆</span> Pick a face to find their card
+      </div>
+    </div>`;
+  }
+
+  function heroHTML(page, members, departments) {
     const p = { ...PAGE_DEFAULTS, ...page };
-    const [ey1, ...ey2] = String(p.eyebrow).split(' / ');
-    const core = String(p.core_big).trim().split(/\s+/), last = core.pop();
-    const count = nodes.length;
-    return `<section class="hero team-hero halic-inspired-hero team-portal-hero" data-team-design="team-portal"><div class="team-portal-copy"><span class="team-portal-eyebrow"><i></i> ${esc(ey1)}${ey2.length ? ` <span>/</span> ${esc(ey2.join(' / '))}` : ''}</span><h1>${esc(p.title_top)}<br><span>${esc(p.title_accent)}</span></h1><p class="lead">${esc(p.lead)}</p><div class="halic-hero-actions"><button type="button" class="btn" data-team-jump="leadership">${esc(p.cta_label)} <span aria-hidden="true">↘</span></button></div></div>
-<div class="team-constellation" aria-label="An interactive map of the GDG SRU community"><div class="constellation-head"><span><i></i> ${esc(p.map_label)}</span></div>
-<svg class="constellation-lines" viewBox="0 0 520 430" aria-hidden="true" preserveAspectRatio="none"><path d="M260 216 L110 92 L350 78 L425 190 L360 340 L142 350 L110 92 L425 190 L142 350 L350 78 L360 340 L260 216"/><path d="M110 92 L260 216 L425 190 M350 78 L260 216 L142 350"/></svg>
-<div class="constellation-core" aria-label="${esc(p.core_small)} team"><small class="core-eyebrow">${esc(p.core_small)}</small><b>${core.length ? esc(core.join(' ')) + ' ' : ''}<em>${esc(last || '')}</em></b></div>
-${nodes.map(({ d, n }, i) => `<button type="button" class="department-orbit-node department-node-${i + 1}" data-team-jump="${sectionId(d)}" aria-label="Explore ${esc(d.heading || d.name)} department"><span class="department-node-dot"></span><span class="department-node-copy"><b>${esc(d.name)}</b><small>${esc(d.blurb || `${n} ${n === 1 ? 'person' : 'people'}`)}</small></span><span class="department-node-arrow" aria-hidden="true">↗</span></button>`).join('')}
-<div class="constellation-footer"><span>ONE TEAM · ${count} DEPARTMENT${count === 1 ? '' : 'S'}</span><span>SELECT A DEPARTMENT ↗</span></div></div></section>`;
+    const list = Array.isArray(members) ? members : [];
+    const count = list.length || 33;
+    const edition = p.edition || '1st';
+    const community = p.community_count || '1,800+';
+
+    return `<section class="hero crew-hero-section">
+      <div class="crew-copy-col">
+        <div class="crew-eyebrow">
+          <span class="crew-pill"><i class="crew-dot" aria-hidden="true"></i> The team</span>
+          <span class="crew-meta">${esc(p.eyebrow || "GDG SRU '26 · GDG ON CAMPUS")}</span>
+        </div>
+        <h1 class="crew-title">The crew<span class="crew-accent-dot" aria-hidden="true"></span><br>behind the day.</h1>
+        <p class="lead crew-lead">${esc(p.lead || "GDG on Campus SR University is powered by the student community. These are the people putting everything together, and the crew grows as the community gets closer.")}</p>
+        <div class="crew-stats-strip">
+          <div class="crew-stat-cell">
+            <b class="crew-stat-num">${count}</b>
+            <span class="crew-stat-lbl">in the crew</span>
+          </div>
+          <div class="crew-stat-cell">
+            <b class="crew-stat-num">${esc(edition)}</b>
+            <span class="crew-stat-lbl">edition</span>
+          </div>
+          <div class="crew-stat-cell">
+            <b class="crew-stat-num">${esc(community)}</b>
+            <span class="crew-stat-lbl">in the community</span>
+          </div>
+        </div>
+        <div class="crew-actions">
+          <a href="#leadership" class="btn crew-btn-meet" data-team-jump="leadership">Meet the crew <span class="crew-btn-arr" aria-hidden="true">↓</span></a>
+          <a href="/join/" class="btn o crew-btn-join">Join GDG SRU <span class="crew-btn-arr" aria-hidden="true">↗</span></a>
+        </div>
+      </div>
+      <div class="crew-constellation-col">
+        ${buildRadarConstellation(list)}
+      </div>
+    </section>`;
   }
 
   /** Turns raw rows into ordered sections. Departments follow their sort_order (the admin order);
@@ -154,12 +296,90 @@ ${nodes.map(({ d, n }, i) => `<button type="button" class="department-orbit-node
   }
 
   function pageHTML(data) {
-    const groups = arrange(data.members, data.departments);
+    const members = data.members || [];
+    const departments = data.departments || [];
+    const groups = arrange(members, departments);
     if (!groups.length) {
-      return `${DEFS}${heroHTML(data.page, [])}<section class="tm-sec" data-team-section><div class="tm-head"><div class="tm-head-main"><h2>The team is being updated.</h2><p>Profiles will appear here as soon as they are published.</p></div></div></section>`;
+      return `${DEFS}${heroHTML(data.page, members, departments)}<section class="tm-sec" data-team-section><div class="tm-head"><div class="tm-head-main"><h2>The team is being updated.</h2><p>Profiles will appear here as soon as they are published.</p></div></div></section>`;
     }
-    const nodes = groups.filter((g) => g.d.kind === 'department').slice(0, 5).map((g) => ({ d: g.d, n: g.members.length }));
-    return DEFS + heroHTML(data.page, nodes) + groups.map((g) => sectionHTML(g.d, g.members)).join('');
+    return DEFS + heroHTML(data.page, members, departments) + groups.map((g) => sectionHTML(g.d, g.members)).join('');
+  }
+
+  function bindRadarEvents(root) {
+    const radar = (root || document).querySelector('#crew-radar');
+    if (!radar || radar.dataset.bound) return;
+    radar.dataset.bound = 'true';
+
+    const ray = radar.querySelector('#radar-active-ray');
+    const tooltip = radar.querySelector('#crew-tooltip');
+    const nameEl = tooltip ? tooltip.querySelector('.crew-tooltip-name') : null;
+    const roleEl = tooltip ? tooltip.querySelector('.crew-tooltip-role') : null;
+    const buttons = radar.querySelectorAll('.crew-avatar-node');
+
+    function activateNode(btn) {
+      buttons.forEach(b => b.classList.toggle('is-active', b === btn));
+      const x = btn.dataset.x;
+      const y = btn.dataset.y;
+      const name = btn.dataset.name;
+      const role = btn.dataset.role;
+
+      if (ray && x && y) {
+        ray.setAttribute('x2', x);
+        ray.setAttribute('y2', y);
+        ray.classList.add('is-active');
+      }
+
+      if (tooltip && nameEl && roleEl) {
+        nameEl.textContent = name;
+        roleEl.textContent = role;
+        const leftPct = parseFloat(btn.style.left);
+        const topPct = parseFloat(btn.style.top);
+        tooltip.style.left = `${leftPct}%`;
+        const placeBelow = topPct < 32;
+        tooltip.style.top = `calc(${topPct}% + ${placeBelow ? '26px' : '-44px'})`;
+        tooltip.classList.add('is-visible');
+      }
+    }
+
+    function deactivateAll() {
+      buttons.forEach(b => b.classList.remove('is-active'));
+      if (ray) ray.classList.remove('is-active');
+      if (tooltip) tooltip.classList.remove('is-visible');
+    }
+
+    buttons.forEach((btn) => {
+      btn.addEventListener('pointerenter', () => activateNode(btn));
+      btn.addEventListener('focus', () => activateNode(btn));
+
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const name = btn.dataset.name;
+        const code = btn.dataset.code;
+
+        const cards = Array.from(document.querySelectorAll('.tm-card'));
+        let target = cards.find(c => {
+          const cName = c.querySelector('.tm-riso-name')?.textContent?.replace(/\s+/g, ' ').trim() || '';
+          return (name && cName.toLowerCase().includes(name.toLowerCase())) ||
+                 (code && c.querySelector('.tm-riso-number')?.textContent?.includes(code));
+        });
+
+        if (!target && cards.length) target = cards[0];
+
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          target.classList.remove('tm-card-target-focus');
+          void target.offsetWidth;
+          target.classList.add('tm-card-target-focus');
+          setTimeout(() => target.classList.remove('tm-card-target-focus'), 2500);
+          target.focus({ preventScroll: true });
+        }
+      });
+    });
+
+    radar.addEventListener('pointerleave', deactivateAll);
+    document.addEventListener('pointerdown', (e) => {
+      if (!radar.contains(e.target)) deactivateAll();
+    });
   }
 
   async function load(client) {
@@ -192,6 +412,7 @@ ${nodes.map(({ d, n }, i) => `<button type="button" class="department-orbit-node
     root.removeAttribute('aria-busy');
     root.innerHTML = pageHTML(data);
     root.dataset.teamSource = data.source;
+    bindRadarEvents(root);
   }
 
   // Broken portrait → fall back to the initials art (no inline handlers, CSP-friendly).
