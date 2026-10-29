@@ -2,7 +2,7 @@
   "schema": 1,
   "handle": "narayan",
   "name": "Narayan Bora",
-  "roll_display": "2403••••01",
+  "roll_display": "2403\u2022\u2022\u2022\u202201",
   "department": "CSE (AI & ML)",
   "cohort": "2024",
   "university": "SR University",
@@ -60,5 +60,17 @@
       "cred": "GDG-SRU-GIT-2025-03"
     }
   ],
-  "joined": "2024-09-01"
+  "joined": "2024-09-01",
+  "hidden": false,
+  "allow_download_card": true,
+  "allow_download_resume": true,
+  "resume_url": "",
+  "allow_print": true,
+  "allow_copy_link": true,
+  "allow_checkin_qr": true,
+  "show_about_me": true,
+  "show_workshops": true,
+  "show_skills_interests": true,
+  "show_quick_links": true,
+  "show_more_about": true
 }

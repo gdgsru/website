@@ -148,6 +148,19 @@
       hobbies: str(d.hobbies, 100) || "Gaming, Photography, Music",
       workshops: Array.isArray(d.workshops) ? d.workshops : [],
       joined: str(d.joined, 10),
+      // Toggles & Custom URLs
+      hidden: d.hidden === true,
+      allow_download_card: d.allow_download_card !== false,
+      allow_download_resume: d.allow_download_resume !== false,
+      resume_url: safeHttpUrl(d.resume_url),
+      allow_print: d.allow_print !== false,
+      allow_copy_link: d.allow_copy_link !== false,
+      allow_checkin_qr: d.allow_checkin_qr !== false,
+      show_about_me: d.show_about_me !== false,
+      show_workshops: d.show_workshops !== false,
+      show_skills_interests: d.show_skills_interests !== false,
+      show_quick_links: d.show_quick_links !== false,
+      show_more_about: d.show_more_about !== false,
     };
   }
 
@@ -169,6 +182,33 @@
     }
 
     return p;
+  }
+
+  async function fetchOverrides(handle) {
+    const url = window.SUPABASE_URL, key = window.SUPABASE_ANON_KEY;
+    if (!url || !key) return null;
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 2500);
+    try {
+      const headers = { "Content-Type": "application/json", apikey: key };
+      if (/^eyJ/.test(key)) headers.Authorization = "Bearer " + key;
+      const endpoint = `${String(url).replace(/\/$/, "")}/rest/v1/site_settings?key=eq.member_profile_overrides&select=value`;
+      const res = await fetch(endpoint, {
+        headers,
+        signal: ctl.signal,
+        cache: "no-store"
+      });
+      if (res.ok) {
+        const rows = await res.json();
+        if (Array.isArray(rows) && rows[0] && rows[0].value && typeof rows[0].value === "object") {
+          return rows[0].value[handle] || null;
+        }
+      }
+    } catch (_) {}
+    finally {
+      clearTimeout(timer);
+    }
+    return null;
   }
 
   async function fetchStats(handle) {
@@ -256,13 +296,46 @@
     // Header User Avatar Initial (matches screenshot "A")
     text("#pf-user-avatar", "A");
 
+    // Action button toggles
+    const setBtnVis = (id, vis) => {
+      const el = $(id);
+      if (el) el.style.display = vis ? "" : "none";
+    };
+    setBtnVis("#pf-png", p.allow_download_card !== false);
+    setBtnVis("#pf-pdf", p.allow_download_resume !== false);
+    setBtnVis("#pf-print", p.allow_print !== false);
+    setBtnVis("#pf-copy", p.allow_copy_link !== false);
+    setBtnVis("#pf-qr", p.allow_checkin_qr !== false);
+
+    // Section display toggles
+    const setSecVis = (cls, vis) => {
+      const el = $(cls);
+      if (el) el.style.display = vis ? "" : "none";
+    };
+    setSecVis(".pf-card-about", p.show_about_me !== false);
+    setSecVis(".pf-card-workshops", p.show_workshops !== false);
+    setSecVis(".pf-card-skills", p.show_skills_interests !== false);
+    setSecVis(".pf-card-links", p.show_quick_links !== false);
+    setSecVis(".pf-card-more", p.show_more_about !== false);
+
     // Hero Section Details
     text("#pf-name", p.name);
-    text("#pf-meta-dept", p.department);
+    text("#pf-meta-dept", p.department || p.dept || "CSE (AI & ML)");
     text("#pf-meta-cohort", p.cohort ? `Cohort ${p.cohort}` : "Cohort 2024");
     text("#pf-location", p.university || "SR University");
     text("#pf-bio", p.bio);
     text("#pf-active-text", p.active_status || "Active Member");
+
+    const verifiedPill = $("#pf-verified-pill");
+    if (verifiedPill) {
+      const statusLabels = {
+        verified: "Verified Member",
+        core: "Core Team",
+        lead: "Chapter Lead",
+        member: "Active Member"
+      };
+      verifiedPill.textContent = statusLabels[p.status] || p.status || "Verified Member";
+    }
 
     // Avatar Image
     const avatarEl = $("#pf-avatar");
@@ -278,14 +351,14 @@
     const skillsWrap = $("#pf-skill-tags");
     if (skillsWrap) {
       skillsWrap.replaceChildren();
-      const heroSkills = p.skills.slice(0, 4);
+      const heroSkills = (p.skills || []).slice(0, 4);
       heroSkills.forEach((s) => {
         const pill = document.createElement("span");
         pill.className = "pf-skill-pill";
         pill.textContent = s;
         skillsWrap.appendChild(pill);
       });
-      if (p.skills.length > 4) {
+      if ((p.skills || []).length > 4) {
         const morePill = document.createElement("span");
         morePill.className = "pf-skill-pill-more";
         morePill.textContent = `+${p.skills.length - 4}`;
@@ -294,14 +367,14 @@
     }
 
     // Hero Quick Meta Card
-    text("#pf-card-dept", p.department);
-    text("#pf-card-cohort", p.cohort);
+    text("#pf-card-dept", p.department || p.dept || "CSE (AI & ML)");
+    text("#pf-card-cohort", p.cohort || "2024");
     text("#pf-card-uni", p.university || "SR University");
 
     // Left Column Card 1: About Me
     text("#pf-about-full", p.about_me || p.bio);
-    text("#pf-strip-dept", p.department);
-    text("#pf-strip-cohort", p.cohort);
+    text("#pf-strip-dept", p.department || p.dept || "CSE (AI & ML)");
+    text("#pf-strip-cohort", p.cohort || "2024");
     text("#pf-strip-uni", p.university || "SR University");
 
     // Left Column Card 2: Workshops Attended
@@ -321,10 +394,10 @@
     // Offscreen Export Badge Details
     text("#pf-eb-name", p.name);
     text("#pf-eb-handle", "@" + p.handle);
-    text("#pf-eb-dept", p.department);
-    text("#pf-eb-cohort", p.cohort);
+    text("#pf-eb-dept", p.department || p.dept || "CSE (AI & ML)");
+    text("#pf-eb-cohort", p.cohort || "2024");
     text("#pf-eb-uni", p.university || "SR University");
-    text("#pf-eb-roll", p.roll || "2403••••01");
+    text("#pf-eb-roll", p.roll_display || p.roll || "2403••••01");
     text("#pf-eb-url", displayUrl(passUrl));
     const ebAvatar = $("#pf-eb-avatar");
     if (ebAvatar) ebAvatar.src = p.photo || avatarSrc(p.avatar || "avatar-03");
@@ -548,9 +621,13 @@
   }
 
   async function exportAtsPdf() {
-    const btn = $("#pf-pdf");
     const p = state.profile;
     if (!p) return;
+    if (p.resume_url) {
+      window.open(p.resume_url, "_blank", "noopener,noreferrer");
+      return;
+    }
+    const btn = $("#pf-pdf");
     setBusy(btn, true);
 
     try {
@@ -731,6 +808,35 @@
     }
   }
 
+  /* ------------------------------------------------------------------ admin bridge */
+  function isAdminLoggedIn() {
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && (k.includes("auth-token") || k.includes("mc_admin") || k === "supabase.auth.token")) {
+          const val = localStorage.getItem(k);
+          if (val && (val.includes("access_token") || val.includes("user"))) return true;
+        }
+      }
+    } catch (_) {}
+    return false;
+  }
+
+  function renderAdminEditButton(handle) {
+    if (!isAdminLoggedIn()) return;
+    let pill = $("#pf-admin-edit-pill");
+    if (!pill) {
+      pill = document.createElement("a");
+      pill.id = "pf-admin-edit-pill";
+      pill.className = "pf-admin-edit-pill";
+      pill.target = "_blank";
+      pill.rel = "noopener";
+      pill.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg><span>Edit Profile in Admin</span>`;
+      document.body.appendChild(pill);
+    }
+    pill.href = `/admin/#/member-profiles?edit=${encodeURIComponent(handle)}`;
+  }
+
   /* ------------------------------------------------------------------ init */
   async function init() {
     bindEvents();
@@ -745,22 +851,41 @@
 
     show("loading");
 
-    const profile = await fetchProfile(handle);
-    if (!profile) {
+    const [staticProfile, overrides] = await Promise.all([
+      fetchProfile(handle),
+      fetchOverrides(handle)
+    ]);
+
+    if (!staticProfile && !overrides) {
       text("#pf-nf-handle", "@" + handle);
       show("notfound");
       return;
     }
 
+    const profile = staticProfile || { handle };
+    if (overrides) {
+      Object.assign(profile, overrides);
+    }
+
+    if (profile.hidden) {
+      show("withdrawn");
+      return;
+    }
+
     renderProfile(profile);
     show("content");
+    renderAdminEditButton(handle);
 
     // Fetch live Supabase stats if available
     try {
       const stats = await fetchStats(handle);
-      if (stats && !stats.hidden) {
+      if (stats) {
+        if (stats.hidden) {
+          show("withdrawn");
+          return;
+        }
         state.stats = stats;
-        if (Array.isArray(stats.workshops) && stats.workshops.length) {
+        if (Array.isArray(stats.workshops) && stats.workshops.length && !profile.workshops?.length) {
           profile.workshops = stats.workshops;
           renderWorkshops(stats.workshops);
         }
