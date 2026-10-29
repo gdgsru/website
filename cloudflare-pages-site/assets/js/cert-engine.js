@@ -362,7 +362,10 @@
   const loadScript = (name) => loaded[name] || (loaded[name] = (async () => { let err; for (const src of LIBS[name]) { try { return await tryScript(src); } catch (e) { err = e; } } loaded[name] = null; throw err; })());
   const safeName = (s) => String(s || 'Certificate').replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, '_').slice(0, 80) || 'Certificate';
 
-  async function toCanvas(frame) {
+  async function toCanvas(frame, opts = {}) {
+    if (!opts.force && frame && frame._cachedCanvas) {
+      return frame._cachedCanvas;
+    }
     try {
       if (document.fonts?.ready) await Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 2500))]);
       if (frame.contentDocument?.fonts?.ready) await Promise.race([frame.contentDocument.fonts.ready, new Promise((r) => setTimeout(r, 2500))]);
@@ -386,7 +389,7 @@
 
     await loadScript('html2canvas');
     const doc = frame.contentDocument, el = doc.getElementById('certificate') || doc.body.firstElementChild;
-    return window.html2canvas(el, {
+    const canvas = await window.html2canvas(el, {
       scale: 2,
       width: 1123,
       height: 794,
@@ -400,6 +403,8 @@
       x: 0,
       y: 0
     });
+    if (frame) frame._cachedCanvas = canvas;
+    return canvas;
   }
   async function downloadPdf(frame, name) {
     const canvas = await toCanvas(frame); await loadScript('jspdf');

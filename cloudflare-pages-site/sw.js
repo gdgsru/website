@@ -1,7 +1,7 @@
 /* GDG SRU · Campus Service Worker (Offline Resilience & PWA)
    Caches core shells and assets for seamless offline browsing on campus Wi-Fi.
 */
-const CACHE_NAME = 'gdg-sru-v37';
+const CACHE_NAME = 'gdg-sru-v38';
 const CORE_SHELLS = [
   '/',
   '/index.html',
@@ -21,6 +21,7 @@ const CORE_SHELLS = [
   '/assets/brand/gdg-logo.svg',
   '/manifest.webmanifest',
   '/assets/fonts/fonts.css',
+  '/assets/fonts/cert-fonts.css',
   '/assets/css/page-home.css',
   '/assets/js/app.js',
   '/assets/js/card-system.js',
@@ -112,10 +113,16 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2. Stale-While-Revalidate for static sub-assets (fonts, images, media)
+  // 2. Cache-First for versioned immutable fonts & vendor libraries (avoids multi-MB background refetches)
+  const isImmutableAsset = url.pathname.startsWith('/assets/fonts/') || url.pathname.startsWith('/assets/vendor/');
+
+  // 3. Stale-While-Revalidate for static sub-assets (images, media, avatars)
   event.respondWith(
     caches.open(CACHE_NAME).then(async (cache) => {
       const cachedResponse = await cache.match(req);
+      if (isImmutableAsset && cachedResponse) {
+        return cachedResponse;
+      }
 
       const fetchPromise = fetch(req)
         .then((networkResponse) => {

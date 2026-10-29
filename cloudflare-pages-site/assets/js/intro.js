@@ -26,8 +26,11 @@ function size(){
   cv.width=W*dpr;cv.height=H*dpr;cv.style.width=W+"px";cv.style.height=H+"px";
   u=Math.max(7,Math.min(W,H)*.052);
 }
-size();addEventListener("resize",size);
-addEventListener("pointermove",e=>{tx=(e.clientX/W-.5)*2;ty=(e.clientY/H-.5)*2},{passive:true});
+const onResize=size;
+const onPointerMove=e=>{tx=(e.clientX/W-.5)*2;ty=(e.clientY/H-.5)*2};
+const onKeyDown=e=>{if(e.key==="Escape"||e.key==="Enter"||e.key===" ")skip()};
+size();addEventListener("resize",onResize);
+addEventListener("pointermove",onPointerMove,{passive:true});
 
 /* rings: [radius in u, count, kind, colour, spin speed, size in u] */
 const RINGS=[
@@ -88,6 +91,9 @@ raf=requestAnimationFrame(frame);
 /* hand over to the four stripes, then reveal the page */
 function finish(){
   if(state!=="run")return;state="done";cancelAnimationFrame(raf);
+  removeEventListener("resize",onResize);
+  removeEventListener("pointermove",onPointerMove);
+  removeEventListener("keydown",onKeyDown);
   gi.style.transition="opacity .6s cubic-bezier(.4, 0, .2, 1), transform .6s cubic-bezier(.4, 0, .2, 1)";
   gi.style.opacity="0";
   gi.style.transform="scale(1.03)";
@@ -99,5 +105,5 @@ function finish(){
 }
 function skip(){if(state==="run"){T.cover=0;}}
 gi.addEventListener("click",skip);
-addEventListener("keydown",e=>{if(e.key==="Escape"||e.key==="Enter"||e.key===" ")skip()});
+addEventListener("keydown",onKeyDown);
 })();

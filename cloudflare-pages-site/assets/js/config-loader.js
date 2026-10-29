@@ -24,6 +24,8 @@
     return value;
   };
   const _queryCache = new Map();
+  let _certTemplateCache = null;
+  let _certEnginePromise = null;
   function fetchCached(key, fetcher, ttlMs = 60000) {
     const hit = _queryCache.get(key);
     const now = Date.now();
@@ -1059,13 +1061,19 @@
       link.href = '/assets/fonts/cert-fonts.css?v=20261025';
       document.head.appendChild(link);
     }
-    return window.GDGCert ? Promise.resolve() : new Promise((resolve, reject) => {
+    if (window.GDGCert) return Promise.resolve();
+    if (_certEnginePromise) return _certEnginePromise;
+    _certEnginePromise = new Promise((resolve, reject) => {
       const s = document.createElement('script');
       s.src = '/assets/js/cert-engine.js?v=20261025-selfhost';
       s.onload = resolve;
-      s.onerror = () => reject(new Error('Certificate tools are unavailable right now. Please try again later.'));
+      s.onerror = () => {
+        _certEnginePromise = null;
+        reject(new Error('Certificate tools are unavailable right now. Please try again later.'));
+      };
       document.head.appendChild(s);
     });
+    return _certEnginePromise;
   };
   async function decorateCertificates(client, root) {
     const form=$('#cf',root), result=$('#res',root); if(!form||!result)return;
@@ -1077,7 +1085,7 @@
     const select=$('#gdg-cert-event',form), nameInput=$('#gdg-cert-name',form), idInput=$('#gdg-cert-id',form), submit=$('button[type=submit]',form);
     let certEvents = [];
     try {
-      const { data: rEvents } = await client.rpc('list_certificate_events');
+      const { data: rEvents } = await fetchCached('certificate_events', () => client.rpc('list_certificate_events'), 60000);
       if (Array.isArray(rEvents) && rEvents.length) certEvents = rEvents;
     } catch (_) { console.warn('[App] Operation notice:', _); }
 
@@ -1120,12 +1128,15 @@
           result.innerHTML=`<div class="event-vault-empty" role="status"><b>We couldn't find that name in the attendance roster for this event.</b><p>Check the spelling and the event, using the name, roll number or email you registered with${mail}. If multiple attendees have the same name, ask the organisers to correct the attendance list.</p></div>`;return;
         }
         const data=claim.certificate;
-        try {
-          const tRes = await fetch('/assets/data/certificate-default-template.html');
-          if (tRes.ok) data.template_html = await tRes.text();
-        } catch (tErr) {
-          console.warn('Could not load master certificate template:', tErr);
+        if (!_certTemplateCache) {
+          try {
+            const tRes = await fetch('/assets/data/certificate-default-template.html');
+            if (tRes.ok) _certTemplateCache = await tRes.text();
+          } catch (tErr) {
+            console.warn('Could not load master certificate template:', tErr);
+          }
         }
+        if (_certTemplateCache) data.template_html = _certTemplateCache;
         if (!data.template_html) {
           result.innerHTML = '<p role="alert">Could not load certificate template. Please try again later.</p>';
           return;

@@ -365,7 +365,10 @@
   function checkMount() {
     const isJoin = document.body && (document.body.dataset.route === 'join' || location.pathname.includes('/join'));
     if (!isJoin) return;
-    if (document.getElementById('gdg-pass-teaser')) return;
+    if (document.getElementById('gdg-pass-teaser')) {
+      if (typeof obs !== 'undefined' && obs.disconnect) obs.disconnect();
+      return;
+    }
 
     const mainApp = document.querySelector('#app');
     if (!mainApp) return;
@@ -373,6 +376,7 @@
     const targetSec = mainApp.querySelector('.reference-card') || mainApp.querySelector('.join-contact-section') || mainApp.querySelector('.page-intro');
     if (targetSec) {
       renderPreviewBanner(mainApp);
+      if (typeof obs !== 'undefined' && obs.disconnect) obs.disconnect();
     } else {
       setTimeout(checkMount, 120);
     }

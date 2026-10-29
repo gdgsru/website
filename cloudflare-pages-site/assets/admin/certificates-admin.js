@@ -392,18 +392,25 @@
   /* ------------------------------------------------------------------ Certificates tab */
   async function loadStudioLibs() {
     if (window.html2canvas && window.jspdf && window.JSZip) return;
-    const loadScript = (src) => new Promise((resolve) => {
-      if (document.querySelector(`script[src="${src}"]`)) return resolve();
+    const loadScript = (localSrc, cdnSrc) => new Promise((resolve) => {
+      if (document.querySelector(`script[src="${localSrc}"], script[src="${cdnSrc}"]`)) return resolve();
       const s = document.createElement('script');
-      s.src = src;
+      s.src = localSrc;
       s.onload = resolve;
-      s.onerror = resolve;
+      s.onerror = () => {
+        s.remove();
+        const fallback = document.createElement('script');
+        fallback.src = cdnSrc;
+        fallback.onload = resolve;
+        fallback.onerror = resolve;
+        document.head.appendChild(fallback);
+      };
       document.head.appendChild(s);
     });
     await Promise.all([
-      loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'),
-      loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'),
-      loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js')
+      loadScript('/assets/vendor/html2canvas.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'),
+      loadScript('/assets/vendor/jspdf.umd.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'),
+      loadScript('/assets/vendor/jszip.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js')
     ]);
   }
 
@@ -2195,7 +2202,7 @@
         for (let i = 0; i < recipients.length; i++) {
           setProgress(true, Math.round((i / recipients.length) * 100), `Generating ${i + 1} of ${recipients.length}: ${recipients[i].name}`);
           applyRecipient(i);
-          await new Promise((r) => setTimeout(r, 80));
+          await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 20)));
           const canvas = await renderCertCanvas();
           const imgData = canvas.toDataURL('image/jpeg', 0.92);
 
@@ -2208,6 +2215,9 @@
             if (i > 0) merged.addPage();
             merged.addImage(imgData, 'JPEG', 0, 0, 297, 210);
           }
+          // Immediate memory release of 2x raster canvas backing buffer to prevent tab heap exhaustion
+          canvas.width = 0;
+          canvas.height = 0;
         }
 
         setProgress(true, 98, 'Finalizing download package…');
