@@ -1306,3 +1306,101 @@ html:root body .page-team .tm-riso-card:not(#_) .tm-riso-info {
     font-size: 11.5px !important;
   }
 }
+
+
+/* Page Transition (#pt) Container & Animation */
+#pt {
+  --x: 14vh;
+  --c: min(17vh, 15vw);
+  --g: min(4vh, 3vw);
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 2147483000 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+  overflow: hidden !important;
+  width: 100vw !important;
+  height: 100vh !important;
+}
+html:is(.pt-in, .pt-out, .pt-reveal) #pt {
+  visibility: visible !important;
+}
+html.pt-out, html.pt-in {
+  overflow: hidden !important;
+}
+#pt .b {
+  position: absolute !important;
+  left: 0 !important;
+  width: calc(100vw + var(--x)) !important;
+  height: 25.2% !important;
+  border-radius: 0 999px 999px 0 !important;
+  transform: translate3d(-100%, 0, 0) !important;
+  will-change: transform !important;
+  backface-visibility: hidden !important;
+  -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
+  backdrop-filter: blur(24px) saturate(160%) !important;
+  border-right: 2px solid rgba(255, 255, 255, 0.45) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.28) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.35), 18px 0 45px rgba(0, 0, 0, 0.32) !important;
+}
+#pt .b1 { top: 0 !important; background: linear-gradient(90deg, rgba(66, 133, 244, 0.92) 0%, rgba(51, 103, 214, 0.96) 100%) !important; }
+#pt .b2 { top: 25% !important; background: linear-gradient(90deg, rgba(52, 168, 83, 0.92) 0%, rgba(30, 142, 62, 0.96) 100%) !important; }
+#pt .b3 { top: 50% !important; background: linear-gradient(90deg, rgba(251, 188, 4, 0.92) 0%, rgba(234, 134, 0, 0.96) 100%) !important; }
+#pt .b4 { top: 74.8% !important; height: 25.2% !important; background: linear-gradient(90deg, rgba(234, 67, 53, 0.92) 0%, rgba(197, 34, 31, 0.96) 100%) !important; }
+#pt .b b {
+  position: absolute !important;
+  top: 50% !important;
+  right: calc(var(--x) + var(--g)) !important;
+  width: var(--c) !important;
+  height: var(--c) !important;
+  transform: translateY(-50%) !important;
+  border-radius: 50% !important;
+  background: #fff !important;
+  display: grid !important;
+  place-items: center !important;
+}
+#pt .b svg { width: 60% !important; height: 60% !important; max-width: 100px !important; max-height: 100px !important; }
+#pt .t {
+  position: absolute !important;
+  left: 7vw !important;
+  right: 7vw !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  overflow: hidden !important;
+  padding: 0.1em 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+}
+#pt .t small { display: none !important; }
+#pt .t span {
+  display: block !important;
+  font: 800 clamp(64px, min(15vw, 19vh), 170px) / 0.95 "Google Sans", var(--f-body), system-ui, sans-serif !important;
+  letter-spacing: -0.04em !important;
+  color: #fff !important;
+  white-space: nowrap !important;
+  transform: translateY(115%) !important;
+  filter: drop-shadow(0 8px 32px rgba(0, 0, 0, 0.35)) !important;
+}
+html.pt-in #pt .b { transform: translate3d(0, 0, 0) !important; }
+html.pt-in #pt .t span { transform: none !important; }
+html.pt-in #pt .t small { display: none !important; }
+html.pt-out #pt .b { animation: ptIn 0.58s cubic-bezier(0.25, 0.9, 0.25, 1) forwards !important; }
+html.pt-out #pt .b2 { animation-delay: 0.07s !important; }
+html.pt-out #pt .b3 { animation-delay: 0.14s !important; }
+html.pt-out #pt .b4 { animation-delay: 0.21s !important; }
+html.pt-out #pt .t span { animation: ptTitleIn 0.50s cubic-bezier(0.2, 0.8, 0.2, 1) 0.36s forwards !important; }
+html.pt-out #pt .t small { display: none !important; }
+html.pt-reveal #pt .b { transform: translate3d(0, 0, 0) !important; animation: ptOut 0.58s cubic-bezier(0.25, 0.9, 0.25, 1) 0.14s forwards !important; }
+html.pt-reveal #pt .b2 { animation-delay: 0.21s !important; }
+html.pt-reveal #pt .b3 { animation-delay: 0.28s !important; }
+html.pt-reveal #pt .b4 { animation-delay: 0.35s !important; }
+html.pt-reveal #pt .t span { transform: none !important; animation: ptTitleOut 0.32s cubic-bezier(0.6, 0, 0.8, 0.3) forwards !important; }
+html.pt-reveal #pt .t small { display: none !important; }
+html.pt-in:not(.pt-reveal):not(.pt-intro) #pt .b { animation: ptOut 0.6s cubic-bezier(0.65, 0, 0.25, 1) 3s forwards !important; }
+
+@keyframes ptIn { from { transform: translate3d(-100%, 0, 0); } to { transform: translate3d(0, 0, 0); } }
+@keyframes ptOut { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(100%, 0, 0); } }
+@keyframes ptTitleIn { from { transform: translateY(115%); } to { transform: none; } }
+@keyframes ptTitleOut { from { transform: none; } to { transform: translateY(-115%); } }
