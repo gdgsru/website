@@ -21,11 +21,12 @@ function reveal(){
   const t0=performance.now(),hold=root.classList.contains("pt-intro")?1700:320;
   const wait=()=>{
     if(ready()&&performance.now()-t0>hold)return go();
-    if(performance.now()-t0>hold+1200)return go();
+    if(performance.now()-t0>hold+500)return go();
     requestAnimationFrame(wait);
   };
-  (document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(wait,wait);
-  setTimeout(go,hold+2500);
+  requestAnimationFrame(wait);
+  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(wait,wait);
+  setTimeout(go,hold+800);
 }
 reveal();
 
@@ -41,7 +42,7 @@ function internal(a){
   if(u.pathname===location.pathname&&u.search===location.search)return false; // same page / #hash
   return true;
 }
-const NAMES={"/":"Home","/events/":"Events","/team/":"Team","/blog/":"Blog","/join/":"Join us","/resources/":"Resource Hub","/leaderboard/":"Leaderboard","/certificates/":"Certificates","/verify/":"Verify","/privacy/":"Privacy","/event.html":"Event"};
+const NAMES={"/":"Home","/events/":"Events","/team/":"Team","/blog/":"Blog","/members/":"Members","/join/":"Join us","/resources/":"Resource Hub","/leaderboard/":"Leaderboard","/certificates/":"Certificates","/verify/":"Verify","/privacy/":"Privacy","/event.html":"Event","/easter-eggs/":"Easter Eggs","/wheel/":"Prize Wheel"};
 function titleFor(u,a){
   const p=u.pathname.replace(/index\.html$/,"");
   if(NAMES[p])return NAMES[p];
