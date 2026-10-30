@@ -882,19 +882,22 @@ html, body {
   width: 100vw !important;
   height: 100vh !important;
 }
-html.pt-in #pt, html.pt-out #pt, html.pt-reveal #pt{
+html:is(.pt-in, .pt-out, .pt-reveal) #pt,
+html.pt-in #pt, html.pt-out #pt, html.pt-reveal #pt {
   visibility: visible !important;
 }
 html.pt-out, html.pt-in {
   overflow: hidden !important;
 }
+
+/* 4 Color Bars: Google Blue, Green, Yellow, Red */
 #pt .b {
   position: absolute !important;
   left: 0 !important;
   width: calc(100vw + var(--x)) !important;
   height: 25.2% !important;
   border-radius: 0 999px 999px 0 !important;
-  transform: translate3d(-100%, 0, 0) !important;
+  transform: translate3d(-100%, 0, 0);
   will-change: transform !important;
   backface-visibility: hidden !important;
   -webkit-backdrop-filter: blur(24px) saturate(160%) !important;
@@ -921,6 +924,8 @@ html.pt-out, html.pt-in {
   place-items: center !important;
 }
 #pt .b svg { width: 60% !important; height: 60% !important; max-width: 100px !important; max-height: 100px !important; }
+
+/* Transition Title Text Container */
 #pt .t {
   position: absolute !important;
   left: 7vw !important;
@@ -932,35 +937,106 @@ html.pt-out, html.pt-in {
   display: flex !important;
   flex-direction: column !important;
   justify-content: center !important;
+  pointer-events: none !important;
 }
 #pt .t small { display: none !important; }
+
 #pt .t span {
   display: block !important;
   font: 800 clamp(64px, min(15vw, 19vh), 170px) / 0.95 "Google Sans", var(--f-body), system-ui, sans-serif !important;
   letter-spacing: -0.04em !important;
   color: #fff !important;
   white-space: nowrap !important;
-  transform: translateY(115%) !important;
   filter: drop-shadow(0 8px 32px rgba(0, 0, 0, 0.35)) !important;
 }
-html.pt-in #pt .b { transform: translate3d(0, 0, 0) !important; }
-html.pt-in #pt .t span { transform: none !important; }
-html.pt-in #pt .t small { display: none !important; }
-html.pt-out #pt .b { animation: ptIn 0.58s cubic-bezier(0.25, 0.9, 0.25, 1) forwards !important; }
-html.pt-out #pt .b2 { animation-delay: 0.07s !important; }
-html.pt-out #pt .b3 { animation-delay: 0.14s !important; }
-html.pt-out #pt .b4 { animation-delay: 0.21s !important; }
-html.pt-out #pt .t span { animation: ptTitleIn 0.50s cubic-bezier(0.2, 0.8, 0.2, 1) 0.36s forwards !important; }
-html.pt-out #pt .t small { display: none !important; }
-html.pt-reveal #pt .b { transform: translate3d(0, 0, 0) !important; animation: ptOut 0.58s cubic-bezier(0.25, 0.9, 0.25, 1) 0.14s forwards !important; }
-html.pt-reveal #pt .b2 { animation-delay: 0.21s !important; }
-html.pt-reveal #pt .b3 { animation-delay: 0.28s !important; }
-html.pt-reveal #pt .b4 { animation-delay: 0.35s !important; }
-html.pt-reveal #pt .t span { transform: none !important; animation: ptTitleOut 0.32s cubic-bezier(0.6, 0, 0.8, 0.3) forwards !important; }
-html.pt-reveal #pt .t small { display: none !important; }
-html.pt-in:not(.pt-reveal):not(.pt-intro) #pt .b { animation: ptOut 0.6s cubic-bezier(0.65, 0, 0.25, 1) 3s forwards !important; }
 
-@keyframes ptIn { from { transform: translate3d(-100%, 0, 0); } to { transform: translate3d(0, 0, 0); } }
-@keyframes ptOut { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(100%, 0, 0); } }
-@keyframes ptTitleIn { from { transform: translateY(115%); } to { transform: none; } }
-@keyframes ptTitleOut { from { transform: none; } to { transform: translateY(-115%); } }
+#pt .t span i {
+  display: inline-block !important;
+  font-style: normal !important;
+  transform: translateY(120%);
+  opacity: 0;
+}
+
+#pt .t:after {
+  content: "" !important;
+  display: block !important;
+  height: 4px !important;
+  width: 0 !important;
+  margin-top: 3.2vh !important;
+  border-radius: 4px !important;
+  background: linear-gradient(90deg, #4285f4 0 25%, #ea4335 25% 50%, #fbbc04 50% 75%, #34a853 75%) !important;
+  box-shadow: 0 0 18px rgba(255, 255, 255, 0.35) !important;
+}
+
+/* 1. In State (Landing Page held before reveal) */
+html.pt-in #pt .b { transform: translate3d(0, 0, 0) !important; }
+html.pt-in #pt .t span { transform: none !important; opacity: 1 !important; }
+html.pt-in #pt .t span i { transform: none !important; opacity: 1 !important; }
+html.pt-in #pt .t:after { width: min(280px, 40vw) !important; }
+
+/* 2. Out State (Bars sweep in first, then text rises in) */
+html.pt-out #pt .b {
+  animation: ptIn 0.44s cubic-bezier(0.25, 1, 0.35, 1) forwards !important;
+}
+html.pt-out #pt .b2 { animation-delay: 0.04s !important; }
+html.pt-out #pt .b3 { animation-delay: 0.08s !important; }
+html.pt-out #pt .b4 { animation-delay: 0.12s !important; }
+
+/* Text strictly waits for bars to sweep in (delay: 0.46s) */
+html.pt-out #pt .t span { transform: none !important; opacity: 1 !important; }
+html.pt-out #pt .t span i {
+  animation: ptCharIn 0.36s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  animation-delay: calc(0.46s + var(--i, 0) * 18ms) !important;
+}
+html.pt-out #pt .t:after {
+  animation: ptBarIn 0.45s cubic-bezier(0.2, 0.9, 0.2, 1) 0.52s forwards !important;
+}
+
+/* 3. Reveal State (Destination Page reveals: text exits up, bars sweep right) */
+html.pt-reveal #pt .t span { transform: none !important; }
+html.pt-reveal #pt .t span i {
+  animation: ptCharOut 0.26s cubic-bezier(0.5, 0, 0.8, 0.2) forwards !important;
+}
+html.pt-reveal #pt .t:after {
+  animation: ptBarOut 0.22s ease forwards !important;
+}
+html.pt-reveal #pt .b {
+  transform: translate3d(0, 0, 0);
+  animation: ptOut 0.46s cubic-bezier(0.25, 1, 0.35, 1) 0.12s forwards !important;
+}
+html.pt-reveal #pt .b2 { animation-delay: 0.16s !important; }
+html.pt-reveal #pt .b3 { animation-delay: 0.20s !important; }
+html.pt-reveal #pt .b4 { animation-delay: 0.24s !important; }
+
+/* Safety Fallback */
+html.pt-in:not(.pt-reveal):not(.pt-intro) #pt .b {
+  animation: ptOut 0.5s cubic-bezier(0.65, 0, 0.25, 1) 3s forwards !important;
+}
+
+@keyframes ptIn {
+  from { transform: translate3d(-100%, 0, 0); }
+  to { transform: translate3d(0, 0, 0); }
+}
+@keyframes ptOut {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(100%, 0, 0); }
+}
+@keyframes ptCharIn {
+  from { transform: translateY(120%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes ptCharOut {
+  from { transform: translateY(0); opacity: 1; }
+  to { transform: translateY(-120%); opacity: 0; }
+}
+@keyframes ptBarIn {
+  from { width: 0; }
+  to { width: min(280px, 40vw); }
+}
+@keyframes ptBarOut {
+  from { width: min(280px, 40vw); opacity: 1; }
+  to { width: 0; opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #pt { display: none !important; }
+}

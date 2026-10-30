@@ -64,7 +64,7 @@ document.addEventListener("click",e=>{
   }
   try{sessionStorage.setItem(KEY,title)}catch(_){}
   root.classList.add("pt-out");
-  setTimeout(()=>{location.href=href},780);
+  setTimeout(()=>{location.href=href},820);
   setTimeout(clear,3200);
 });
 
