@@ -982,14 +982,14 @@ html.pt-out #pt .b2 { animation-delay: 0.04s !important; }
 html.pt-out #pt .b3 { animation-delay: 0.08s !important; }
 html.pt-out #pt .b4 { animation-delay: 0.12s !important; }
 
-/* Text strictly waits for bars to sweep in (delay: 0.46s) */
+/* Text rises smoothly right behind the leading edge of the bars (delay: 0.22s) */
 html.pt-out #pt .t span { transform: none !important; opacity: 1 !important; }
 html.pt-out #pt .t span i {
-  animation: ptCharIn 0.36s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
-  animation-delay: calc(0.46s + var(--i, 0) * 18ms) !important;
+  animation: ptCharIn 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  animation-delay: calc(0.22s + var(--i, 0) * 12ms) !important;
 }
 html.pt-out #pt .t:after {
-  animation: ptBarIn 0.45s cubic-bezier(0.2, 0.9, 0.2, 1) 0.52s forwards !important;
+  animation: ptBarIn 0.35s cubic-bezier(0.2, 0.9, 0.2, 1) 0.28s forwards !important;
 }
 
 /* 3. Reveal State (Destination Page reveals: text exits up, bars sweep right) */
