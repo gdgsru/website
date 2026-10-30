@@ -932,41 +932,261 @@ html:root body .page-team .tm-riso-card:not(#_) .tm-riso-info {
 }
 
 /* Card Info & Typography */
-:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-riso-info {
-  padding: 8px 10px 10px !important;
-  height: auto !important;
-  flex: 1 1 auto !important;
-  overflow: visible !important;
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) {
+  position: relative !important;
   display: flex !important;
   flex-direction: column !important;
+  min-width: 0 !important;
+  height: auto !important;
+  border-radius: 16px !important;
+  isolation: isolate !important;
+  perspective: 1100px !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  cursor: pointer !important;
+}
+
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-flip-shell {
+  display: grid !important;
+  grid-template: 1fr / 1fr !important;
+  position: relative !important;
+  width: 100% !important;
+  height: 100% !important;
+  transform-style: preserve-3d !important;
+  transition: transform 0.65s cubic-bezier(0.23, 0.78, 0.22, 1) !important;
+  border-radius: 16px !important;
+}
+
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card.is-flipped .tm-flip-shell {
+  transform: rotateY(180deg) !important;
+}
+
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-face {
+  grid-area: 1 / 1 !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  backface-visibility: hidden !important;
+  -webkit-backface-visibility: hidden !important;
+}
+
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-face-front {
+  position: relative !important;
+  z-index: 2 !important;
+  transform: rotateY(0deg) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  pointer-events: auto !important;
+}
+
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card.is-flipped .tm-face-front {
+  pointer-events: none !important;
+  z-index: 1 !important;
+}
+
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-face-back {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 1 !important;
+  transform: rotateY(180deg) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 16px !important;
+  overflow-y: auto !important;
+  border-radius: 16px !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18) !important;
+  pointer-events: none !important;
+}
+
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card.is-flipped .tm-face-back {
+  pointer-events: auto !important;
+  z-index: 2 !important;
+}
+
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-riso-front {
+  display: flex !important;
+  flex-direction: column !important;
+  position: relative !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-riso-paper {
+  background: var(--riso-paper, #ffffff) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  position: relative !important;
+  width: 100% !important;
+  height: 100% !important;
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.05) !important;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease !important;
+}
+
+:root[data-theme="dark"] :is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-riso-paper {
+  background: #191a1e !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 4px 22px rgba(0, 0, 0, 0.4) !important;
+}
+
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__):hover .tm-riso-paper {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1) !important;
+  border-color: color-mix(in srgb, var(--team-accent, #4285f4) 45%, rgba(0, 0, 0, 0.1)) !important;
+}
+
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-riso-art {
+  position: relative !important;
+  flex: none !important;
+  width: 100% !important;
+  aspect-ratio: 1 / 1 !important;
+  overflow: hidden !important;
+  background: color-mix(in srgb, var(--team-accent, #4285f4) 8%, #f8f9fa) !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+
+:root[data-theme="dark"] :is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-riso-art {
+  background: color-mix(in srgb, var(--team-accent, #4285f4) 12%, #111215) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-riso-art .tm-riso-composition {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  opacity: 0.28 !important;
+}
+
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-riso-reg {
+  position: absolute !important;
+  z-index: 2 !important;
+  width: 12px !important;
+  height: 12px !important;
+  opacity: 0.65 !important;
+}
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-riso-reg-a { top: 6px !important; right: 6px !important; }
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-riso-reg-b { bottom: 6px !important; left: 6px !important; }
+
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) :is(.tm-riso-portrait, .tm-photo) {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  align-items: flex-end !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+  z-index: 2 !important;
+}
+
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) :is(.tm-riso-portrait, .tm-photo) img.tm-riso-photo-image {
+  position: absolute !important;
+  bottom: 0 !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: auto !important;
+  height: 94% !important;
+  max-width: 90% !important;
+  max-height: 96% !important;
+  object-fit: contain !important;
+  object-position: 50% 100% !important;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.16)) !important;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__):hover :is(.tm-riso-portrait, .tm-photo) img.tm-riso-photo-image {
+  transform: translateX(-50%) scale(1.04) !important;
+}
+
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-riso-ini {
+  font-family: var(--f-body, "Google Sans", sans-serif) !important;
+  font-size: 26px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.04em !important;
+  color: var(--team-accent, #4285f4) !important;
+  opacity: 0.85 !important;
+  display: grid !important;
+  place-items: center !important;
+  width: 60px !important;
+  height: 60px !important;
+  border-radius: 50% !important;
+  background: rgba(255, 255, 255, 0.7) !important;
+  margin-bottom: 24px !important;
+}
+
+/* Card Info Section */
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-riso-info {
+  padding: 10px 12px 14px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+  position: relative !important;
 }
 
 :is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-riso-number {
+  position: absolute !important;
+  top: 8px !important;
+  right: 12px !important;
   font-family: var(--f-mono, "Google Sans Code", monospace) !important;
   font-size: 8.5px !important;
   font-weight: 600 !important;
-  top: 6px !important;
-  right: 8px !important;
   letter-spacing: 0.08em !important;
   text-transform: uppercase !important;
   color: var(--mut, #5f6368) !important;
 }
 
-:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-riso-name {
-  font-family: var(--f-body, "Google Sans", sans-serif) !important;
-  font-size: clamp(14px, 4vw, 16px) !important;
-  font-weight: 700 !important;
-  line-height: 1.25 !important;
-  color: var(--ink, #1f1f23) !important;
-  margin: 5px 0 0 !important;
-  font-stretch: normal !important;
-  word-break: normal !important;
-  white-space: normal !important;
-  letter-spacing: -0.025em !important;
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-id {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  margin: 4px 0 0 !important;
 }
 
-:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-riso-name span {
-  display: inline !important;
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-riso-name {
+  font-family: var(--f-body, "Google Sans", sans-serif) !important;
+  font-size: clamp(14px, 3.8vw, 16px) !important;
+  font-weight: 700 !important;
+  line-height: 1.25 !important;
+  letter-spacing: -0.025em !important;
+  color: var(--ink, #1f1f23) !important;
+  margin: 0 !important;
+}
+
+:root[data-theme="dark"] :is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-riso-name {
+  color: #fff !important;
+}
+
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-riso-flipmark {
+  display: inline-grid !important;
+  place-items: center !important;
+  flex: none !important;
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 50% !important;
+  background: rgba(0, 0, 0, 0.05) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  color: var(--mut, #5f6368) !important;
+  font-size: 13px !important;
+  line-height: 1 !important;
+  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.2s, color 0.2s !important;
+  cursor: pointer !important;
+}
+
+:root[data-theme="dark"] :is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-riso-flipmark {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__):hover .tm-riso-flipmark {
+  transform: rotate(180deg) !important;
+  background: rgba(66, 133, 244, 0.12) !important;
+  border-color: rgba(66, 133, 244, 0.25) !important;
+  color: #4285f4 !important;
 }
 
 :is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-riso-role {
@@ -979,17 +1199,27 @@ html:root body .page-team .tm-riso-card:not(#_) .tm-riso-info {
   letter-spacing: -0.01em !important;
 }
 
-/* Hide the ugly reload circle completely */
-:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-riso-flipmark {
-  display: none !important;
+:root[data-theme="dark"] :is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-riso-role {
+  color: rgba(255, 255, 255, 0.65) !important;
 }
 
-/* Modern Google Brand Chips */
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-riso-role i {
+  display: inline-block !important;
+  width: 6px !important;
+  height: 6px !important;
+  border-radius: 50% !important;
+  background: var(--team-accent, #4285f4) !important;
+  margin-right: 6px !important;
+  vertical-align: middle !important;
+}
+
+/* Chips */
 :is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-chips {
   display: flex !important;
   flex-wrap: wrap !important;
+  align-items: center !important;
   gap: 5px !important;
-  margin-top: 7px !important;
+  margin-top: 6px !important;
 }
 
 :is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-chip {
@@ -1001,15 +1231,23 @@ html:root body .page-team .tm-riso-card:not(#_) .tm-riso-info {
   font-weight: 600 !important;
   padding: 3px 8px !important;
   border-radius: 999px !important;
-  line-height: 1.3 !important;
+  line-height: 1.25 !important;
   letter-spacing: -0.01em !important;
+  background: rgba(0, 0, 0, 0.04) !important;
+  color: var(--mut, #5f6368) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
 }
 
-/* Department / Role Chip */
+:root[data-theme="dark"] :is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-chip {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: rgba(255, 255, 255, 0.75) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
 :is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-chip-main {
-  background: color-mix(in srgb, var(--team-accent, #4285f4) 12%, #f1f3f4) !important;
+  background: color-mix(in srgb, var(--team-accent, #4285f4) 10%, #f4f7fe) !important;
   color: color-mix(in srgb, var(--team-accent, #4285f4) 85%, #111) !important;
-  border: 1px solid color-mix(in srgb, var(--team-accent, #4285f4) 28%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--team-accent, #4285f4) 25%, transparent) !important;
 }
 
 :root[data-theme="dark"] :is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-chip-main {
@@ -1027,27 +1265,237 @@ html:root body .page-team .tm-riso-card:not(#_) .tm-riso-info {
   display: inline-block !important;
 }
 
-/* 4-Color Google brand bar at the bottom */
+/* Stats Row: Member ID & Chapter */
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-stats {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 6px !important;
+  padding: 8px 0 2px !important;
+  margin-top: 8px !important;
+  border-top: 1px solid rgba(0, 0, 0, 0.08) !important;
+  text-align: center !important;
+}
+
+:root[data-theme="dark"] :is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-stats {
+  border-top-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-stats > div {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+}
+
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-stats b {
+  display: block !important;
+  font-family: var(--f-mono, "Google Sans Code", monospace) !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  line-height: 1.15 !important;
+  letter-spacing: -0.02em !important;
+  color: var(--ink, #1f1f23) !important;
+}
+
+:root[data-theme="dark"] :is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-stats b {
+  color: #fff !important;
+}
+
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-stats span {
+  display: block !important;
+  margin-top: 2px !important;
+  font-family: var(--f-mono, "Google Sans Code", monospace) !important;
+  font-size: 9px !important;
+  font-weight: 500 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  color: var(--mut, #5f6368) !important;
+}
+
+/* Riso Hint */
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-riso-hint {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-top: 7px !important;
+  padding-top: 4px !important;
+  font-family: var(--f-mono, "Google Sans Code", monospace) !important;
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em !important;
+  color: var(--mut, #5f6368) !important;
+  transition: color 0.2s ease !important;
+}
+
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__):hover .tm-riso-hint {
+  color: var(--b, #4285f4) !important;
+}
+
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-riso-hint i {
+  font-style: normal !important;
+  transition: transform 0.2s ease !important;
+}
+
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__):hover .tm-riso-hint i {
+  transform: translate(2px, -2px) !important;
+}
+
+/* 4-Color Google Brand Bar */
 :is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-riso-bar {
   display: flex !important;
-  position: relative !important;
-  inset: auto !important;
-  margin-top: 9px !important;
-  height: 3.5px !important;
-  border-radius: 999px !important;
+  position: absolute !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  height: 4px !important;
   overflow: hidden !important;
+  z-index: 5 !important;
+  border-radius: 0 0 16px 16px !important;
+}
+
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-riso-bar b {
+  display: block !important;
+  flex: 1 !important;
+  height: 100% !important;
+}
+
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-riso-bar b:nth-child(1) { background: #4285f4 !important; }
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-riso-bar b:nth-child(2) { background: #ea4335 !important; }
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-riso-bar b:nth-child(3) { background: #fbbc04 !important; }
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-riso-bar b:nth-child(4) { background: #34a853 !important; }
+
+/* Back of Card */
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-face-back {
+  background: var(--team-accent, #4285f4) !important;
+  color: #fff !important;
+}
+
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card[data-c="b"] .tm-face-back { background: #4285f4 !important; color: #fff !important; }
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card[data-c="r"] .tm-face-back { background: #ea4335 !important; color: #fff !important; }
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card[data-c="y"] .tm-face-back { background: #f9ab00 !important; color: #1f1f23 !important; }
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card[data-c="g"] .tm-face-back { background: #34a853 !important; color: #fff !important; }
+
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-face-back h3 {
+  font-family: var(--f-body, "Google Sans", sans-serif) !important;
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  color: inherit !important;
+  margin: 6px 0 2px !important;
+}
+
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-face-back .tm-role {
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: inherit !important;
+  opacity: 0.9 !important;
+  margin: 0 !important;
+}
+
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-face-back .tm-sub {
+  font-size: 11px !important;
+  color: inherit !important;
+  opacity: 0.8 !important;
+  margin: 4px 0 0 !important;
+}
+
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-face-back .tm-bio {
+  font-size: 11.5px !important;
+  line-height: 1.4 !important;
+  color: inherit !important;
+  opacity: 0.95 !important;
+  margin: 8px 0 0 !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 4 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-back-top {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  font-family: var(--f-mono, "Google Sans Code", monospace) !important;
+  font-size: 10px !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  color: inherit !important;
+  opacity: 0.85 !important;
+}
+
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-back-dept {
+  font-family: var(--f-mono, "Google Sans Code", monospace) !important;
+  font-size: 9.5px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+  opacity: 0.85 !important;
+  display: block !important;
+  margin-top: 8px !important;
+}
+
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-back-social {
+  margin-top: auto !important;
+  padding-top: 10px !important;
+}
+
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-back-social-label {
+  display: block !important;
+  font-family: var(--f-mono, "Google Sans Code", monospace) !important;
+  font-size: 9px !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+  opacity: 0.75 !important;
+  margin-bottom: 6px !important;
+}
+
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-links {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+}
+
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-links a {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 3px 8px !important;
+  border-radius: 6px !important;
+  background: rgba(255, 255, 255, 0.22) !important;
+  color: inherit !important;
+  text-decoration: none !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  transition: background 0.15s !important;
+}
+
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-links a:hover {
+  background: rgba(255, 255, 255, 0.38) !important;
+}
+
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-return {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  margin-top: 10px !important;
+  padding: 6px 12px !important;
+  border-radius: 999px !important;
+  background: rgba(255, 255, 255, 0.25) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  color: inherit !important;
+  font-family: var(--f-body, "Google Sans", sans-serif) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
   width: 100% !important;
+  transition: background 0.2s !important;
 }
 
-:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-stats {
-  display: none !important;
+:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-return:hover {
+  background: rgba(255, 255, 255, 0.42) !important;
 }
 
-:is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-riso-hint {
-  display: none !important;
-}
-
-/* 1. Desktop Screens (min-width: 1024px) */
+/* Responsive Layout */
+/* Desktop (>= 1024px) */
 @media (min-width: 1024px) {
   :is(.page-team, body[data-route="team"], html body) .tm-sec-leadership,
   :is(.page-team, body[data-route="team"], html body) .tm-sec-advisory,
@@ -1060,40 +1508,31 @@ html:root body .page-team .tm-riso-card:not(#_) .tm-riso-info {
   }
 
   :is(.page-team, body[data-route="team"], html body) .tm-sec-leadership > .tm-grid,
-  :is(.page-team, body[data-route="team"], html body) .tm-sec-advisory > .tm-grid {
+  :is(.page-team, body[data-route="team"], html body) .tm-sec-advisory > .tm-grid,
+  :is(.page-team, body[data-route="team"], html body) .tm-sec[data-team-section] > .tm-grid {
     display: grid !important;
-    grid-template-columns: repeat(3, minmax(0, 240px)) !important;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 250px)) !important;
     gap: 20px !important;
     justify-content: start !important;
     width: 100% !important;
   }
 
-  :is(.page-team, body[data-route="team"], html body) .tm-sec[data-team-section]:not(.tm-sec-leadership):not(.tm-sec-advisory) > .tm-grid {
-    display: grid !important;
-    grid-template-columns: repeat(auto-fill, minmax(210px, 240px)) !important;
-    gap: 20px !important;
-    width: 100% !important;
-  }
-
-  :is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__),
-  :is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card.tm-riso-featured:not(#_):not(#__),
-  :is(.page-team, body[data-route="team"], html body) .tm-sec-leadership .tm-card.tm-riso-card.is-lead-organizer:not(#_):not(#__) {
-    max-width: 240px !important;
+  :is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) {
+    max-width: 250px !important;
     width: 100% !important;
     grid-column: span 1 !important;
   }
 }
 
-/* 2. Tablet Screens (641px - 1023px) */
+/* Tablet (641px - 1023px) */
 @media (min-width: 641px) and (max-width: 1023px) {
   :is(.page-team, body[data-route="team"], html body) .tm-sec,
   :is(.page-team, body[data-route="team"], html body) .tm-sec-leadership,
   :is(.page-team, body[data-route="team"], html body) .tm-sec-advisory,
   :is(.page-team, body[data-route="team"], html body) .tm-sec[data-team-section] {
     display: block !important;
-    width: calc(100% - 32px) !important;
-    margin-top: 52px !important;
-    clear: both !important;
+    width: 100% !important;
+    margin-top: 48px !important;
   }
 
   :is(.page-team, body[data-route="team"], html body) .tm-sec > .tm-head,
@@ -1121,15 +1560,8 @@ html:root body .page-team .tm-riso-card:not(#_) .tm-riso-info {
   }
 }
 
-/* 3. Mobile Screens (<= 640px) */
+/* Mobile (<= 640px) */
 @media (max-width: 640px) {
-  body[data-route="team"] main,
-  body.page-team main,
-  .page-team main {
-    padding-left: 14px !important;
-    padding-right: 14px !important;
-  }
-
   :is(.page-team, body[data-route="team"], html body) .tm-sec,
   :is(.page-team, body[data-route="team"], html body) .tm-sec-leadership,
   :is(.page-team, body[data-route="team"], html body) .tm-sec-advisory,
@@ -1138,13 +1570,7 @@ html:root body .page-team .tm-riso-card:not(#_) .tm-riso-info {
     width: 100% !important;
     max-width: 100% !important;
     margin: 32px auto 0 !important;
-    padding-top: 28px !important;
-    clear: both !important;
-    min-width: 0 !important;
-    overflow: visible !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    scroll-margin-top: 110px !important;
+    padding-top: 24px !important;
   }
 
   :is(.page-team, body[data-route="team"], html body) .tm-sec > .tm-head,
@@ -1154,43 +1580,15 @@ html:root body .page-team .tm-riso-card:not(#_) .tm-riso-info {
     display: block !important;
     width: 100% !important;
     margin: 0 0 16px !important;
-    padding: 0 !important;
-    border: 0 !important;
-    min-width: 0 !important;
   }
 
   :is(.page-team, body[data-route="team"], html body) .tm-sec > .tm-head h2,
   :is(.page-team, body[data-route="team"], html body) .tm-sec-leadership > .tm-head h2,
   :is(.page-team, body[data-route="team"], html body) .tm-sec-advisory > .tm-head h2,
   :is(.page-team, body[data-route="team"], html body) .tm-sec[data-team-section] > .tm-head h2 {
-    font-family: var(--f-body, "Google Sans", sans-serif) !important;
-    font-size: clamp(26px, 7vw, 36px) !important;
+    font-size: clamp(24px, 6.5vw, 32px) !important;
     font-weight: 750 !important;
-    letter-spacing: -0.035em !important;
-    line-height: 1.08 !important;
-    max-width: 100% !important;
-    margin: 0 !important;
-  }
-
-  :is(.page-team, body[data-route="team"], html body) .tm-sec .tm-kicker {
-    font-family: var(--f-mono, "Google Sans Code", monospace) !important;
-    font-size: 11px !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.14em !important;
-    text-transform: uppercase !important;
-    color: var(--b, #4285f4) !important;
-    display: block !important;
-    margin-bottom: 4px !important;
-  }
-
-  :is(.page-team, body[data-route="team"], html body) .tm-sec > .tm-head p,
-  :is(.page-team, body[data-route="team"], html body) .tm-sec-leadership > .tm-head p,
-  :is(.page-team, body[data-route="team"], html body) .tm-sec-advisory > .tm-head p,
-  :is(.page-team, body[data-route="team"], html body) .tm-sec[data-team-section] > .tm-head p {
-    font-size: 13px !important;
-    line-height: 1.4 !important;
-    max-width: 100% !important;
-    margin: 5px 0 0 !important;
+    line-height: 1.1 !important;
   }
 
   :is(.page-team, body[data-route="team"], html body) .tm-grid,
@@ -1201,90 +1599,55 @@ html:root body .page-team .tm-riso-card:not(#_) .tm-riso-info {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     gap: 12px !important;
     width: 100% !important;
-    max-width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
-    align-items: stretch !important;
-    justify-items: stretch !important;
   }
 
-  /* Default 2-column mobile card */
+  /* All mobile cards are uniform vertical cards in 2 columns */
   :is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__),
-  :is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card.tm-riso-featured:not(#_):not(#__) {
+  :is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card.tm-riso-featured:not(#_):not(#__),
+  :is(.page-team, body[data-route="team"], html body) .tm-sec-leadership .tm-card.tm-riso-card.is-lead-organizer:not(#_):not(#__),
+  :is(.page-team, body[data-route="team"], html body) .tm-sec-leadership .tm-card.tm-riso-card.is-wide:not(#_):not(#__) {
     width: 100% !important;
     max-width: 100% !important;
     height: auto !important;
-    aspect-ratio: auto !important;
     grid-column: span 1 !important;
     margin: 0 !important;
-    justify-self: stretch !important;
+    display: flex !important;
+    flex-direction: column !important;
   }
 
-  /* Featured Chapter Lead: Spans both columns to eliminate the orphan 2+1 gap */
-  :is(.page-team, body[data-route="team"], html body) .tm-sec-leadership .tm-card.tm-riso-card.is-lead-organizer:not(#_):not(#__),
-  :is(.page-team, body[data-route="team"], html body) .tm-sec-leadership .tm-card.tm-riso-card.is-wide:not(#_):not(#__) {
-    grid-column: 1 / -1 !important;
-    width: 100% !important;
-    max-width: 100% !important;
+  :is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-riso-info {
+    padding: 8px 8px 12px !important;
   }
 
-  /* Lead Organizer horizontal hero card on mobile */
-  :is(.page-team, body[data-route="team"], html body) .tm-sec-leadership .tm-card.tm-riso-card.is-lead-organizer:not(#_):not(#__) .tm-riso-paper,
-  :is(.page-team, body[data-route="team"], html body) .tm-sec-leadership .tm-card.tm-riso-card.is-wide:not(#_):not(#__) .tm-riso-paper {
-    display: grid !important;
-    grid-template-columns: 115px 1fr !important;
-    gap: 12px !important;
-    align-items: center !important;
-    padding: 8px !important;
+  :is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-riso-name {
+    font-size: 13.5px !important;
   }
 
-  :is(.page-team, body[data-route="team"], html body) .tm-sec-leadership .tm-card.tm-riso-card.is-lead-organizer:not(#_):not(#__) .tm-riso-art,
-  :is(.page-team, body[data-route="team"], html body) .tm-sec-leadership .tm-card.tm-riso-card.is-wide:not(#_):not(#__) .tm-riso-art {
-    width: 115px !important;
-    height: 115px !important;
-    aspect-ratio: 1 / 1 !important;
-    border-radius: 12px !important;
-    flex: none !important;
+  :is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-riso-role {
+    font-size: 10.5px !important;
   }
 
-  :is(.page-team, body[data-route="team"], html body) .tm-sec-leadership .tm-card.tm-riso-card.is-lead-organizer:not(#_):not(#__) .tm-riso-info,
-  :is(.page-team, body[data-route="team"], html body) .tm-sec-leadership .tm-card.tm-riso-card.is-wide:not(#_):not(#__) .tm-riso-info {
-    padding: 4px 6px !important;
+  :is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-chip {
+    font-size: 9px !important;
+    padding: 2px 6px !important;
   }
 
-  :is(.page-team, body[data-route="team"], html body) .tm-sec-leadership .tm-card.tm-riso-card.is-lead-organizer:not(#_):not(#__) .tm-riso-name,
-  :is(.page-team, body[data-route="team"], html body) .tm-sec-leadership .tm-card.tm-riso-card.is-wide:not(#_):not(#__) .tm-riso-name {
-    font-size: 17px !important;
+  :is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-stats b {
+    font-size: 11.5px !important;
   }
 
-  :is(.page-team, body[data-route="team"], html body) .tm-sec-leadership .tm-card.tm-riso-card.is-lead-organizer:not(#_):not(#__) .tm-riso-role,
-  :is(.page-team, body[data-route="team"], html body) .tm-sec-leadership .tm-card.tm-riso-card.is-wide:not(#_):not(#__) .tm-riso-role {
-    font-size: 12px !important;
+  :is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-stats span {
+    font-size: 8px !important;
   }
 
-  /* Back of card on mobile */
+  :is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-riso-hint {
+    font-size: 9px !important;
+  }
+
   :is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-face-back {
-    padding: 10px 10px 14px !important;
-  }
-
-  :is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-face-back h3 {
-    font-size: clamp(13px, 3.8vw, 16px) !important;
-    line-height: 1.15 !important;
-  }
-
-  :is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-face-back .tm-role {
-    font-size: 10px !important;
-  }
-
-  :is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-face-back .tm-bio {
-    font-size: 9.5px !important;
-    line-height: 1.35 !important;
-    -webkit-line-clamp: 2 !important;
-  }
-
-  :is(.page-team, body[data-route="team"], html body) .tm-card.tm-riso-card:not(#_):not(#__) .tm-return {
-    font-size: 10px !important;
-    padding: 5px 8px !important;
+    padding: 12px !important;
   }
 }
 
@@ -1306,7 +1669,6 @@ html:root body .page-team .tm-riso-card:not(#_) .tm-riso-info {
     font-size: 11.5px !important;
   }
 }
-
 
 /* Page Transition (#pt) Container & Animation */
 #pt {
