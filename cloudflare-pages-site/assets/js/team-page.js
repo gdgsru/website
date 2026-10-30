@@ -120,17 +120,159 @@
     return `<section class="tm-sec tm-sec-${id}" id="${id}" data-team-section><div class="tm-head"><div class="tm-head-main"><span class="tm-kicker">${KICKER[d.kind] || KICKER.department}</span><h2>${esc(d.heading || d.name)}</h2>${d.description ? `<p>${esc(d.description)}</p>` : ''}</div><span class="tm-count" data-total="${n}">${n} ${n === 1 ? 'person' : 'people'}</span></div><div class="tm-grid" data-count="${n}">${members.map((m, i) => cardHTML(m, { kind: d.kind, index: i })).join('')}</div><p class="tm-empty" hidden>No team members match your search.</p></section>`;
   }
 
-  function heroHTML(page, nodes) {
+  const D_COLORS = {
+    b: '#4285f4',
+    g: '#34a853',
+    y: '#f9ab00',
+    r: '#ea4335'
+  };
+  const GOOGLE_COLORS = [D_COLORS.b, D_COLORS.g, D_COLORS.y, D_COLORS.r];
+
+  function getPetalSvg(kind, size, i) {
+    switch (kind) {
+      case 'sparkle':
+        return `<g transform="scale(${(size / 16).toFixed(3)})"><path class="bloom__petal" d="M0 -16C2.6 -2.6 2.6 -2.6 16 0 2.6 2.6 2.6 2.6 0 16 -2.6 2.6 -2.6 2.6 -16 0 -2.6 -2.6 -2.6 -2.6 0 -16Z" fill="${D_COLORS.b}"/></g>`;
+      case 'chip':
+        return `<g transform="scale(${(size / 11.6).toFixed(3)})"><g class="bloom__petal"><circle r="10" fill="#fff" stroke="${D_COLORS.g}" stroke-width="3.2"/><path d="M-11.6 0A11.6 11.6 0 0 0 11.6 0Z" fill="${D_COLORS.g}"/></g></g>`;
+      case 'petal':
+        return `<g transform="scale(${(size / 17).toFixed(3)})"><path class="bloom__petal" d="M0 -17C9 -8 9 6 0 14 -9 6 -9 -8 0 -17Z" fill="${D_COLORS.y}"/></g>`;
+      case 'ray':
+        return `<rect class="bloom__petal" x="${(-size * 0.25).toFixed(2)}" y="${(-size).toFixed(2)}" width="${(size * 0.5).toFixed(2)}" height="${(size * 2).toFixed(2)}" rx="${(size * 0.25).toFixed(2)}" fill="${D_COLORS.r}"/>`;
+      case 'dots':
+        const r = (i % 2) ? (size * 0.6).toFixed(2) : size.toFixed(2);
+        const color = GOOGLE_COLORS[i % 4];
+        return `<circle class="bloom__petal" r="${r}" fill="${color}"/>`;
+    }
+    return '';
+  }
+
+  function renderArtRing(r, kind, size) {
+    const spacing = kind === 'dots' ? size * 4.2 : kind === 'ray' ? size * 1.6 : size * 3;
+    const count = Math.max(6, Math.round((2 * Math.PI * r) / spacing));
+    const petals = [];
+    for (let i = 0; i < count; i++) {
+      const deg = ((i / count) * 360).toFixed(2);
+      petals.push(`<g transform="rotate(${deg}) translate(0 ${-r})">${getPetalSvg(kind, size, i)}</g>`);
+    }
+    return `<g class="bloom__art-ring" data-radius="${r}">${petals.join('')}</g>`;
+  }
+
+  function buildBloomConstellation(members) {
+    const list = Array.isArray(members) ? members : [];
+    const count = list.length || 18;
+
+    // Distribute members across 2 concentric rings (6 inner, 12 outer)
+    const countInner = Math.min(6, Math.max(4, Math.round(count * 0.35)));
+    const innerList = list.slice(0, countInner);
+    const outerList = list.slice(countInner);
+
+    const ring0_r = 50;
+    const ring1_r = 82;
+    const avatarD = 12.5; // diameter %
+
+    // SVG art rings exactly as defined in CCD Kochi reference
+    const artSvg = [
+      `<circle r="${ring0_r}" class="bloom__guide"/>`,
+      `<circle r="${ring1_r}" class="bloom__guide"/>`,
+      `<circle r="26.5" class="bloom__guide"/>`,
+      renderArtRing(36, 'sparkle', 4),
+      renderArtRing(66, 'chip', 4.6),
+      renderArtRing(91.5, 'ray', 2.3),
+      renderArtRing(98.6, 'dots', 1)
+    ];
+
+    function renderRing(ringList, r, ringIdx) {
+      const total = ringList.length;
+      return ringList.map((raw, idx) => {
+        const m = normalise(raw);
+        const angle = (-90 + (ringIdx % 2 ? 180 / total : 0) + (idx / total) * 360) * Math.PI / 180;
+        const cx = (50 + (r / 2) * Math.cos(angle)).toFixed(2);
+        const cy = (50 + (r / 2) * Math.sin(angle)).toFixed(2);
+        const color = GOOGLE_COLORS[(ringIdx * 6 + idx) % 4];
+        const ini = initials(m.name);
+        const photo = m.photo;
+
+        return `<button type="button" class="bloom__face" style="left:${cx}%;top:${cy}%;--c:${color};" aria-label="${esc(m.name)}, ${esc(m.role)}. Go to their card" data-member-name="${esc(m.name)}" data-member-code="${esc(m.code || '')}">
+          <span class="bloom__upright">
+            <span class="bloom__pop">
+              <span class="bloom__photo">
+                ${photo ? `<img src="${esc(photo)}" alt="${esc(m.name)}" loading="eager" decoding="async" draggable="false">` : `<span class="crew-photo__initials">${esc(ini)}</span>`}
+              </span>
+            </span>
+            <span class="bloom__tag" aria-hidden="true">${esc(m.name)}</span>
+          </span>
+        </button>`;
+      }).join('');
+    }
+
+    const ringsHtml = [
+      `<div class="bloom__ring" data-ring-idx="0">${renderRing(innerList, ring0_r, 0)}</div>`,
+      `<div class="bloom__ring" data-ring-idx="1">${renderRing(outerList, ring1_r, 1)}</div>`
+    ].join('');
+
+    return `<div class="bloom" id="crew-bloom" style="--d:${avatarD}%;">
+      <svg class="bloom__art" viewBox="-100 -100 200 200" aria-hidden="true">
+        ${artSvg.join('')}
+      </svg>
+      <button class="bloom__hub" type="button" aria-label="${count} in the crew. Give the flower a spin">
+        <span class="bloom__hub-in">
+          <span class="bloom__count">${count}</span>
+          <span class="bloom__labels" aria-hidden="true">
+            <span class="bloom__label">in the crew</span>
+            <span class="bloom__label bloom__label--spin">give it a spin</span>
+          </span>
+        </span>
+      </button>
+      ${ringsHtml}
+    </div>`;
+  }
+
+  function heroHTML(page, members, departments) {
     const p = { ...PAGE_DEFAULTS, ...page };
-    const [ey1, ...ey2] = String(p.eyebrow).split(' / ');
-    const core = String(p.core_big).trim().split(/\s+/), last = core.pop();
-    const count = nodes.length;
-    return `<section class="hero team-hero halic-inspired-hero team-portal-hero" data-team-design="team-portal"><div class="team-portal-copy"><span class="team-portal-eyebrow"><i></i> ${esc(ey1)}${ey2.length ? ` <span>/</span> ${esc(ey2.join(' / '))}` : ''}</span><h1>${esc(p.title_top)}<br><span>${esc(p.title_accent)}</span></h1><p class="lead">${esc(p.lead)}</p><div class="halic-hero-actions"><button type="button" class="btn" data-team-jump="leadership">${esc(p.cta_label)} <span aria-hidden="true">↘</span></button></div></div>
-<div class="team-constellation" aria-label="An interactive map of the GDG SRU community"><div class="constellation-head"><span><i></i> ${esc(p.map_label)}</span></div>
-<svg class="constellation-lines" viewBox="0 0 520 430" aria-hidden="true" preserveAspectRatio="none"><path d="M260 216 L110 92 L350 78 L425 190 L360 340 L142 350 L110 92 L425 190 L142 350 L350 78 L360 340 L260 216"/><path d="M110 92 L260 216 L425 190 M350 78 L260 216 L142 350"/></svg>
-<div class="constellation-core" aria-label="${esc(p.core_small)} team"><small class="core-eyebrow">${esc(p.core_small)}</small><b>${core.length ? esc(core.join(' ')) + ' ' : ''}<em>${esc(last || '')}</em></b></div>
-${nodes.map(({ d, n }, i) => `<button type="button" class="department-orbit-node department-node-${i + 1}" data-team-jump="${sectionId(d)}" aria-label="Explore ${esc(d.heading || d.name)} department"><span class="department-node-dot"></span><span class="department-node-copy"><b>${esc(d.name)}</b><small>${esc(d.blurb || `${n} ${n === 1 ? 'person' : 'people'}`)}</small></span><span class="department-node-arrow" aria-hidden="true">↗</span></button>`).join('')}
-<div class="constellation-footer"><span>ONE TEAM · ${count} DEPARTMENT${count === 1 ? '' : 'S'}</span><span>SELECT A DEPARTMENT ↗</span></div></div></section>`;
+    const list = Array.isArray(members) ? members : [];
+    const count = list.length || 18;
+    const edition = p.edition || '3rd';
+    const community = p.community_count || '2,000+';
+
+    return `<section class="crew-hero" aria-labelledby="crew-title">
+      <div class="crew-hero__copy">
+        <div class="section-eyebrow">
+          <span class="pill crew__pill"><i class="crew__pill-dot" aria-hidden="true"></i> The team</span>
+          <span class="eyebrow">${esc(p.eyebrow || "GDG SRU '26 ┬╖ GDG ON CAMPUS")}</span>
+        </div>
+        <h1 class="crew-hero__title" id="crew-title">
+          <span class="crew-hero__mask">
+            <span class="crew-hero__line">The <span class="crew-hero__word"><span class="crew-hero__trail" aria-hidden="true"></span><span class="crew-hero__text">crew</span><span class="crew-hero__head" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#fff" stroke="#34a853" stroke-width="2.8"/><path d="M2 12A10 10 0 0 0 22 12Z" fill="#34a853"/></svg></span></span></span>
+          </span>
+          <span class="crew-hero__mask">
+            <span class="crew-hero__line">behind the day.</span>
+          </span>
+        </h1>
+        <p class="crew-hero__lede">${esc(p.lead || "GDG on Campus SR University is powered by the student community. These are the people putting the 3rd edition together, and the crew grows as the community gets closer.")}</p>
+        <dl class="crew-hero__stats">
+          <div>
+            <dt class="sr-only">Crew</dt>
+            <dd><strong>${count}</strong><span>in the crew</span></dd>
+          </div>
+          <div>
+            <dt class="sr-only">Edition</dt>
+            <dd><strong class="stat-highlight stat-edition">${esc(edition)}</strong><span>edition</span></dd>
+          </div>
+          <div>
+            <dt class="sr-only">Community</dt>
+            <dd><strong class="stat-highlight stat-community">${esc(community)}</strong><span>verified in community</span></dd>
+          </div>
+        </dl>
+        <div class="crew-hero__ctas">
+          <a href="#leadership" class="btn crew-btn crew-btn-primary" data-team-jump="leadership"><span>Meet the crew</span> <span class="btn__arrow" aria-hidden="true">Γåô</span></a>
+          <a href="/join/" class="btn o crew-btn crew-btn-secondary"><span>Join GDG SRU</span> <span class="btn__arrow" aria-hidden="true">Γåù</span></a>
+        </div>
+      </div>
+      <div class="crew-hero__bloom">
+        ${buildBloomConstellation(list)}
+        <p class="crew-hero__hint" aria-hidden="true"><span>≡ƒæå</span> Pick a face to find their card</p>
+      </div>
+    </section>`;
   }
 
   /** Turns raw rows into ordered sections. Departments follow their sort_order (the admin order);
@@ -155,11 +297,12 @@ ${nodes.map(({ d, n }, i) => `<button type="button" class="department-orbit-node
 
   function pageHTML(data) {
     const groups = arrange(data.members, data.departments);
+    const members = data.members || [];
+    const departments = data.departments || [];
     if (!groups.length) {
-      return `${DEFS}${heroHTML(data.page, [])}<section class="tm-sec" data-team-section><div class="tm-head"><div class="tm-head-main"><h2>The team is being updated.</h2><p>Profiles will appear here as soon as they are published.</p></div></div></section>`;
+      return `${DEFS}${heroHTML(data.page, members, departments)}<section class="tm-sec" data-team-section><div class="tm-head"><div class="tm-head-main"><h2>The team is being updated.</h2><p>Profiles will appear here as soon as they are published.</p></div></div></section>`;
     }
-    const nodes = groups.filter((g) => g.d.kind === 'department').slice(0, 5).map((g) => ({ d: g.d, n: g.members.length }));
-    return DEFS + heroHTML(data.page, nodes) + groups.map((g) => sectionHTML(g.d, g.members)).join('');
+    return DEFS + heroHTML(data.page, members, departments) + groups.map((g) => sectionHTML(g.d, g.members)).join('');
   }
 
   async function load(client) {
@@ -183,6 +326,216 @@ ${nodes.map(({ d, n }, i) => `<button type="button" class="department-orbit-node
     } catch { return { members: [], departments: [], page: {}, source: 'none' }; }
   }
 
+  function bindRadarEvents(root) {
+    const bloom = (root || document).querySelector('#crew-bloom');
+    if (!bloom) return;
+
+    const hubBtn = bloom.querySelector('.bloom__hub');
+    const rings = Array.from(bloom.querySelectorAll('.bloom__ring'));
+    const artRings = Array.from(bloom.querySelectorAll('.bloom__art-ring'));
+    const faces = Array.from(bloom.querySelectorAll('.bloom__face'));
+
+    const anims = [];
+
+    // 1. Continuous smooth counter-rotation for avatar rings and uprights
+    rings.forEach((ring, idx) => {
+      const dir = (idx % 2) ? -360 : 360;
+      const duration = (110 + idx * 40) * 1000;
+      const anim = ring.animate([
+        { transform: 'rotate(0deg)' },
+        { transform: `rotate(${dir}deg)` }
+      ], {
+        duration,
+        iterations: Infinity,
+        easing: 'linear'
+      });
+      anims.push(anim);
+
+      // Counter-rotate the uprights so avatars remain right side up!
+      const uprights = ring.querySelectorAll('.bloom__upright');
+      uprights.forEach((u) => {
+        const uAnim = u.animate([
+          { transform: 'rotate(0deg)' },
+          { transform: `rotate(${-dir}deg)` }
+        ], {
+          duration,
+          iterations: Infinity,
+          easing: 'linear'
+        });
+        anims.push(uAnim);
+      });
+    });
+
+    // 2. Rotate art rings in SVG
+    artRings.forEach((artRing, idx) => {
+      const dir = (idx % 2) ? 360 : -360;
+      const duration = (70 + idx * 25) * 1000;
+      const anim = artRing.animate([
+        { transform: 'rotate(0deg)' },
+        { transform: `rotate(${dir}deg)` }
+      ], {
+        duration,
+        iterations: Infinity,
+        easing: 'linear'
+      });
+      anims.push(anim);
+    });
+
+    // 3. Pause when not visible on screen
+    if ('IntersectionObserver' in window) {
+      const observer = new IntersectionObserver(([entry]) => {
+        const visible = !!entry?.isIntersecting;
+        anims.forEach((a) => {
+          if (visible) {
+            try { a.play(); } catch (_) {}
+          } else {
+            try { a.pause(); } catch (_) {}
+          }
+        });
+      });
+      observer.observe(bloom);
+    }
+
+    // 4. Smooth slow down on hover, resume on leave
+    let currentRate = 1;
+    let rateRaf = null;
+
+    function setRate(target, duration = 0.6) {
+      if (rateRaf) cancelAnimationFrame(rateRaf);
+      const start = currentRate;
+      const t0 = performance.now();
+      function step(now) {
+        const p = Math.min(1, (now - t0) / (duration * 1000));
+        const ease = 1 - Math.pow(1 - p, 3);
+        currentRate = start + (target - start) * ease;
+        anims.forEach((a) => {
+          try { a.playbackRate = currentRate; } catch (_) {}
+        });
+        if (p < 1) rateRaf = requestAnimationFrame(step);
+      }
+      rateRaf = requestAnimationFrame(step);
+    }
+
+    bloom.addEventListener('pointerenter', () => {
+      if (!bloom.classList.contains('is-spinning')) setRate(0, 0.5);
+    });
+    bloom.addEventListener('pointerleave', () => {
+      if (!bloom.classList.contains('is-spinning')) setRate(1, 0.9);
+    });
+
+    // 5. Hub click: Spin burst with sparks and pop waves
+    if (hubBtn) {
+      hubBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (bloom.classList.contains('is-spinning')) return;
+        bloom.classList.add('is-spinning');
+
+        // Accelerate spin rate up to 28 then slow down to 1
+        setRate(28, 0.35);
+        setTimeout(() => {
+          setRate(1, 2.5);
+          setTimeout(() => {
+            bloom.classList.remove('is-spinning');
+          }, 2600);
+        }, 400);
+
+        // Hub elastic pulse
+        const hubIn = hubBtn.querySelector('.bloom__hub-in');
+        if (hubIn) {
+          hubIn.animate([
+            { transform: 'scale(0.88)' },
+            { transform: 'scale(1.08)' },
+            { transform: 'scale(1)' }
+          ], { duration: 800, easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)' });
+        }
+
+        // Staggered pop wave on faces
+        const pops = bloom.querySelectorAll('.bloom__pop');
+        pops.forEach((pop) => {
+          const delay = Math.random() * 320;
+          setTimeout(() => {
+            pop.animate([
+              { transform: 'scale(1)' },
+              { transform: 'scale(1.28)' },
+              { transform: 'scale(1)' }
+            ], { duration: 420, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' });
+          }, delay);
+        });
+
+        // 18 flying Google spark particles
+        const rect = bloom.getBoundingClientRect();
+        const radius = rect.width * 0.44;
+        const sparkColors = ['#4285f4', '#34a853', '#f9ab00', '#ea4335'];
+        for (let s = 0; s < 18; s++) {
+          const spark = document.createElement('span');
+          spark.className = 'bloom__spark';
+          const c = sparkColors[s % 4];
+          spark.innerHTML = `<svg viewBox="0 0 32 32"><path d="M16 0C18 10 22 14 32 16 22 18 18 22 16 32 14 22 10 18 0 16 10 14 14 10 16 0Z" fill="${c}"/></svg>`;
+          bloom.appendChild(spark);
+
+          const angle = (s / 18) * Math.PI * 2 + (Math.random() - 0.5) * 0.35;
+          const dist = radius * (0.6 + Math.random() * 0.45);
+          const tx = Math.cos(angle) * dist;
+          const ty = Math.sin(angle) * dist;
+          const rot = (Math.random() - 0.5) * 720;
+
+          const sparkAnim = spark.animate([
+            { transform: 'translate(0, 0) scale(0.2) rotate(0deg)', opacity: 1 },
+            { transform: `translate(${tx}px, ${ty}px) scale(${0.8 + Math.random() * 0.5}) rotate(${rot}deg)`, opacity: 0 }
+          ], {
+            duration: 900 + Math.random() * 400,
+            easing: 'cubic-bezier(0.16, 1, 0.3, 1)'
+          });
+          sparkAnim.onfinish = () => spark.remove();
+        }
+      });
+    }
+
+    // 6. 3D Parallax tilt on mouse move
+    const heroSection = bloom.closest('.crew-hero') || bloom;
+    heroSection.addEventListener('pointermove', (e) => {
+      if (window.innerWidth <= 900) return;
+      const rect = bloom.getBoundingClientRect();
+      const nx = (e.clientX - (rect.left + rect.width / 2)) / (window.innerWidth / 2);
+      const ny = (e.clientY - (rect.top + rect.height / 2)) / (window.innerHeight / 2);
+      const rotY = Math.max(-10, Math.min(10, nx * 14));
+      const rotX = Math.max(-10, Math.min(10, -ny * 14));
+      bloom.style.transform = `perspective(1100px) rotateX(${rotX.toFixed(2)}deg) rotateY(${rotY.toFixed(2)}deg)`;
+    });
+    heroSection.addEventListener('pointerleave', () => {
+      bloom.style.transform = 'perspective(1100px) rotateX(0deg) rotateY(0deg)';
+      bloom.style.transition = 'transform 0.6s ease-out';
+      setTimeout(() => { bloom.style.transition = ''; }, 600);
+    });
+
+    // 7. Click on avatar: Scroll to their card in the grid below with focus pulse
+    faces.forEach((face) => {
+      face.addEventListener('click', (e) => {
+        e.preventDefault();
+        const name = face.dataset.memberName;
+        const code = face.dataset.memberCode;
+
+        const cards = Array.from(document.querySelectorAll('.tm-card'));
+        let target = cards.find((c) => {
+          const cName = c.querySelector('.tm-riso-name')?.textContent?.replace(/\s+/g, ' ').trim() || '';
+          return (name && cName.toLowerCase().includes(name.toLowerCase())) ||
+                 (code && c.querySelector('.tm-riso-number')?.textContent?.includes(code));
+        });
+
+        if (!target && cards.length) target = cards[0];
+
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          target.classList.remove('tm-card-target-focus');
+          void target.offsetWidth;
+          target.classList.add('tm-card-target-focus');
+          setTimeout(() => target.classList.remove('tm-card-target-focus'), 2500);
+          target.focus({ preventScroll: true });
+        }
+      });
+    });
+  }
+
   let mounted = false;
   async function mount(client, root) {
     root = root || document.querySelector('[data-team-root]');
@@ -192,6 +545,7 @@ ${nodes.map(({ d, n }, i) => `<button type="button" class="department-orbit-node
     root.removeAttribute('aria-busy');
     root.innerHTML = pageHTML(data);
     root.dataset.teamSource = data.source;
+    bindRadarEvents(root);
   }
 
   // Broken portrait → fall back to the initials art (no inline handlers, CSP-friendly).
