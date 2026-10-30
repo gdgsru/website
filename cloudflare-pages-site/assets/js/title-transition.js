@@ -3,8 +3,9 @@
 (()=>{
   const textOf=el=>el.children.length?[...el.children].map(c=>c.textContent).join(""):el.textContent;
   function sync(el){
+    if(el.querySelector("i[style*='--i']"))return; // already correctly split by polish.js
     const t=textOf(el).replace(/\u00a0/g," ");
-    if(el.children.length&&el.dataset.split===t)return;
+    if(!t||(el.children.length&&el.dataset.split===t))return;
     el.dataset.split=t;
     el.setAttribute("aria-label",t);
     el.textContent="";

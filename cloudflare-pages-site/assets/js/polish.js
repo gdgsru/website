@@ -14,19 +14,19 @@ function reveal(){
     if(done)return;done=true;
     root.classList.add("pt-reveal");
     root.classList.remove("pt-in","pt-intro");
-    setTimeout(()=>{clear();delete root.dataset.pt},1250);
+    setTimeout(()=>{clear();delete root.dataset.pt},950);
   };
   const app=document.getElementById("app");
   const ready=()=>!app||app.children.length>0;
-  const t0=performance.now(),hold=root.classList.contains("pt-intro")?1700:320;
+  const t0=performance.now(),hold=root.classList.contains("pt-intro")?1700:220;
   const wait=()=>{
     if(ready()&&performance.now()-t0>hold)return go();
-    if(performance.now()-t0>hold+500)return go();
+    if(performance.now()-t0>hold+400)return go();
     requestAnimationFrame(wait);
   };
   requestAnimationFrame(wait);
   if(document.fonts&&document.fonts.ready)document.fonts.ready.then(wait,wait);
-  setTimeout(go,hold+800);
+  setTimeout(go,hold+600);
 }
 reveal();
 
@@ -42,15 +42,32 @@ function internal(a){
   if(u.pathname===location.pathname&&u.search===location.search)return false; // same page / #hash
   return true;
 }
-const NAMES={"/":"Home","/events/":"Events","/team/":"Team","/blog/":"Blog","/members/":"Members","/join/":"Join us","/resources/":"Resource Hub","/leaderboard/":"Leaderboard","/certificates/":"Certificates","/verify/":"Verify","/privacy/":"Privacy","/event.html":"Event","/easter-eggs/":"Easter Eggs","/wheel/":"Prize Wheel"};
+const NAMES={
+  "/":"Home",
+  "/events/":"Events","/events":"Events",
+  "/team/":"Team","/team":"Team",
+  "/blog/":"Blog","/blog":"Blog","/blogs/":"Blog",
+  "/members/":"Members","/members":"Members",
+  "/join/":"Join us","/join":"Join us",
+  "/resources/":"Resource Hub","/resources":"Resource Hub",
+  "/leaderboard/":"Leaderboard","/leaderboard":"Leaderboard",
+  "/certificates/":"Certificates","/certificates":"Certificates",
+  "/verify/":"Verify","/verify":"Verify",
+  "/privacy/":"Privacy","/privacy":"Privacy",
+  "/event.html":"Event",
+  "/easter-eggs/":"Easter Eggs","/easter-eggs":"Easter Eggs",
+  "/wheel/":"Prize Wheel","/wheel":"Prize Wheel"
+};
 function titleFor(u,a){
   const p=u.pathname.replace(/index\.html$/,"");
   if(NAMES[p])return NAMES[p];
+  const pSlash=p.endsWith("/")?p:p+"/";
+  if(NAMES[pSlash])return NAMES[pSlash];
   const t=(a.textContent||"").replace(/\s+/g," ").trim();
   return t&&t.length<28?t:"GDG SRU";
 }
 
-// Buttery smooth, balanced page transition: 560ms natural glide covering the screen completely
+// Buttery smooth, balanced page transition: synchronized stripes & rising typography
 document.addEventListener("click",e=>{
   if(still||e.defaultPrevented||e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;
   const a=e.target.closest&&e.target.closest("a");
@@ -65,7 +82,7 @@ document.addEventListener("click",e=>{
   }
   try{sessionStorage.setItem(KEY,title)}catch(_){}
   root.classList.add("pt-out");
-  setTimeout(()=>{location.href=href},780);
+  setTimeout(()=>{location.href=href},520);
   setTimeout(clear,3200);
 });
 
