@@ -273,11 +273,16 @@
     const edition = p.edition || '3rd';
     const community = p.community_count || '2,000+';
 
+    const editionNum = parseInt(edition) || 3;
+    const editionSuffix = String(edition).replace(/^\d+/, '') || 'rd';
+    const commNum = parseInt(String(community).replace(/[,+]/g, '')) || 2000;
+    const commSuffix = String(community).replace(/^[\d,]+/, '') || '+';
+
     return `<section class="crew-hero" aria-labelledby="crew-title">
       <div class="crew-hero__copy">
         <div class="section-eyebrow">
           <span class="pill crew__pill"><i class="crew__pill-dot" aria-hidden="true"></i> The team</span>
-          <span class="eyebrow">${esc(p.eyebrow || "GDG SRU '26 ┬╖ GDG ON CAMPUS")}</span>
+          <span class="eyebrow">${esc(p.eyebrow || "GDG SRU '26 · GDG ON CAMPUS")}</span>
         </div>
         <h1 class="crew-hero__title" id="crew-title">
           <span class="crew-hero__mask">
@@ -289,27 +294,42 @@
         </h1>
         <p class="crew-hero__lede">${esc(p.lead || "GDG on Campus SR University is powered by the student community. These are the people putting the 3rd edition together, and the crew grows as the community gets closer.")}</p>
         <dl class="crew-hero__stats">
-          <div>
+          <div class="crew-stat crew-stat--crew" tabindex="0" role="region" aria-label="Team size">
             <dt class="sr-only">Crew</dt>
-            <dd><strong>${count}</strong><span>in the crew</span></dd>
+            <dd>
+              <strong class="crew-stat__number stat-crew">
+                <span class="crew-stat__val" data-target="${count}">${count}</span>
+              </strong>
+              <span class="crew-stat__label">in the crew</span>
+            </dd>
           </div>
-          <div>
+          <div class="crew-stat crew-stat--edition" tabindex="0" role="region" aria-label="Edition">
             <dt class="sr-only">Edition</dt>
-            <dd><strong class="stat-highlight stat-edition">${esc(edition)}</strong><span>edition</span></dd>
+            <dd>
+              <strong class="crew-stat__number stat-edition">
+                <span class="crew-stat__val" data-target="${editionNum}">${editionNum}</span><span class="crew-stat__suffix">${esc(editionSuffix)}</span>
+              </strong>
+              <span class="crew-stat__label">edition</span>
+            </dd>
           </div>
-          <div>
+          <div class="crew-stat crew-stat--community" tabindex="0" role="region" aria-label="Community size">
             <dt class="sr-only">Community</dt>
-            <dd><strong class="stat-highlight stat-community">${esc(community)}</strong><span>verified in community</span></dd>
+            <dd>
+              <strong class="crew-stat__number stat-community">
+                <span class="crew-stat__val" data-target="${commNum}">${commNum.toLocaleString('en-US')}</span><span class="crew-stat__suffix">${esc(commSuffix)}</span>
+              </strong>
+              <span class="crew-stat__label">verified in community</span>
+            </dd>
           </div>
         </dl>
         <div class="crew-hero__ctas">
-          <a href="#leadership" class="btn crew-btn crew-btn-primary" data-team-jump="leadership"><span>Meet the crew</span> <span class="btn__arrow" aria-hidden="true">Γåô</span></a>
-          <a href="/join/" class="btn o crew-btn crew-btn-secondary"><span>Join GDG SRU</span> <span class="btn__arrow" aria-hidden="true">Γåù</span></a>
+          <a href="#leadership" class="btn crew-btn crew-btn-primary" data-team-jump="leadership"><span>Meet the crew</span> <span class="btn__arrow" aria-hidden="true">↘</span></a>
+          <a href="/join/" class="btn o crew-btn crew-btn-secondary"><span>Join GDG SRU</span> <span class="btn__arrow" aria-hidden="true">↗</span></a>
         </div>
       </div>
       <div class="crew-hero__bloom">
         ${buildBloomConstellation(list)}
-        <p class="crew-hero__hint" aria-hidden="true"><span>≡ƒæå</span> Pick a face to find their card</p>
+        <p class="crew-hero__hint" aria-hidden="true"><span>👆</span> Pick a face to find their card</p>
       </div>
     </section>`;
   }
@@ -365,7 +385,69 @@
     } catch { return { members: [], departments: [], page: {}, source: 'none' }; }
   }
 
+  function animateCounter(el, target, duration = 1200, isFormatted = false) {
+    if (!el) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      el.textContent = isFormatted ? Number(target).toLocaleString('en-US') : target;
+      return;
+    }
+    const t0 = performance.now();
+    el.classList.add('stat-animating');
+    function tick(now) {
+      const p = Math.min(1, (now - t0) / duration);
+      // Quintic ease-out deceleration curve
+      const ease = 1 - Math.pow(1 - p, 4);
+      const cur = Math.round(target * ease);
+      el.textContent = isFormatted ? cur.toLocaleString('en-US') : cur;
+      if (p < 1) {
+        requestAnimationFrame(tick);
+      } else {
+        el.textContent = isFormatted ? Number(target).toLocaleString('en-US') : target;
+        setTimeout(() => el.classList.remove('stat-animating'), 200);
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function initHeroStats(root) {
+    const statsContainer = (root || document).querySelector('.crew-hero__stats');
+    if (!statsContainer) return;
+
+    // Crew count roll-in
+    const crewEl = statsContainer.querySelector('.stat-crew .crew-stat__val');
+    if (crewEl) {
+      const target = parseInt(crewEl.dataset.target || crewEl.textContent) || 0;
+      crewEl.textContent = '0';
+      setTimeout(() => animateCounter(crewEl, target, 1100, false), 180);
+    }
+
+    // Edition count roll-in
+    const editionEl = statsContainer.querySelector('.stat-edition .crew-stat__val');
+    if (editionEl) {
+      const target = parseInt(editionEl.dataset.target || editionEl.textContent) || 3;
+      editionEl.textContent = '0';
+      setTimeout(() => animateCounter(editionEl, target, 900, false), 280);
+    }
+
+    // Community count roll-in
+    const commEl = statsContainer.querySelector('.stat-community .crew-stat__val');
+    if (commEl) {
+      const target = parseInt(commEl.dataset.target || commEl.textContent.replace(/[,+]/g, '')) || 2000;
+      commEl.textContent = '0';
+      setTimeout(() => animateCounter(commEl, target, 1400, true), 380);
+    }
+
+    // Bloom flower center hub count roll-in
+    const bloomCountEl = (root || document).querySelector('.bloom__count');
+    if (bloomCountEl) {
+      const target = parseInt(bloomCountEl.dataset.target || bloomCountEl.textContent) || 0;
+      bloomCountEl.textContent = '0';
+      setTimeout(() => animateCounter(bloomCountEl, target, 1100, false), 180);
+    }
+  }
+
   function bindRadarEvents(root) {
+    initHeroStats(root);
     const bloom = (root || document).querySelector('#crew-bloom');
     if (!bloom) return;
 
@@ -527,6 +609,17 @@
           });
           sparkAnim.onfinish = () => spark.remove();
         }
+
+        // Staggered celebratory bounce on hero stats numbers
+        const statNums = (root || document).querySelectorAll('.crew-stat__number, .bloom__count');
+        statNums.forEach((num, i) => {
+          setTimeout(() => {
+            num.classList.remove('stat-hub-bump');
+            void num.offsetWidth;
+            num.classList.add('stat-hub-bump');
+            setTimeout(() => num.classList.remove('stat-hub-bump'), 800);
+          }, i * 75);
+        });
       });
     }
 

@@ -192,6 +192,7 @@
 }
 
 /* Stats strip */
+/* Animated Stats in Hero */
 .crew-hero__stats {
   border-top: 1.5px solid var(--ln, #dadce0) !important;
   grid-template-columns: repeat(3, auto) !important;
@@ -199,47 +200,199 @@
   margin: 0 !important;
   padding: 0 !important;
   display: grid !important;
+  gap: 0 !important;
 }
 
 :root[data-theme="dark"] .crew-hero__stats {
   border-top-color: rgba(255, 255, 255, 0.12) !important;
 }
 
-.crew-hero__stats > div {
+.crew-stat {
   border-left: 1.5px solid var(--ln, #dadce0) !important;
-  padding: 16px clamp(16px, 2.2vw, 32px) 0 !important;
+  padding: 16px clamp(14px, 2vw, 32px) 14px !important;
+  border-radius: 16px !important;
+  cursor: pointer !important;
+  transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), background-color 0.25s ease, box-shadow 0.28s ease !important;
+  position: relative !important;
+  overflow: hidden !important;
 }
 
-:root[data-theme="dark"] .crew-hero__stats > div {
+:root[data-theme="dark"] .crew-stat {
   border-left-color: rgba(255, 255, 255, 0.12) !important;
 }
 
-.crew-hero__stats > div:first-child {
+.crew-stat:first-child {
   border-left: 0 !important;
   padding-left: 0 !important;
 }
 
-.crew-hero__stats dd {
+.crew-stat:hover, .crew-stat:focus-visible {
+  transform: translateY(-3px) !important;
+}
+
+/* Subtle accent ambient glow on hover */
+.crew-stat--crew:hover {
+  background: rgba(66, 133, 244, 0.06) !important;
+  box-shadow: 0 8px 24px -6px rgba(66, 133, 244, 0.22) !important;
+}
+.crew-stat--edition:hover {
+  background: rgba(251, 188, 4, 0.08) !important;
+  box-shadow: 0 8px 24px -6px rgba(251, 188, 4, 0.25) !important;
+}
+.crew-stat--community:hover {
+  background: rgba(52, 168, 83, 0.07) !important;
+  box-shadow: 0 8px 24px -6px rgba(52, 168, 83, 0.24) !important;
+}
+
+:root[data-theme="dark"] .crew-stat--crew:hover { background: rgba(66, 133, 244, 0.14) !important; }
+:root[data-theme="dark"] .crew-stat--edition:hover { background: rgba(251, 188, 4, 0.14) !important; }
+:root[data-theme="dark"] .crew-stat--community:hover { background: rgba(52, 168, 83, 0.14) !important; }
+
+.crew-stat dd {
   gap: 4px !important;
   margin: 0 !important;
   display: grid !important;
 }
 
-.crew-hero__stats strong {
-  letter-spacing: -.05em !important;
+/* Base number typography */
+.crew-stat__number {
+  letter-spacing: -.055em !important;
   font-variant-numeric: tabular-nums !important;
-  font-size: clamp(2rem, 1.3rem + 2vw, 3.2rem) !important;
-  font-weight: 800 !important;
-  font-family: Google Sans, sans-serif !important;
-  color: var(--ink, #1f1f23) !important;
+  font-size: clamp(2rem, 1.25rem + 2.2vw, 3.4rem) !important;
+  font-weight: 850 !important;
+  font-family: Google Sans, var(--f-disp), var(--fb), Arial, sans-serif !important;
   line-height: 1 !important;
+  display: inline-flex !important;
+  align-items: baseline !important;
+  width: fit-content !important;
+  position: relative !important;
+  transition: transform 0.24s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.24s ease !important;
 }
 
-.crew-hero__stats span {
+.crew-stat:hover .crew-stat__number {
+  transform: scale(1.06) !important;
+}
+
+/* Distinct Google-brand gradient character for each metric */
+.crew-stat--crew .crew-stat__number {
+  color: #1a73e8 !important;
+  background: linear-gradient(135deg, #4285f4 0%, #1a73e8 100%) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+.crew-stat--edition .crew-stat__number {
+  color: #e37400 !important;
+  background: linear-gradient(135deg, #f9ab00 0%, #ea4335 100%) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+.crew-stat--community .crew-stat__number {
+  color: #188038 !important;
+  background: linear-gradient(135deg, #34a853 0%, #137333 100%) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+:root[data-theme="dark"] .crew-stat--crew .crew-stat__number {
+  background: linear-gradient(135deg, #8ab4f8 0%, #4285f4 100%) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+:root[data-theme="dark"] .crew-stat--edition .crew-stat__number {
+  background: linear-gradient(135deg, #fdd663 0%, #fbbc04 100%) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+:root[data-theme="dark"] .crew-stat--community .crew-stat__number {
+  background: linear-gradient(135deg, #81c995 0%, #34a853 100%) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+/* Suffix styling (rd, +) */
+.crew-stat__suffix {
+  font-size: 0.54em !important;
+  font-weight: 800 !important;
+  margin-left: 2px !important;
+  display: inline-block !important;
+  transform: translateY(-0.35em) !important;
+  opacity: 0.9 !important;
+  letter-spacing: -0.02em !important;
+}
+
+.crew-stat--community .crew-stat__suffix {
+  font-size: 0.72em !important;
+  transform: translateY(-0.15em) !important;
+}
+
+.crew-stat__label {
   font-size: 13px !important;
   color: var(--mut, #5f6368) !important;
   font-family: var(--f-mono, monospace) !important;
   letter-spacing: 0.04em !important;
+  line-height: 1.35 !important;
+  display: block !important;
+}
+
+:root[data-theme="dark"] .crew-stat__label {
+  color: #a8abb0 !important;
+}
+
+/* Diagonal reflection sweep on hover */
+.crew-stat__number::after {
+  content: "" !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: -120% !important;
+  width: 70% !important;
+  height: 100% !important;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.65), transparent) !important;
+  transform: skewX(-24deg) !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+  transition: opacity 0.2s !important;
+}
+
+.crew-stat:hover .crew-stat__number::after {
+  opacity: 1 !important;
+  animation: statShimmer 0.85s ease forwards !important;
+}
+
+@keyframes statShimmer {
+  0% { left: -120%; }
+  100% { left: 220%; }
+}
+
+/* Pop wave triggered on hub spin or roll-in */
+@keyframes statHubPulse {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.18); filter: drop-shadow(0 4px 14px currentColor); }
+  100% { transform: scale(1); filter: none; }
+}
+
+.crew-stat__number.stat-hub-bump {
+  animation: statHubPulse 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) both !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crew-stat,
+  .crew-stat__number,
+  .crew-stat:hover .crew-stat__number,
+  .crew-stat__number.stat-hub-bump {
+    transform: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
 }
 
 /* CTAs */
