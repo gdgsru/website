@@ -493,16 +493,33 @@
             const cleanName = identifier.charAt(0).toUpperCase() + identifier.slice(1);
             const isEmail = identifier.includes('@');
             const newRecord = {
-              event_id: eventId,
               attendee_name: isEmail ? cleanName.split('@')[0] : cleanName,
               roll_no: !isEmail ? identifier.toUpperCase() : null,
               attendee_email: isEmail ? identifier.toLowerCase() : null,
-              attendance_status: 'attended',
-              created_by: c.adminUser?.id || null
+              attendance_status: 'attended'
             };
-            const { data: inserted, error: insErr } = await sb.from('attendance_records').insert(newRecord).select().single();
-            if (insErr) throw insErr;
-            if (inserted) allRows.unshift(inserted);
+            try {
+              const { error: rpcErr } = await sb.rpc('import_attendance_roster', {
+                p_event_id: eventId,
+                p_rows: [newRecord],
+                p_replace: false
+              });
+              if (rpcErr) throw rpcErr;
+              allRows.unshift({
+                ...newRecord,
+                event_id: eventId,
+                id: 'qr-' + Date.now(),
+                imported_at: new Date().toISOString()
+              });
+            } catch (rpcErr) {
+              const { data: inserted, error: insErr } = await sb.from('attendance_records').insert({
+                ...newRecord,
+                event_id: eventId,
+                created_by: c.adminUser?.id || null
+              }).select().single();
+              if (insErr) throw insErr;
+              if (inserted) allRows.unshift(inserted);
+            }
             playSuccessBeep();
             sessionCheckinCount++;
             countEl.textContent = sessionCheckinCount;
@@ -706,22 +723,39 @@ Keep building and learning!
         const submitBtn = singleForm.querySelector('button[type=submit]');
         submitBtn.disabled = true;
         try {
-          const { error } = await sb.from('attendance_records').insert({
-            event_id: evId,
+          const payload = [{
             attendee_name: name,
             roll_no: roll ? roll.toUpperCase() : null,
             attendee_email: email || null,
-            attendance_status: status,
-            created_by: c.adminUser?.id || null
-          });
-          if (error) {
-            if (/attendance_has_identifier|needs a name, a roll number or email/i.test(error.message || '')) {
-              adminMessage('Database migration required: please run migration 20261023120000_allow_name_only_attendance_rosters.sql in Supabase to save name-only attendees.');
-            } else {
-              throw error;
+            attendance_status: status
+          }];
+
+          try {
+            const { data, error: rpcErr } = await sb.rpc('import_attendance_roster', {
+              p_event_id: evId,
+              p_rows: payload,
+              p_replace: false
+            });
+            if (rpcErr) throw rpcErr;
+          } catch (rpcErr) {
+            console.warn('[Attendance Admin] RPC notice, falling back to direct insert:', rpcErr);
+            const { error: insErr } = await sb.from('attendance_records').insert({
+              event_id: evId,
+              attendee_name: name,
+              roll_no: roll ? roll.toUpperCase() : null,
+              attendee_email: email || null,
+              attendance_status: status,
+              created_by: c.adminUser?.id || null
+            });
+            if (insErr) {
+              if (/attendance_has_identifier|needs a name, a roll number or email/i.test(insErr.message || '')) {
+                adminMessage('Database migration required: please run migration 20261023120000_allow_name_only_attendance_rosters.sql in Supabase to save name-only attendees.');
+                return;
+              }
+              throw insErr;
             }
-            return;
           }
+
           await audit('create', 'attendance_records', `${name} added to ${evId}`);
           adminMessage(`Attendee "${name}" added successfully.`, true);
           singleForm.reset();
