@@ -80,7 +80,15 @@
   function normalise(m) {
     const role = String(m.role || '').trim() || 'Community Member';
     let level = String(m.level || '').toLowerCase();
-    if (!LEVELS[level]) level = /lead organizer|\blead\b|head of/i.test(role) ? 'lead' : /organizer/i.test(role) ? 'organizer' : /advisor/i.test(role) ? 'advisor' : 'member';
+    if (/lead organizer|\bchapter lead\b|\blead\b|head of/i.test(role)) {
+      level = 'lead';
+    } else if (/co-organizer|\borganizer\b/i.test(role)) {
+      level = 'organizer';
+    } else if (/advisor/i.test(role)) {
+      level = 'advisor';
+    } else if (!LEVELS[level]) {
+      level = 'member';
+    }
     const accent = ACCENTS.includes(m.accent) ? m.accent : null;
     const pos = /^\d{1,3}% \d{1,3}%$/.test(m.photo_position || '') ? m.photo_position : '50% 100%';
     return {
@@ -107,18 +115,20 @@
     const code = m.code || `GDG SRU · ${String(index + 1).padStart(2, '0')}`;
     const ini = initials(m.name);
     const isFaculty = /faculty advisor/i.test(m.role), isStudentAdvisor = /student advisor/i.test(m.role);
-    const special = opts.kind === 'leadership' && m.level === 'lead' ? ' tm-riso-featured is-wide is-lead-organizer' : isFaculty ? ' tm-faculty-advisor' : isStudentAdvisor ? ' tm-student-advisor' : '';
+    const isLeadership = opts.kind === 'leadership';
+    const isLead = (isLeadership && (m.level === 'lead' || /lead organizer/i.test(m.role))) || (isLeadership && index === 0);
+    const special = isLead ? ' tm-riso-featured is-wide is-lead-organizer' : isFaculty ? ' tm-faculty-advisor' : isStudentAdvisor ? ' tm-student-advisor' : '';
     const portrait = m.photo
       ? `<span class="tm-riso-portrait has-photo"><span class="tm-riso-ini tm-riso-photo-fallback" aria-hidden="true"><b>${esc(ini)}</b><b>${esc(ini)}</b></span><img class="tm-riso-photo-image" src="${esc(m.photo)}" alt="" loading="lazy" decoding="async" style="object-position:${esc(m.pos)}"></span>`
       : `<span class="tm-riso-portrait no-photo"><span class="tm-riso-ini" aria-hidden="true"><b>${esc(ini)}</b><b>${esc(ini)}</b></span></span>`;
     const idTail = code.replace(/^\d\d-/, '').replace(/^GDG SRU · /, '') || 'GDG';
     const social = links(m.socials, m.name);
-    const showLevel = m.level && m.level !== 'member' && !m.role.toLowerCase().includes(m.level.toLowerCase()) && LEVELS[m.level];
-    const levelChip = showLevel ? `<span class="tm-chip">${LEVELS[m.level]}</span>` : '';
+    const chipText = isLeadership ? (isLead ? 'Chapter Lead' : 'Organizer') : (m.department || 'Community');
+    const chip = `<span class="tm-chip tm-chip-main"><i aria-hidden="true"></i>${esc(chipText)}</span>`;
     return `<article class="tm-card tm-riso-card${special}" data-c="${color}" data-level="${m.level}" data-role="${esc(m.role)}" data-department="${esc(m.department || 'Community')}" tabindex="0" aria-label="${esc(m.name + ', ' + m.role)}. Press Enter or Space to flip the card." aria-expanded="false">
 <div class="tm-flip-shell"><div class="tm-face tm-face-front"><div class="tm-riso-front"><div class="tm-riso-paper"><div class="tm-riso-art">${riso(m.name, ink)}<i class="tm-riso-reg tm-riso-reg-a" aria-hidden="true"></i><i class="tm-riso-reg tm-riso-reg-b" aria-hidden="true"></i>${portrait}</div>
-<div class="tm-riso-info"><span class="tm-riso-number">${esc(code)}</span><div class="tm-id"><h3 class="tm-riso-name">${m.name.split(/\s+/).map((p) => `<span>${esc(p)}</span>`).join('')}</h3></div>
-<p class="tm-riso-role"><i aria-hidden="true"></i>${esc(m.role)}</p><div class="tm-chips"><span class="tm-chip tm-chip-main"><i aria-hidden="true"></i>${esc(m.department || 'Community')}</span>${levelChip}</div>
+<div class="tm-riso-info"><span class="tm-riso-number">${esc(code)}</span><div class="tm-id"><h3 class="tm-riso-name">${esc(m.name)}</h3></div>
+<p class="tm-riso-role"><i aria-hidden="true"></i>${esc(m.role)}</p><div class="tm-chips">${chip}</div>
 <div class="tm-stats"><div><b>${esc(idTail)}</b><span>member id</span></div><div><b>SRU</b><span>chapter</span></div></div><span class="tm-riso-hint">Get in touch <i aria-hidden="true">↗</i></span><i class="tm-riso-bar" aria-hidden="true"><b></b><b></b><b></b><b></b></i></div></div></div></div>
 <div class="tm-face tm-face-back" aria-hidden="true" inert><div class="tm-back-top"><span class="tm-back-index">${esc(code)}</span><span class="tm-back-mark" aria-hidden="true">✳</span></div><div class="tm-back-identity"><span class="tm-back-dept">${esc(m.department || 'Community')}</span><h3>${esc(m.name)}</h3><p class="tm-role">${esc(m.role)}</p>${m.subtitle ? `<p class="tm-sub">${esc(m.subtitle)}</p>` : ''}${m.bio ? `<p class="tm-bio">${esc(m.bio)}</p>` : ''}</div>${social ? `<div class="tm-back-social"><span class="tm-back-social-label">CONNECT</span>${social}</div>` : ''}<button class="tm-return" type="button" data-card-return aria-label="Return to ${esc(m.name)}'s profile">Back to profile <span aria-hidden="true">↗</span></button></div></div></article>`;
   }
