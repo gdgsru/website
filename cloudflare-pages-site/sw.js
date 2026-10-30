@@ -1,7 +1,7 @@
 /* GDG SRU · Campus Service Worker (Offline Resilience & PWA)
    Caches core shells and assets for seamless offline browsing on campus Wi-Fi.
 */
-const CACHE_NAME = 'gdg-sru-v45';
+const CACHE_NAME = 'gdg-sru-v46';
 const CORE_SHELLS = [
   '/',
   '/index.html',

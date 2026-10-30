@@ -121,15 +121,15 @@
     const portrait = m.photo
       ? `<span class="tm-riso-portrait has-photo"><span class="tm-riso-ini tm-riso-photo-fallback" aria-hidden="true"><b>${esc(ini)}</b><b>${esc(ini)}</b></span><img class="tm-riso-photo-image" src="${esc(m.photo)}" alt="" loading="lazy" decoding="async" style="object-position:${esc(m.pos)}"></span>`
       : `<span class="tm-riso-portrait no-photo"><span class="tm-riso-ini" aria-hidden="true"><b>${esc(ini)}</b><b>${esc(ini)}</b></span></span>`;
-    const idTail = code.replace(/^\d\d-/, '').replace(/^GDG SRU · /, '') || 'GDG';
+    const idTail = code.replace(/^26-/, '').replace(/^\d\d-/, '').replace(/^GDG SRU · /, '') || 'EXE-01';
     const social = links(m.socials, m.name);
-    const deptName = m.department || 'Community';
+    const deptName = isLeadership ? 'Chapter Leadership' : (m.department || 'Community');
     const levelLabel = LEVELS[m.level] || 'Member';
     return `<article class="tm-card tm-riso-card${special}" data-c="${color}" data-level="${m.level}" data-role="${esc(m.role)}" data-department="${esc(deptName)}" tabindex="0" aria-label="${esc(m.name + ', ' + m.role)}. Press Enter or Space to flip the card." aria-expanded="false">
 <div class="tm-flip-shell"><div class="tm-face tm-face-front"><div class="tm-riso-front"><div class="tm-riso-paper"><div class="tm-riso-art">${riso(m.name, ink)}<i class="tm-riso-reg tm-riso-reg-a" aria-hidden="true"></i><i class="tm-riso-reg tm-riso-reg-b" aria-hidden="true"></i>${portrait}</div>
-<div class="tm-riso-info"><span class="tm-riso-number">${esc(code)}</span><div class="tm-id"><h3 class="tm-riso-name">${esc(m.name)}</h3><span class="tm-riso-flipmark" aria-hidden="true">↻</span></div>
-<p class="tm-riso-role"><i aria-hidden="true"></i>${esc(m.role)}</p><div class="tm-chips"><span class="tm-chip tm-chip-main"><i aria-hidden="true"></i>${esc(deptName)}</span><span class="tm-chip">${esc(levelLabel)}</span></div>
-<div class="tm-stats"><div><b>${esc(idTail)}</b><span>member id</span></div><div><b>SRU</b><span>chapter</span></div></div><span class="tm-riso-hint">Get in touch <i aria-hidden="true">↗</i></span></div><i class="tm-riso-bar" aria-hidden="true"><b></b><b></b><b></b><b></b></i></div></div></div>
+<div class="tm-riso-info"><div class="tm-id"><h3 class="tm-riso-name">${esc(m.name)}</h3><span class="tm-riso-flipmark" aria-hidden="true">↻</span></div>
+<p class="tm-riso-role">${esc(m.role)}</p><div class="tm-chips"><span class="tm-chip tm-chip-main"><i aria-hidden="true"></i>${esc(deptName)}</span><span class="tm-chip">${esc(levelLabel)}</span></div>
+<div class="tm-stats"><div><b>${esc(idTail)}</b><span>member id</span></div><div><b>SRU</b><span>chapter</span></div></div></div></div></div></div>
 <div class="tm-face tm-face-back" aria-hidden="true" inert><div class="tm-back-top"><span class="tm-back-index">${esc(code)}</span><span class="tm-back-mark" aria-hidden="true">✳</span></div><div class="tm-back-identity"><span class="tm-back-dept">${esc(deptName)}</span><h3>${esc(m.name)}</h3><p class="tm-role">${esc(m.role)}</p>${m.subtitle ? `<p class="tm-sub">${esc(m.subtitle)}</p>` : ''}${m.bio ? `<p class="tm-bio">${esc(m.bio)}</p>` : ''}</div>${social ? `<div class="tm-back-social"><span class="tm-back-social-label">CONNECT</span>${social}</div>` : ''}<button class="tm-return" type="button" data-card-return aria-label="Return to ${esc(m.name)}'s profile">Back to profile <span aria-hidden="true">↗</span></button></div></div></article>`;
   }
 
