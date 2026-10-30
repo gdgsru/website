@@ -16,11 +16,11 @@ function reveal(){
     root.classList.add("pt-reveal");
     root.classList.remove("pt-in","pt-intro");
     clearTimeout(cleanupTimer);
-    cleanupTimer=setTimeout(()=>{clear();delete root.dataset.pt},720);
+    cleanupTimer=setTimeout(()=>{clear();delete root.dataset.pt},1180);
   };
   const app=document.getElementById("app");
   const ready=()=>!app||app.children.length>0;
-  const t0=performance.now(),hold=root.classList.contains("pt-intro")?1700:180;
+  const t0=performance.now(),hold=root.classList.contains("pt-intro")?1700:340;
   const wait=()=>{
     if(ready()&&performance.now()-t0>hold)return go();
     if(performance.now()-t0>hold+400)return go();
@@ -89,7 +89,7 @@ document.addEventListener("click",e=>{
   }
   try{sessionStorage.setItem(KEY,title)}catch(_){}
   root.classList.add("pt-out");
-  setTimeout(()=>{location.href=href},480);
+  setTimeout(()=>{location.href=href},560);
   setTimeout(()=>{clear();navigating=false},3200);
 });
 
