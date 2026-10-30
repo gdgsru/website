@@ -161,10 +161,49 @@
     const list = Array.isArray(members) ? members : [];
     const count = list.length || 18;
 
-    // Distribute members across 2 concentric rings (6 inner, 12 outer)
-    const countInner = Math.min(6, Math.max(4, Math.round(count * 0.35)));
-    const innerList = list.slice(0, countInner);
-    const outerList = list.slice(countInner);
+    // Distribute members across 2 concentric rings with proper leadership hierarchy:
+    // Inner ring (6 core leads & advisors): Narayan Bora, Siddhartha Bhattacharyya, Uttam Chaurasia, Rahul, Gagan, Eshwari
+    const INNER_TARGETS = [
+      /narayan\s*bora/i,
+      /siddhartha/i,
+      /uttam/i,
+      /\brahul\b/i,
+      /\bgagan\b/i,
+      /\beshwari\b/i
+    ];
+
+    const innerList = [];
+    const outerList = [];
+    const assigned = new Set();
+
+    INNER_TARGETS.forEach((re) => {
+      const idx = list.findIndex((m, i) => !assigned.has(i) && re.test(String(m?.name || '')));
+      if (idx !== -1) {
+        innerList.push(list[idx]);
+        assigned.add(idx);
+      }
+    });
+
+    // Fallback: if list doesn't match targets or has fewer, backfill inner up to 6 by role
+    if (innerList.length < 6) {
+      list.forEach((m, idx) => {
+        if (!assigned.has(idx) && innerList.length < 6) {
+          const role = String(m?.role || '').toLowerCase();
+          const level = String(m?.level || '').toLowerCase();
+          if (level === 'lead' || /lead|advisor|organizer/i.test(role)) {
+            innerList.push(m);
+            assigned.add(idx);
+          }
+        }
+      });
+    }
+
+    // Outer ring gets all remaining members
+    list.forEach((m, idx) => {
+      if (!assigned.has(idx)) {
+        outerList.push(m);
+      }
+    });
 
     const ring0_r = 50;
     const ring1_r = 82;
