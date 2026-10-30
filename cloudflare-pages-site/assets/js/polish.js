@@ -14,7 +14,7 @@ function reveal(){
     if(done)return;done=true;
     root.classList.add("pt-reveal");
     root.classList.remove("pt-in","pt-intro");
-    setTimeout(()=>{clear();delete root.dataset.pt},950);
+    setTimeout(()=>{clear();delete root.dataset.pt},900);
   };
   const app=document.getElementById("app");
   const ready=()=>!app||app.children.length>0;
@@ -82,7 +82,7 @@ document.addEventListener("click",e=>{
   }
   try{sessionStorage.setItem(KEY,title)}catch(_){}
   root.classList.add("pt-out");
-  setTimeout(()=>{location.href=href},520);
+  setTimeout(()=>{location.href=href},500);
   setTimeout(clear,3200);
 });
 
