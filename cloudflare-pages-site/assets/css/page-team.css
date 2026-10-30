@@ -714,8 +714,82 @@
 }
 
 /* ==========================================================================
-   TEAM MEMBER CARDS - BALANCED PROPORTIONS & OVERLAP PREVENTION
+   TEAM MEMBER CARDS & SECTION HEADINGS - COMPLETE FIX
    ========================================================================== */
+
+/* Fix Heading Truncation: never clip "Chapter Leadership" to "Leadersh" */
+.page-team .tm-sec > .tm-head h2,
+.page-team .tm-sec-leadership > .tm-head h2,
+.page-team .tm-sec-advisory > .tm-head h2,
+.page-team .tm-sec[data-team-section] > .tm-head h2 {
+  max-width: none !important;
+  width: auto !important;
+  overflow: visible !important;
+  white-space: normal !important;
+  word-break: normal !important;
+  hyphens: manual !important;
+}
+
+/* Card Geometry: NEVER cut off bottom of cards (allow full height to show all chips/stats) */
+html:root body .page-team .tm-card.tm-riso-card:not(#_),
+html:root body .page-team .tm-card.tm-riso-card.tm-riso-featured:not(#_),
+html:root body .page-team .tm-sec-leadership .tm-card.tm-riso-card.is-lead-organizer:not(#_),
+html:root body .page-team .tm-sec-leadership .tm-card.tm-riso-card.is-lead-organizer.is-wide:not(#_) {
+  aspect-ratio: auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+  grid-column: span 1 !important;
+  box-sizing: border-box !important;
+}
+
+/* Flip Shell & Faces: let front face dictate natural card height so all content fits */
+html:root body .page-team .tm-riso-card:not(#_) .tm-flip-shell {
+  position: relative !important;
+  inset: auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  grid-template-rows: 1fr !important;
+}
+
+html:root body .page-team .tm-riso-card:not(#_) .tm-face {
+  position: relative !important;
+  inset: auto !important;
+  height: auto !important;
+  min-height: 100% !important;
+  grid-area: 1 / 1 !important;
+  overflow: hidden !important;
+  border-radius: var(--tr, 24px) !important;
+}
+
+html:root body .page-team .tm-riso-card:not(#_) .tm-face-front {
+  position: relative !important;
+  height: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+html:root body .page-team .tm-riso-card:not(#_) .tm-face-back {
+  position: absolute !important;
+  inset: 0 !important;
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
+html:root body .page-team .tm-riso-card:not(#_) .tm-riso-paper {
+  height: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+html:root body .page-team .tm-riso-card:not(#_) .tm-riso-info {
+  height: auto !important;
+  flex: 1 1 auto !important;
+  overflow: visible !important;
+  padding: 14px 16px 18px !important;
+}
 
 /* Universal Section & Card Container Rules */
 .page-team .tm-sec,
@@ -728,40 +802,13 @@
   box-sizing: border-box !important;
 }
 
-/* Card Base Geometry: Always maintain crisp collectible card ratio */
-html:root body .page-team .tm-card.tm-riso-card:not(#_),
-html:root body .page-team .tm-card.tm-riso-card.tm-riso-featured:not(#_),
-html:root body .page-team .tm-sec-leadership .tm-card.tm-riso-card.is-lead-organizer:not(#_),
-html:root body .page-team .tm-sec-leadership .tm-card.tm-riso-card.is-lead-organizer.is-wide:not(#_) {
-  aspect-ratio: 3 / 4.35 !important;
-  height: auto !important;
-  min-height: 0 !important;
-  grid-column: span 1 !important;
-  box-sizing: border-box !important;
-}
-
-/* Flip Shell & Faces inside Card */
-html:root body .page-team .tm-riso-card:not(#_) .tm-flip-shell {
-  width: 100% !important;
-  height: 100% !important;
-  position: relative !important;
-}
-
-html:root body .page-team .tm-riso-card:not(#_) .tm-face {
-  position: absolute !important;
-  inset: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  box-sizing: border-box !important;
-}
-
 /* 1. Desktop Screens (min-width: 1024px) */
 @media (min-width: 1024px) {
   html:root body .page-team .tm-sec-leadership,
   html:root body .page-team .tm-sec-advisory,
   html:root body .page-team .tm-sec[data-team-section] {
     display: grid !important;
-    grid-template-columns: minmax(220px, 260px) 1fr !important;
+    grid-template-columns: minmax(260px, 320px) 1fr !important;
     column-gap: 36px !important;
     align-items: start !important;
     margin-top: 64px !important;
@@ -778,7 +825,7 @@ html:root body .page-team .tm-riso-card:not(#_) .tm-face {
 
   html:root body .page-team .tm-sec[data-team-section]:not(.tm-sec-leadership):not(.tm-sec-advisory) > .tm-grid {
     display: grid !important;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 240px)) !important;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 240px)) !important;
     gap: 20px !important;
     width: 100% !important;
   }
@@ -791,7 +838,7 @@ html:root body .page-team .tm-riso-card:not(#_) .tm-face {
   }
 }
 
-/* 2. Tablet & Medium Screens (641px - 1023px) */
+/* 2. Tablet Screens (641px - 1023px) */
 @media (min-width: 641px) and (max-width: 1023px) {
   html:root body .page-team .tm-sec,
   html:root body .page-team .tm-sec-leadership,
@@ -828,7 +875,7 @@ html:root body .page-team .tm-riso-card:not(#_) .tm-face {
   }
 }
 
-/* 3. Mobile Screens (<= 640px) - TWO COMPACT COLLECTIBLE COLUMNS */
+/* 3. Mobile Screens (<= 640px) */
 @media (max-width: 640px) {
   body.page-team main,
   .page-team main,
@@ -905,7 +952,6 @@ html:root body .page-team .tm-riso-card:not(#_) .tm-face {
   html:root body .page-team .tm-sec-leadership .tm-card.tm-riso-card.is-lead-organizer.is-wide:not(#_) {
     width: 100% !important;
     max-width: 100% !important;
-    aspect-ratio: 3 / 4.35 !important;
     height: auto !important;
     grid-column: span 1 !important;
     margin: 0 !important;
