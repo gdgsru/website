@@ -974,38 +974,38 @@ html.pt-in #pt .t span { animation: none !important; transform: none !important;
 html.pt-in #pt .t span i { transform: none !important; opacity: 1 !important; }
 html.pt-in #pt .t:after { width: min(280px, 40vw) !important; }
 
-/* 2. Out State (Bars sweep in first, then text rises in with the sweep) */
+/* 2. Out State (Bars sweep in first, then text rises smoothly with the sweep) */
 html.pt-out #pt .b {
-  animation: ptIn 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
+  animation: ptIn 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
 }
-html.pt-out #pt .b2 { animation-delay: 0.03s !important; }
-html.pt-out #pt .b3 { animation-delay: 0.06s !important; }
-html.pt-out #pt .b4 { animation-delay: 0.09s !important; }
+html.pt-out #pt .b2 { animation-delay: 0.035s !important; }
+html.pt-out #pt .b3 { animation-delay: 0.070s !important; }
+html.pt-out #pt .b4 { animation-delay: 0.105s !important; }
 
 html.pt-out #pt .t span { animation: none !important; transform: none !important; opacity: 1 !important; }
 html.pt-out #pt .t span i {
-  animation: ptCharIn 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
-  animation-delay: calc(0.08s + var(--i, 0) * 10ms) !important;
+  animation: ptCharIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  animation-delay: calc(0.10s + var(--i, 0) * 11ms) !important;
 }
 html.pt-out #pt .t:after {
-  animation: ptBarIn 0.28s cubic-bezier(0.2, 0.9, 0.2, 1) 0.18s forwards !important;
+  animation: ptBarIn 0.28s cubic-bezier(0.2, 0.9, 0.2, 1) 0.20s forwards !important;
 }
 
-/* 3. Reveal State (Destination Page reveals: text exits up, bars sweep right) */
+/* 3. Reveal State (Destination Page reveals: text exits gracefully up, bars sweep open) */
 html.pt-reveal #pt .t span { animation: none !important; transform: none !important; }
 html.pt-reveal #pt .t span i {
-  animation: ptCharOut 0.22s cubic-bezier(0.5, 0, 0.8, 0.2) forwards !important;
+  animation: ptCharOut 0.30s cubic-bezier(0.25, 1, 0.35, 1) forwards !important;
 }
 html.pt-reveal #pt .t:after {
-  animation: ptBarOut 0.18s ease forwards !important;
+  animation: ptBarOut 0.24s ease forwards !important;
 }
 html.pt-reveal #pt .b {
   transform: translate3d(0, 0, 0);
-  animation: ptOut 0.40s cubic-bezier(0.25, 1, 0.35, 1) 0.08s forwards !important;
+  animation: ptOut 0.48s cubic-bezier(0.22, 1, 0.36, 1) 0.08s forwards !important;
 }
-html.pt-reveal #pt .b2 { animation-delay: 0.11s !important; }
-html.pt-reveal #pt .b3 { animation-delay: 0.14s !important; }
-html.pt-reveal #pt .b4 { animation-delay: 0.17s !important; }
+html.pt-reveal #pt .b2 { animation-delay: 0.12s !important; }
+html.pt-reveal #pt .b3 { animation-delay: 0.16s !important; }
+html.pt-reveal #pt .b4 { animation-delay: 0.20s !important; }
 
 /* Safety Fallback */
 html.pt-in:not(.pt-reveal):not(.pt-intro) #pt .b {

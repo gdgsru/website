@@ -6,6 +6,7 @@ const still=matchMedia("(prefers-reduced-motion:reduce)").matches;
 const KEY="gdg-pt";
 const clear=()=>root.classList.remove("pt-in","pt-out","pt-reveal","pt-intro");
 
+let cleanupTimer = 0;
 // Arrived via an in-site link: smoothly unveil the destination page
 function reveal(){
   if(!root.classList.contains("pt-in"))return;
@@ -14,11 +15,12 @@ function reveal(){
     if(done)return;done=true;
     root.classList.add("pt-reveal");
     root.classList.remove("pt-in","pt-intro");
-    setTimeout(()=>{clear();delete root.dataset.pt},900);
+    clearTimeout(cleanupTimer);
+    cleanupTimer=setTimeout(()=>{clear();delete root.dataset.pt},720);
   };
   const app=document.getElementById("app");
   const ready=()=>!app||app.children.length>0;
-  const t0=performance.now(),hold=root.classList.contains("pt-intro")?1700:220;
+  const t0=performance.now(),hold=root.classList.contains("pt-intro")?1700:180;
   const wait=()=>{
     if(ready()&&performance.now()-t0>hold)return go();
     if(performance.now()-t0>hold+400)return go();
@@ -26,7 +28,7 @@ function reveal(){
   };
   requestAnimationFrame(wait);
   if(document.fonts&&document.fonts.ready)document.fonts.ready.then(wait,wait);
-  setTimeout(go,hold+600);
+  setTimeout(go,hold+500);
 }
 reveal();
 
@@ -67,12 +69,17 @@ function titleFor(u,a){
   return t&&t.length<28?t:"GDG SRU";
 }
 
+let navigating = false;
 // Buttery smooth, balanced page transition: synchronized stripes & rising typography
 document.addEventListener("click",e=>{
   if(still||e.defaultPrevented||e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;
   const a=e.target.closest&&e.target.closest("a");
   if(!internal(a))return;
+  if(navigating)return;
+  navigating=true;
   e.preventDefault();
+  clearTimeout(cleanupTimer);
+  clear(); // Immediately clear any lingering pt-reveal/pt-in
   const href=a.href,u=new URL(href);
   const title=titleFor(u,a);
   const span=document.querySelector("#pt .t span");
@@ -82,8 +89,8 @@ document.addEventListener("click",e=>{
   }
   try{sessionStorage.setItem(KEY,title)}catch(_){}
   root.classList.add("pt-out");
-  setTimeout(()=>{location.href=href},500);
-  setTimeout(clear,3200);
+  setTimeout(()=>{location.href=href},480);
+  setTimeout(()=>{clear();navigating=false},3200);
 });
 
 /* ---------- scroll reveal ---------- */
