@@ -61,7 +61,7 @@
         </div>
         <div class="admin-list" id="admin-roster-rows" style="max-height:320px;overflow-y:auto">
           ${standingsList.map(s => {
-            const lg = s.points >= 150 ? '💎 Diamond' : s.points >= 75 ? '🥇 Gold' : s.points >= 30 ? '🥈 Silver' : '🥉 Bronze';
+            const lg = s.points >= 150 ? 'Diamond' : s.points >= 75 ? 'Gold' : s.points >= 30 ? 'Silver' : 'Bronze';
             return `<div class="admin-list-row admin-standings-row" data-name="${esc(s.student_name.toLowerCase())}">
               <div>
                 <b>#${s.rank} · ${esc(s.student_name)}</b>

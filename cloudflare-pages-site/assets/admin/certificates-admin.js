@@ -128,7 +128,7 @@
         if (nameOnly) countParts.push(`${nameOnly} Name only`);
         const previewRows = parsed.rows.slice(0, 5).map((r, i) => `<tr><td style="padding:4px 6px;border-bottom:1px solid #e0e0e0;color:#666">${i+1}</td><td style="padding:4px 6px;border-bottom:1px solid #e0e0e0"><b>${esc(r.attendee_name)}</b></td><td style="padding:4px 6px;border-bottom:1px solid #e0e0e0">${esc(r.roll_no || '—')}</td><td style="padding:4px 6px;border-bottom:1px solid #e0e0e0">${esc(r.attendee_email || '—')}</td><td style="padding:4px 6px;border-bottom:1px solid #e0e0e0">${esc(r.attendance_status || 'attended')}</td></tr>`).join('');
         const previewTable = `<div style="margin:8px 0;overflow-x:auto;max-width:100%"><table style="width:100%;font-size:12px;border-collapse:collapse;border:1px solid #dadce0"><thead><tr style="background:#f8f9fa;text-align:left"><th style="padding:4px 6px;border-bottom:1px solid #dadce0">#</th><th style="padding:4px 6px;border-bottom:1px solid #dadce0">Name</th><th style="padding:4px 6px;border-bottom:1px solid #dadce0">Roll No</th><th style="padding:4px 6px;border-bottom:1px solid #dadce0">Email</th><th style="padding:4px 6px;border-bottom:1px solid #dadce0">Status</th></tr></thead><tbody>${previewRows}</tbody></table></div>`;
-        const nameOnlyNote = nameOnly > 0 ? `<p class="muted small" style="color:var(--b,#4285f4);margin:4px 0 8px">ℹ️ <b>Name-only roster:</b> Attendees without roll numbers or emails can claim their certificates on the Certificates page using their name.</p>` : '';
+        const nameOnlyNote = nameOnly > 0 ? `<p class="muted small" style="color:var(--b,#4285f4);margin:4px 0 8px"><b>Name-only roster:</b> Attendees without roll numbers or emails can claim their certificates on the Certificates page using their name.</p>` : '';
         $('[data-names-preview]').innerHTML = `<p><b>${parsed.rows.length}</b> attendees ready to import <span class="muted small">(${countParts.join(', ') || 'All verified'})</span></p>${nameOnlyNote}${previewTable}${warnings.join('')}`;
       } else {
         $('[data-names-preview]').innerHTML = c.msg(parsed.issues[0] || 'No names found.');
@@ -248,8 +248,8 @@
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:12px">
           <h2 style="margin:0">Attendance records (<span id="att-count">${(allRows || []).length}</span>)</h2>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <button type="button" class="button" id="btn-live-qr-scan" style="background:#137333;border-color:#137333;font-size:12px;padding:5px 12px;display:inline-flex;align-items:center;gap:6px">📷 Live QR Check-in</button>
-            <button type="button" class="button-outline" id="btn-email-dispatch" style="font-size:12px;padding:5px 12px;display:inline-flex;align-items:center;gap:6px">✉️ Email Links</button>
+            <button type="button" class="button" id="btn-live-qr-scan" style="background:#137333;border-color:#137333;font-size:12px;padding:5px 12px;display:inline-flex;align-items:center;gap:6px">Live QR Check-in</button>
+            <button type="button" class="button-outline" id="btn-email-dispatch" style="font-size:12px;padding:5px 12px;display:inline-flex;align-items:center;gap:6px">Email Links</button>
             <input type="search" id="att-search" placeholder="Search name, roll, email…" style="font-size:12px;padding:4px 8px;width:180px">
             <button type="button" class="button-outline" id="att-clear-event" style="font-size:12px;padding:4px 10px;color:#d93025;border-color:#fad2cf;display:none">Clear event records</button>
           </div>
@@ -364,7 +364,7 @@
         <div style="background:#131722;color:#fff;border-radius:16px;border:1px solid #2d3748;width:100%;max-width:480px;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,0.6);display:flex;flex-direction:column">
           <div style="padding:16px 20px;border-bottom:1px solid #232a3b;display:flex;justify-content:space-between;align-items:center">
             <div>
-              <b style="font-size:16px;display:flex;align-items:center;gap:6px">📷 Door Check-in Scanner</b>
+              <b style="font-size:16px;display:flex;align-items:center;gap:6px">Door Check-in Scanner</b>
               <div style="font-size:12px;color:#94a3b8;margin-top:2px">${esc(eventTitle)}</div>
             </div>
             <button type="button" id="btn-close-scanner" style="background:none;border:none;color:#94a3b8;font-size:22px;cursor:pointer;padding:4px 8px">✕</button>
@@ -388,7 +388,7 @@
             </div>
             <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid #1e2638;padding-top:12px">
               <span style="font-size:12px;color:#64748b">Verified this session: <b id="session-checkin-count" style="color:#34a853;font-size:14px">0</b></span>
-              <button type="button" id="btn-flip-camera" class="button-outline" style="font-size:11px;padding:4px 10px;color:#94a3b8;border-color:#334155">🔄 Flip Camera</button>
+              <button type="button" id="btn-flip-camera" class="button-outline" style="font-size:11px;padding:4px 10px;color:#94a3b8;border-color:#334155">Flip Camera</button>
             </div>
           </div>
         </div>
@@ -580,7 +580,7 @@
         <div style="background:#131722;color:#fff;border-radius:16px;border:1px solid #2d3748;width:100%;max-width:540px;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,0.6);display:flex;flex-direction:column">
           <div style="padding:16px 20px;border-bottom:1px solid #232a3b;display:flex;justify-content:space-between;align-items:center">
             <div>
-              <b style="font-size:16px;display:flex;align-items:center;gap:6px">✉️ Email Certificate Links</b>
+              <b style="font-size:16px;display:flex;align-items:center;gap:6px">Email Certificate Links</b>
               <div style="font-size:12px;color:#94a3b8;margin-top:2px">${esc(eventTitle)} · <b>${withEmail.length}</b> attendees with email</div>
             </div>
             <button type="button" id="btn-close-dispatcher" style="background:none;border:none;color:#94a3b8;font-size:22px;cursor:pointer;padding:4px 8px">✕</button>
@@ -589,14 +589,14 @@
           <div style="padding:20px;display:flex;flex-direction:column;gap:14px;font-size:13px;color:#cbd5e1;max-height:70vh;overflow-y:auto">
             <div style="background:#1a2234;border:1px solid #2d3a54;border-radius:10px;padding:12px 16px">
               <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;font-weight:700;margin-bottom:6px">Email Template Preview</div>
-              <div style="font-weight:700;color:#fff;margin-bottom:8px">Subject: 🎓 Your Official Certificate for "${esc(eventTitle)}" · GDG on Campus SR University</div>
+              <div style="font-weight:700;color:#fff;margin-bottom:8px">Subject: Your Official Certificate for "${esc(eventTitle)}" · GDG on Campus SR University</div>
               <p style="margin:0;line-height:1.6;color:#cbd5e1;white-space:pre-wrap;font-size:12px">Hi {Attendee Name},
 
 Thank you for participating in "${esc(eventTitle)}" hosted by Google Developer Group on Campus SR University!
 
 Your official Certificate of Participation is ready to claim and verify:
 
-🔗 Certificate Portal: ${location.origin}/certificates/
+Certificate Portal: ${location.origin}/certificates/
 Verify Credential: ${location.origin}/verify/
 
 Keep building and learning!
@@ -605,10 +605,10 @@ Keep building and learning!
 
             <div style="display:flex;flex-direction:column;gap:10px">
               <div style="display:flex;gap:10px;flex-wrap:wrap">
-                <button type="button" id="btn-copy-emails" class="button" style="flex:1;min-width:180px;display:inline-flex;align-items:center;justify-content:center;gap:6px">📋 Copy BCC Email List (${withEmail.length})</button>
-                <button type="button" id="btn-export-mailmerge" class="button-outline" style="flex:1;min-width:180px;display:inline-flex;align-items:center;justify-content:center;gap:6px">📥 Export Mail-Merge CSV</button>
+                <button type="button" id="btn-copy-emails" class="button" style="flex:1;min-width:180px;display:inline-flex;align-items:center;justify-content:center;gap:6px">Copy BCC Email List (${withEmail.length})</button>
+                <button type="button" id="btn-export-mailmerge" class="button-outline" style="flex:1;min-width:180px;display:inline-flex;align-items:center;justify-content:center;gap:6px">Export Mail-Merge CSV</button>
               </div>
-              <button type="button" id="btn-cloud-dispatch" class="button-outline" style="width:100%;border-color:#4285f4;color:#8ab4f8;display:inline-flex;align-items:center;justify-content:center;gap:6px">⚡ Send via Cloud Function (Resend / Supabase)</button>
+              <button type="button" id="btn-cloud-dispatch" class="button-outline" style="width:100%;border-color:#4285f4;color:#8ab4f8;display:inline-flex;align-items:center;justify-content:center;gap:6px">Send via Cloud Function (Resend / Supabase)</button>
             </div>
             <div id="dispatch-status" style="font-size:12px;color:#94a3b8;text-align:center;min-height:20px"></div>
           </div>
@@ -1356,14 +1356,13 @@ Keep building and learning!
               <!-- GDG Chapter Logo Studio -->
               <div class="mc-cert-card-header" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line)">
                 <div style="display:flex;justify-content:space-between;align-items:center;width:100%">
-                  <h4 style="margin:0;font-size:12px">// GDG Chapter Logo &amp; Studio</h4>
+                  <h4 style="margin:0;font-size:12px">GDG Chapter Logo &amp; Studio</h4>
                   <span id="gdg-logo-status" style="font-size:11px;color:var(--ink-2);font-weight:600">Using Default Vector (&lt; &gt;)</span>
                 </div>
               </div>
 
               <div class="mc-form-row" style="align-items:center">
-                <label class="mc-upload-btn" style="flex:1">
-                  📁 Upload Custom GDG Logo
+                <label class="mc-upload-btn" style="flex:1">Upload Custom GDG Logo
                   <input type="file" id="inpGdgLogoFile" accept="image/*">
                 </label>
                 <button type="button" class="button-outline" id="btn-reset-gdg-logo" style="display:none;padding:6px 10px;font-size:11.5px;color:#d93025;border-color:#fad2cf">✕ Reset to Default</button>
@@ -1400,8 +1399,7 @@ Keep building and learning!
                     <button type="button" class="mc-p-btn" id="btn-reset-gdg-offset" style="padding:2px 6px;font-size:10.5px">Reset</button>
                   </div>
                 </div>
-                <div style="margin-top:6px;font-size:10.5px;color:var(--ink-3)">
-                  💡 Tip: You can also drag the logo directly on the canvas preview to reposition it!
+                <div style="margin-top:6px;font-size:10.5px;color:var(--ink-3)">Tip: You can also drag the logo directly on the canvas preview to reposition it!
                 </div>
 
                 <div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)">
@@ -1515,15 +1513,14 @@ Keep building and learning!
               </div>
 
               <div class="mc-form-row" style="align-items:center;margin-bottom:8px">
-                <button type="button" class="button" id="btnPullRoster" style="flex:1;background:var(--sunk,#f8f9fa);color:var(--ink);border:1px solid var(--line);font-size:12px;padding:8px">👥 Pull Event Attendees</button>
-                <button type="button" class="button-outline" id="btnToggleManualList" style="font-size:11px;padding:7px 10px">✏️ Paste / CSV</button>
+                <button type="button" class="button" id="btnPullRoster" style="flex:1;background:var(--sunk,#f8f9fa);color:var(--ink);border:1px solid var(--line);font-size:12px;padding:8px">Pull Event Attendees</button>
+                <button type="button" class="button-outline" id="btnToggleManualList" style="font-size:11px;padding:7px 10px">Paste / CSV</button>
               </div>
 
               <div class="mc-form-group" id="manualListWrap" style="display:none;margin-bottom:8px">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
                   <label style="font-size:11px;font-weight:700">Paste Names (one per line):</label>
-                  <label class="mc-upload-btn" style="padding:2px 8px;font-size:10.5px">
-                    📁 Upload CSV
+                  <label class="mc-upload-btn" style="padding:2px 8px;font-size:10.5px">Upload CSV
                     <input type="file" id="inpBulkFile" accept=".csv,.txt,text/csv,text/plain">
                   </label>
                 </div>
@@ -1541,11 +1538,11 @@ Keep building and learning!
               </div>
 
               <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px">
-                <button type="button" id="btnExportZip" style="background:var(--primary, #1a73e8);color:#fff;border:none;border-radius:var(--r-m);padding:9px;font-weight:700;font-size:12.5px;cursor:pointer">📦 Download All (ZIP of PDFs)</button>
-                <button type="button" class="button-outline" id="btnExportMerged" style="font-size:12px;padding:7px">📄 Download All as One Merged PDF</button>
+                <button type="button" id="btnExportZip" style="background:var(--primary, #1a73e8);color:#fff;border:none;border-radius:var(--r-m);padding:9px;font-weight:700;font-size:12.5px;cursor:pointer">Download All (ZIP of PDFs)</button>
+                <button type="button" class="button-outline" id="btnExportMerged" style="font-size:12px;padding:7px">Download All as One Merged PDF</button>
                 <div class="mc-form-row">
-                  <button type="button" class="button-outline" id="btnExportSingle" style="font-size:11.5px;padding:6px">🖨️ Export Current PDF</button>
-                  <button type="button" class="button-outline" id="btnExportPng" style="font-size:11.5px;padding:6px">🖼️ Download PNG</button>
+                  <button type="button" class="button-outline" id="btnExportSingle" style="font-size:11.5px;padding:6px">Export Current PDF</button>
+                  <button type="button" class="button-outline" id="btnExportPng" style="font-size:11.5px;padding:6px">Download PNG</button>
                 </div>
               </div>
             </section>

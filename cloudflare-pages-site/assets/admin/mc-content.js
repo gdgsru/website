@@ -179,9 +179,9 @@
   /* ---------------- Events ---------------- */
   const eventFields = [
     { key: 'event_tier', label: 'Event Tier', type: 'select', default: 'standard', options: [
-      { value: 'flagship', label: '★ Flagship Event (Hero Showcase Banner)' },
+      { value: 'flagship', label: 'Flagship Event (Hero Showcase Banner)' },
       { value: 'program', label: '◷ Month-Long Program (Cohort, Study Jam)' },
-      { value: 'standard', label: '🎟 Standard Event (Workshop, Tech Talk)' }
+      { value: 'standard', label: 'Standard Event (Workshop, Tech Talk)' }
     ], full: true, help: 'Changes layout and fields automatically.' },
     { key: 'title', label: 'Event Title', required: true, full: true },
     { key: 'slug', label: 'Web address', required: true, help: 'Becomes /events/your-slug' },
@@ -227,7 +227,7 @@
     newLabel: 'New event', empty: 'No events yet. Create one to publish it to the chapter calendar.', fields: eventFields,
     load: async (rows) => ({ facts: await MC.eventFacts(rows) }),
     row: (r, x) => {
-      const tierBadge = r.event_tier === 'flagship' ? '<span class="tag" style="background:#4285f4;color:#fff">★ Flagship</span>' : (r.event_tier === 'program' ? '<span class="tag" style="background:#fbbc04;color:#111">◷ Program</span>' : '');
+      const tierBadge = r.event_tier === 'flagship' ? '<span class="tag" style="background:#4285f4;color:#fff">Flagship</span>' : (r.event_tier === 'program' ? '<span class="tag" style="background:#fbbc04;color:#111">◷ Program</span>' : '');
       const modeBadge = `<span class="tag">${r.event_mode === 'virtual' ? 'Online' : (r.event_mode === 'hybrid' ? 'Hybrid' : 'In-Person')}</span>`;
       return `<li class="mc-item"><div class="mc-item-main"><b>${esc(r.title)}</b><small>${esc(r.category || '')} · ${esc(when(r.start_at))}${r.start_at ? ` · ${esc(until(r.start_at))}` : ''}</small><span class="mc-tags">${tierBadge}${modeBadge}${r.pinned_next_session ? '<span class="tag blue">Next session</span>' : ''}<span class="status s-${esc(r.status)}">${esc(r.status)}</span></span></div>${MC.pipeline(r, x.facts[r.id])}<div class="mc-item-actions"><button type="button" class="button-outline" data-edit="${esc(r.id)}">${icon('edit')}Edit</button><button type="button" class="mc-icon-btn" data-dup="${esc(r.id)}" aria-label="Duplicate ${esc(r.title)}" title="Duplicate">${icon('copy')}</button>${r.status === 'published' ? `<a class="mc-icon-btn" href="/events/" target="_blank" rel="noopener" aria-label="View on site" title="View on site">${icon('ext')}</a>` : ''}</div></li>`;
     },
